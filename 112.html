@@ -35,15 +35,16 @@
           width: 60px;
           height: 60px;
           font-size: 25px;
+          line-height: 60px;
           margin: 2px 0px;
-          border-radius: 5px;
+          border-radius: 10px;
           border: none;
           background-color: #DDDDDD;
           cursor: pointer;
       }
 
       .button:hover {
-          background-color: #CCCCCC;
+          background-color: #bbb;
       }
 
       #txt {
@@ -79,7 +80,7 @@
       <button class="button" onclick="appendNumber('-')">-</button>
       <button class="button" onclick="clearInput()">C</button>
       <button class="button" onclick="backspace()">←</button>
-      <button class="button" onclick="main()" style="width: 125px;">정답 확인</button>
+      <button class="button" onclick="main()" style="width: 125px; background-color: #3399FF; color: white;"">정답 확인</button>
     
     <hr/>
     <div id="result1" style="font-size:30px">정답여부</div>
@@ -166,6 +167,7 @@
             }
           }
 
+
           input.value = "";
       }
 
@@ -190,6 +192,7 @@
               main(); // Enter 키로 정답 확인
           }
       });
+
     </script>
   </body>
 </html>
