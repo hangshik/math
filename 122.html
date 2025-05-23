@@ -60,7 +60,10 @@
     <div>
       <button id="btn1" class="stage-button" onclick="setStage(1)">1단계</button>
       <button id="btn2" class="stage-button" onclick="setStage(2)">2단계</button>
-      <button id="btn3" class="stage-button" onclick="setStage(3)">3단계</button>
+      <button id="btn3" class="stage-button" onclick="setStage(3)">3단계</button><br>
+      <button id="btn4" class="stage-button" onclick="setStage(4)">4단계</button>
+      <button id="btn5" class="stage-button" onclick="setStage(5)">5단계</button>
+      <button id="btn6" class="stage-button" onclick="setStage(6)">6단계</button>
     </div>
 
     <div id="problem" style="font-size: 30px; margin-top: 20px;">문제</div>
@@ -94,9 +97,12 @@
     <div id="result1" style="font-size:30px">정답여부</div>
     <div id="result2" style="font-size:30px">0번 정답입니다.</div>
     <div id="result3" style="font-size:30px">0번 틀렸습니다.</div>
-    <br><font size="5">1단계: 정답이 정수임<br>
-        2단계: 정답이 정수가 아님<br>
-        3단계: 정답이 둘 다 가능
+    <br><font size="5">
+      1~3단계: ax+b=cx+d<br>
+      4~6단계: a(bx+c)=dx+e 또는 ax+b=c(dx+e)<br>
+      1,4단계: 정답이 정수임<br>
+        2,5단계: 정답이 정수가 아님<br>
+        3,6단계: 정답이 둘 다 가능
     </font>
   </center>
 
@@ -123,7 +129,7 @@
     }
 
     function updateButtonStyles() {
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 1; i <= 6; i++) {
         const btn = document.getElementById("btn" + i);
         if (i === currentStage) {
           btn.classList.add("active");
@@ -141,6 +147,8 @@
         x2 = Math.floor(Math.random() * 18 - 8);
         x3 = Math.floor(Math.random() * 18 - 8);
         x4 = Math.floor(Math.random() * 18 - 8);
+        sign1 = Math.random();
+        sign2 = Math.random();
 
         if (x1 < 1) x1 -= 1;
         if (x2 < 1) x2 -= 1;
@@ -154,11 +162,17 @@
         let denominator = x1 - x3;
         if (denominator === 0) continue;
 
+        
+        x5 = sign1 < 0.5 ? gcd(x1, x2) : gcd(x1, x2)*-1;
+
         rr = numerator / denominator;
 
         if (mode === 1 && Number.isInteger(rr)) break;
         if (mode === 2 && !Number.isInteger(rr)) break;
         if (mode === 3) break;
+        if (mode === 4 && Number.isInteger(rr) && x5!=1) break;
+        if (mode === 5 && !Number.isInteger(rr) && x5!=1) break;
+        if (mode === 6 && x5!=1) break;
       }
 
       const r1 = gcd(x4 - x2, x1 - x3);
@@ -166,15 +180,32 @@
       const r3 = (x1 - x3) / r1;
       rr = r2 / r3;
 
+      if ( mode>3){
+        x1 = x1 / x5;
+        x2 = x2 / x5;
+      }
+
       const showX1 = x1 === 1 ? "" : x1 === -1 ? "-" : x1;
       const showX3 = x3 === 1 ? "" : x3 === -1 ? "-" : x3;
       const showX2 = x2 > 0 ? "+" + x2 : x2;
       const showX4 = x4 > 0 ? "+" + x4 : x4;
+      const showX5 = x5 === -1 ? "-" : x5;
 
+      if(mode<4){
       document.getElementById("problem").innerHTML =
         showX1 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX2 +
         " = " + showX3 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX4;
-
+      } else {
+      if(sign2 < 0.5){
+        document.getElementById("problem").innerHTML =
+        showX5 + "(" + showX1 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX2 +
+        ") = " + showX3 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX4;
+      } else {
+        document.getElementById("problem").innerHTML =
+        showX3 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX4 +"=" +showX5 + "(" + showX1 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX2 +
+        ")";
+      }
+      }
       // document.getElementById("test").textContent = `${x1}, ${x3}, ${x2}, ${x4}, 정답: ${rr}`;
     }
 
