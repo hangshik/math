@@ -3,6 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>일차방정식</title>
+  <script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
   <style>
     body {
       text-size-adjust: 50px;
@@ -190,22 +198,23 @@
       const showX2 = x2 > 0 ? "+" + x2 : x2;
       const showX4 = x4 > 0 ? "+" + x4 : x4;
       const showX5 = x5 === -1 ? "-" : x5;
-
+      // x 이미지를 수식 x로 대체 (MathJax 사용)
       if(mode<4){
-      document.getElementById("problem").innerHTML =
-        showX1 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX2 +
-        " = " + showX3 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX4;
-      } else {
-      if(sign2 < 0.5){
         document.getElementById("problem").innerHTML =
-        showX5 + "(" + showX1 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX2 +
-        ") = " + showX3 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX4;
+          showX1 + '\\(x\\)' + showX2 +
+          " = " + showX3 + '\\(x\\)' + showX4;
       } else {
-        document.getElementById("problem").innerHTML =
-        showX3 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX4 +"=" +showX5 + "(" + showX1 + '<img src="x.png" style="height: 25px; vertical-align: middle;">' + showX2 +
-        ")";
+        if(sign2 < 0.5){
+          document.getElementById("problem").innerHTML =
+            showX5 + "(" + showX1 + '\\(x\\)' + showX2 +
+            ") = " + showX3 + '\\(x\\)' + showX4;
+        } else {
+          document.getElementById("problem").innerHTML =
+            showX3 + '\\(x\\)' + showX4 + "=" + showX5 + "(" + showX1 + '\\(x\\)' + showX2 +
+            ")";
+        }
       }
-      }
+      MathJax.typesetPromise(); // 수식 렌더링
       // document.getElementById("test").textContent = `${x1}, ${x3}, ${x2}, ${x4}, 정답: ${rr}`;
     }
 
