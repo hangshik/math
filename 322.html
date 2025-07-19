@@ -29,11 +29,9 @@
     padding-bottom: 0;
   }
   .choices button {
-    width: 400px;
+    width: 200px;
     height: 80px;
-    margin: 5px 0;
-    padding-top: -25px;
-    padding-bottom: 0;
+    margin: 0px 0;
     padding-left: 10px;
     padding-right: 10px;
     font-size: 18px;
@@ -41,7 +39,9 @@
     border: 1px solid #ccc;
     background: white;
     cursor: pointer;
-    display: block;
+    display: flex;
+    align-items: center; /* 세로 가운데 정렬 */
+    justify-content: center; /* 가로 가운데 정렬(필요시) */
   }
   .correct { background-color: #4CAF50 !important; color: white !important; }
   .wrong { background-color: #f44336 !important; color: white !important; }
@@ -78,13 +78,14 @@
 <div class="question" id="questionBox"></div>
 <div class="choices" id="choicesBox"></div>
 <div id="scoreBoard" style="font-size:25px">정답: 0 | 오답: 0</div><br>
-<button onclick="generateQuiz()" style="width:300px; height:80px; font-size:36px;border-radius:20px;border:1px solid #ffffff;background:#a3f3a6;cursor:pointer;">다음 문제</button>
-
-<div style="font-size:20px">1-3단계: $a=1$<br>
+<button onclick="generateQuiz()" style="width:300px; height:60px; font-size:36px;border-radius:20px;border:1px solid #ffffff;background:#3399FF;color:white;cursor:pointer;">다음 문제</button>
+<br><br>
+<img src="img_322.png" style="width: 50%; height: auto;">
+<!--<div style="font-size:20px">1-3단계: $a=1$<br>
   4~6단계:  $a$는 모든 수<br>
   1,4단계: $\sqrt{D}$ 유리수<br>
   2,5단계: $\sqrt{D}$ 무리수<br>
-  3,6단계: 모두</div><br>
+  3,6단계: 모두</div><br>-->
 
 <script>
   let currentStage = 1;
@@ -574,34 +575,51 @@
       }
     }
 
+    // 2개씩 3줄로 선택지 버튼을 배치
     const choiceArr = Array.from(choicesSet).sort(() => Math.random() - 0.5);
 
-    choiceArr.forEach(opt => {
-      const btn = document.createElement('button');
-      btn.innerHTML = `$$x = ${opt}$$`;
-      btn.dataset.correct = (opt === correct) ? "true" : "false";
+    // 기존 버튼 제거
+    choicesBox.innerHTML = "";
 
-      btn.addEventListener('click', () => {
-        if (answered) return;
-        answered = true;
+    for (let row = 0; row < 3; row++) {
+      const rowDiv = document.createElement('div');
+      rowDiv.style.display = "flex";
+      rowDiv.style.justifyContent = "center";
+      rowDiv.style.marginBottom = "8px";
+      for (let col = 0; col < 2; col++) {
+        const idx = row * 2 + col;
+        if (idx >= choiceArr.length) break;
+        const opt = choiceArr[idx];
+        const btn = document.createElement('button');
+        btn.innerHTML = `$$x = ${opt}$$`;
+        btn.dataset.correct = (opt === correct) ? "true" : "false";
+        btn.style.margin = "4px";
+        btn.style.minWidth = "120px"; // 기존 120px에서 60px로 절반으로 줄임
+        btn.style.fontSize = "20px";
 
-        if (btn.dataset.correct === "true") {
-          btn.classList.add('correct');
-          correctTotal++;
-        } else {
-          btn.classList.add('wrong');
-          wrongTotal++;
-          Array.from(choicesBox.children).forEach(b => {
-            if (b.dataset.correct === "true") b.classList.add('correct');
-          });
-        }
+        btn.addEventListener('click', () => {
+          if (answered) return;
+          answered = true;
 
-        updateScore();
-        Array.from(choicesBox.children).forEach(b => b.disabled = true);
-      });
+          if (btn.dataset.correct === "true") {
+            btn.classList.add('correct');
+            correctTotal++;
+          } else {
+            btn.classList.add('wrong');
+            wrongTotal++;
+            Array.from(choicesBox.querySelectorAll('button')).forEach(b => {
+              if (b.dataset.correct === "true") b.classList.add('correct');
+            });
+          }
 
-      choicesBox.appendChild(btn);
-    });
+          updateScore();
+          Array.from(choicesBox.querySelectorAll('button')).forEach(b => b.disabled = true);
+        });
+
+        rowDiv.appendChild(btn);
+      }
+      choicesBox.appendChild(rowDiv);
+    }
 
     MathJax.typesetPromise();
   }

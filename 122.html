@@ -78,7 +78,7 @@
     <!--<div id="test" style="font-size: 20px; color: gray;">디버그</div>-->
 
     <div style="margin-top: 20px; text-align: center;display: flex; justify-content: center; align-items: center; ">
-      <img src="x.png"> = <input type="text" id="txt" value="" readonly>
+      <font size="10px">$x$ =</font> <input type="text" id="txt" value="" readonly>
     </div>
 
     <br>
@@ -105,13 +105,15 @@
     <div id="result1" style="font-size:30px">정답여부</div>
     <div id="result2" style="font-size:30px">0번 정답입니다.</div>
     <div id="result3" style="font-size:30px">0번 틀렸습니다.</div>
-    <br><font size="5">
+    
+    <!--<br><font size="5">
       1~3단계: ax+b=cx+d<br>
       4~6단계: a(bx+c)=dx+e 또는 ax+b=c(dx+e)<br>
       1,4단계: 정답이 정수임<br>
         2,5단계: 정답이 정수가 아님<br>
         3,6단계: 정답이 둘 다 가능
-    </font>
+    </font>-->
+    <br><img src="img_122.png" style="width: 50%; height: auto;">
   </center>
 
   <script>
@@ -262,6 +264,7 @@
           wincount++;
           document.getElementById("result1").textContent = "정답입니다.";
           document.getElementById("result1").style.backgroundColor = "green";
+          document.getElementById("result1").style.color = "white";
           document.getElementById("result2").textContent = `${wincount}번 정답입니다.`;
           setTimeout(resultreset, 1000);
           start(currentStage);
@@ -269,6 +272,7 @@
           losecount++;
           document.getElementById("result1").textContent = "틀렸습니다.";
           document.getElementById("result1").style.backgroundColor = "red";
+          document.getElementById("result1").style.color = "white";
           document.getElementById("result3").textContent = `${losecount}번 틀렸습니다.`;
           setTimeout(resultreset, 1000);
         }
