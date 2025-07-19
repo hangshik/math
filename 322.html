@@ -458,171 +458,132 @@
   }
 
   function generateQuiz() {
-    answered = false;
-    const { a, b, c, D } = generateValidProblem();
+  answered = false;
+  const { a, b, c, D } = generateValidProblem();
 
-    const questionBox = document.getElementById('questionBox');
-    const choicesBox = document.getElementById('choicesBox');
-    choicesBox.innerHTML = '';
+  const questionBox = document.getElementById('questionBox');
+  const choicesBox = document.getElementById('choicesBox');
+  choicesBox.innerHTML = '';
 
-    const question = formatEquation(a, b, c);
-    questionBox.innerHTML = `$$${question}$$`;
+  const question = formatEquation(a, b, c);
+  questionBox.innerHTML = `$$${question}$$`;
 
-    let correct, correctRoots = null, isDouble = false;
-    if (currentStage === 1 || currentStage === 4) {
-      // 유리수 근: 반드시 완전제곱수
-      correctRoots = getRationalRoots(a, b, c, D);
-      isDouble = (correctRoots.length === 1);
-      if (isDouble) {
-        correct = formatFraction(correctRoots[0][0], correctRoots[0][1]) + " \\quad (중근)";
-      } else {
-        // 오름차순 정렬
-        correct = `${formatFraction(correctRoots[0][0], correctRoots[0][1])}, ${formatFraction(correctRoots[1][0], correctRoots[1][1])}`;
-      }
-    } else if (currentStage === 2 || currentStage === 5) {
-      // 무리수 근: 반드시 무리수, 정답은 ±를 한꺼번에, 기약분수로
-      correct = formatIrrationalAnswer(a, b, D, true);
+  let correct, correctRoots = null, isDouble = false;
+
+  if (isPerfectSquare(D)) { // ✅ 완전제곱수면 유리근
+    correctRoots = getRationalRoots(a, b, c, D);
+    isDouble = (correctRoots.length === 1);
+    if (isDouble) {
+      correct = formatFraction(correctRoots[0][0], correctRoots[0][1]) + " \\quad (중근)";
     } else {
-      // 3,6단계: 유리수/무리수 모두
-      if (isPerfectSquare(D)) {
-        correctRoots = getRationalRoots(a, b, c, D);
-        isDouble = (correctRoots.length === 1);
-        if (isDouble) {
-          correct = formatFraction(correctRoots[0][0], correctRoots[0][1]) + " \\quad (중근)";
-        } else {
-          correct = `${formatFraction(correctRoots[0][0], correctRoots[0][1])}, ${formatFraction(correctRoots[1][0], correctRoots[1][1])}`;
-        }
-      } else {
-        // 무리수 근: ±를 한꺼번에, 기약분수로
-        correct = formatIrrationalAnswer(a, b, D, true);
-      }
+      correct = `${formatFraction(correctRoots[0][0], correctRoots[0][1])}, ${formatFraction(correctRoots[1][0], correctRoots[1][1])}`;
     }
-    if (!correct) {
-      generateQuiz();
-      return;
-    }
-
-    let choicesSet = new Set();
-    choicesSet.add(correct);
-
-    let distractors = [];
-    if (currentStage === 1 || currentStage === 4) {
-      // 유리수 근: 오답도 2근 쌍(또는 중근)으로, 5개(정답+오답) 맞추기
-      if (isDouble) {
-        // 중근: 오답도 단일 근
-        distractors = generateRationalDistractorsForRoots(correctRoots, 4);
-        distractors = distractors.map(x => x + " \\quad (중근)");
-      } else {
-        // 2근: 오답도 2근 쌍, 부호 오답 1~2개만 추가
-        distractors = generateRationalDistractorsForRoots(correctRoots, 4, true);
-      }
-    } else if (currentStage === 2 || currentStage === 5) {
-      // 무리수 근: 오답도 무리수 근 (±를 같이 표시, 기약분수로)
-      distractors = generateIrrationalDistractorsV2(a, b, D, correct);
-    } else {
-      // 3,6단계: 유리수/무리수 혼합
-      if (isPerfectSquare(D)) {
-        if (isDouble) {
-          distractors = generateRationalDistractorsForRoots(correctRoots, 4);
-          distractors = distractors.map(x => x + " \\quad (중근)");
-        } else {
-          distractors = generateRationalDistractorsForRoots(correctRoots, 4);
-        }
-      } else {
-        distractors = generateIrrationalDistractorsV2(a, b, D, correct);
-      }
-    }
-
-    // 오답 랜덤 섞기
-    distractors = distractors.filter(x => !choicesSet.has(x));
-    while (choicesSet.size < 5 && distractors.length > 0) {
-      const idx = Math.floor(Math.random() * distractors.length);
-      choicesSet.add(distractors.splice(idx, 1)[0]);
-    }
-
-    // 5개 미만이면 랜덤으로 추가(중복 방지)
-    if (choicesSet.size < 5) {
-      let extraTries = 0;
-      while (choicesSet.size < 5 && extraTries < 30) {
-        let extra = null;
-        if ((currentStage === 1 || currentStage === 4) || ((currentStage === 3 || currentStage === 6) && isPerfectSquare(D))) {
-          // 유리수 근
-          if (isDouble && correctRoots) {
-            let r = [correctRoots[0][0] + (Math.floor(Math.random() * 6) - 3) * correctRoots[0][1], correctRoots[0][1]];
-            r = simplifyFraction(r[0], r[1]);
-            extra = formatFraction(r[0], r[1]) + " \\quad (중근)";
-          } else if (correctRoots) {
-            let r1 = [correctRoots[0][0] + (Math.floor(Math.random() * 6) - 3) * correctRoots[0][1], correctRoots[0][1]];
-            let r2 = [correctRoots[1][0] + (Math.floor(Math.random() * 6) - 3) * correctRoots[1][1], correctRoots[1][1]];
-            r1 = simplifyFraction(r1[0], r1[1]);
-            r2 = simplifyFraction(r2[0], r2[1]);
-            const v1 = r1[0]/r1[1], v2 = r2[0]/r2[1];
-            if (v1 < v2) extra = `${formatFraction(r1[0], r1[1])}, ${formatFraction(r2[0], r2[1])}`;
-            else extra = `${formatFraction(r2[0], r2[1])}, ${formatFraction(r1[0], r1[1])}`;
-          }
-        } else {
-          // 무리수 근
-          // b, -b를 랜덤하게
-          let bVar = Math.random() < 0.5 ? b : -b;
-          let delta = (Math.floor(Math.random() * 9) - 4) * 2;
-          let newD = D + delta;
-          if (newD > 0 && !isPerfectSquare(newD)) {
-            extra = formatIrrationalAnswer(a, bVar, newD, true);
-          }
-        }
-        if (extra && !choicesSet.has(extra)) choicesSet.add(extra);
-        extraTries++;
-      }
-    }
-
-    // 2개씩 3줄로 선택지 버튼을 배치
-    const choiceArr = Array.from(choicesSet).sort(() => Math.random() - 0.5);
-
-    // 기존 버튼 제거
-    choicesBox.innerHTML = "";
-
-    for (let row = 0; row < 3; row++) {
-      const rowDiv = document.createElement('div');
-      rowDiv.style.display = "flex";
-      rowDiv.style.justifyContent = "center";
-      rowDiv.style.marginBottom = "8px";
-      for (let col = 0; col < 2; col++) {
-        const idx = row * 2 + col;
-        if (idx >= choiceArr.length) break;
-        const opt = choiceArr[idx];
-        const btn = document.createElement('button');
-        btn.innerHTML = `$$x = ${opt}$$`;
-        btn.dataset.correct = (opt === correct) ? "true" : "false";
-        btn.style.margin = "4px";
-        btn.style.minWidth = "120px"; // 기존 120px에서 60px로 절반으로 줄임
-        btn.style.fontSize = "20px";
-
-        btn.addEventListener('click', () => {
-          if (answered) return;
-          answered = true;
-
-          if (btn.dataset.correct === "true") {
-            btn.classList.add('correct');
-            correctTotal++;
-          } else {
-            btn.classList.add('wrong');
-            wrongTotal++;
-            Array.from(choicesBox.querySelectorAll('button')).forEach(b => {
-              if (b.dataset.correct === "true") b.classList.add('correct');
-            });
-          }
-
-          updateScore();
-          Array.from(choicesBox.querySelectorAll('button')).forEach(b => b.disabled = true);
-        });
-
-        rowDiv.appendChild(btn);
-      }
-      choicesBox.appendChild(rowDiv);
-    }
-
-    MathJax.typesetPromise();
+  } else {
+    correct = formatIrrationalAnswer(a, b, D, true);
   }
+
+  if (!correct) {
+    generateQuiz();
+    return;
+  }
+
+  let choicesSet = new Set();
+  choicesSet.add(correct);
+
+  let distractors = [];
+
+  if (isPerfectSquare(D)) { // ✅ √D 유리수인 경우
+    if (isDouble) {
+      distractors = generateRationalDistractorsForRoots(correctRoots, 4);
+      distractors = distractors.map(x => x + " \\quad (중근)");
+    } else {
+      distractors = generateRationalDistractorsForRoots(correctRoots, 4, true);
+    }
+  } else {
+    distractors = generateIrrationalDistractorsV2(a, b, D, correct);
+  }
+
+  distractors = distractors.filter(x => !choicesSet.has(x));
+  while (choicesSet.size < 5 && distractors.length > 0) {
+    const idx = Math.floor(Math.random() * distractors.length);
+    choicesSet.add(distractors.splice(idx, 1)[0]);
+  }
+
+  // 부족하면 임의 생성
+  if (choicesSet.size < 5) {
+    let extraTries = 0;
+    while (choicesSet.size < 5 && extraTries < 30) {
+      let extra = null;
+      if (isPerfectSquare(D)) {
+        if (isDouble && correctRoots) {
+          let r = [correctRoots[0][0] + (Math.floor(Math.random() * 6) - 3) * correctRoots[0][1], correctRoots[0][1]];
+          r = simplifyFraction(r[0], r[1]);
+          extra = formatFraction(r[0], r[1]) + " \\quad (중근)";
+        } else if (correctRoots) {
+          let r1 = [correctRoots[0][0] + (Math.floor(Math.random() * 6) - 3) * correctRoots[0][1], correctRoots[0][1]];
+          let r2 = [correctRoots[1][0] + (Math.floor(Math.random() * 6) - 3) * correctRoots[1][1], correctRoots[1][1]];
+          r1 = simplifyFraction(r1[0], r1[1]);
+          r2 = simplifyFraction(r2[0], r2[1]);
+          const v1 = r1[0]/r1[1], v2 = r2[0]/r2[1];
+          if (v1 < v2) extra = `${formatFraction(r1[0], r1[1])}, ${formatFraction(r2[0], r2[1])}`;
+          else extra = `${formatFraction(r2[0], r2[1])}, ${formatFraction(r1[0], r1[1])}`;
+        }
+      } else {
+        let bVar = Math.random() < 0.5 ? b : -b;
+        let delta = (Math.floor(Math.random() * 9) - 4) * 2;
+        let newD = D + delta;
+        if (newD > 0 && !isPerfectSquare(newD)) {
+          extra = formatIrrationalAnswer(a, bVar, newD, true);
+        }
+      }
+      if (extra && !choicesSet.has(extra)) choicesSet.add(extra);
+      extraTries++;
+    }
+  }
+
+  // 이하 버튼 렌더링은 동일
+  const choiceArr = Array.from(choicesSet).sort(() => Math.random() - 0.5);
+
+  choicesBox.innerHTML = "";
+  for (let row = 0; row < 3; row++) {
+    const rowDiv = document.createElement('div');
+    rowDiv.style.display = "flex";
+    rowDiv.style.justifyContent = "center";
+    rowDiv.style.marginBottom = "8px";
+    for (let col = 0; col < 2; col++) {
+      const idx = row * 2 + col;
+      if (idx >= choiceArr.length) break;
+      const opt = choiceArr[idx];
+      const btn = document.createElement('button');
+      btn.innerHTML = `$$x = ${opt}$$`;
+      btn.dataset.correct = (opt === correct) ? "true" : "false";
+      btn.style.margin = "4px";
+      btn.style.minWidth = "120px";
+      btn.style.fontSize = "20px";
+
+      btn.addEventListener('click', () => {
+        if (answered) return;
+        answered = true;
+        if (btn.dataset.correct === "true") {
+          btn.classList.add('correct');
+          correctTotal++;
+        } else {
+          btn.classList.add('wrong');
+          wrongTotal++;
+          Array.from(choicesBox.querySelectorAll('button')).forEach(b => {
+            if (b.dataset.correct === "true") b.classList.add('correct');
+          });
+        }
+        updateScore();
+        Array.from(choicesBox.querySelectorAll('button')).forEach(b => b.disabled = true);
+      });
+
+      rowDiv.appendChild(btn);
+    }
+    choicesBox.appendChild(rowDiv);
+  }
+  MathJax.typesetPromise();
+}
 
   window.onload = () => setStage(1);
 </script>
