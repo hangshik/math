@@ -153,7 +153,7 @@
       solutionX = Math.random() < 0.5 ? fracX : -fracX;
       solutionY = Math.random() < 0.5 ? fracY : -fracY;
     } else {
-      if (Math.random() < 0.5) {
+      if (Math.random() < 0.4) {
         solutionX = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
       solutionY = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
       } else {
@@ -259,7 +259,8 @@
 
       if (xCorrect && yCorrect) {
         document.getElementById('result1').innerHTML = `\\(x=${solutionX}\\), \\(y=${solutionY}\\), 정답입니다!`;
-        document.getElementById('result1').style.color = "green";
+        document.getElementById("result1").style.backgroundColor = "green";
+        document.getElementById("result1").style.color = "white";
         winCount++;
         document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
 
@@ -279,7 +280,8 @@
         else msg = "y 값이 틀렸습니다!";
 
         document.getElementById('result1').textContent = msg;
-        document.getElementById('result1').style.color = "red";
+        document.getElementById("result1").style.backgroundColor = "red";
+        document.getElementById("result1").style.color = "white";
         loseCount++;
         document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
       }
@@ -309,7 +311,7 @@
       document.getElementById('showY').textContent = solutionY;
     }
 
-    window.onload = ()=> setStage(2);
+    window.onload = ()=> setStage(1);
   </script>
 </body>
 </html>
