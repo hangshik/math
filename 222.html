@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>연립방정식</title>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+  <style>
+    body { font-family: sans-serif; }
+    .stage-button {
+      font-size: 20px; margin: 5px; padding: 10px 20px;
+      border: none; border-radius: 10px; cursor: pointer;
+    }
+    .active {
+      background-color: #3399FF; color: white;
+    }
+    .input-box {
+      width: 80px; height: 40px; font-size: 30px; text-align: center;
+      margin: 0 10px; border: 2px solid #333; border-radius: 5px;
+    }
+    .selected { background-color: #3399FF; color: white; }
+    .button {
+      width: 60px; height: 60px; font-size: 25px; margin: 2px 0;
+      border-radius: 10px; border: none; background-color: #DDDDDD; cursor: pointer;
+    }
+    .button:hover { background-color: #bbb; }
+  </style>
+</head>
+<body>
+  <center>
+    <h1>연립방정식</h1>
+    <div>
+      <button id="btn1" class="stage-button" onclick="setStage(1)">1단계</button>
+      <button id="btn2" class="stage-button" onclick="setStage(2)">2단계</button>
+      <button id="btn3" class="stage-button" onclick="setStage(3)">3단계</button>
+      <button id="btn4" class="stage-button" onclick="setStage(4)">4단계</button>
+    </div>
+
+    <div id="problem" style="font-size: 30px; margin-top: 20px;">문제</div>
+
+    <div style="margin-top: 20px; display: flex; justify-content: center; align-items: center;">
+      <span style="font-size: 30px;">$x$ =</span>
+      <input type="text" id="inputX" class="input-box selected" readonly onclick="selectInput('x')">
+      <span style="font-size: 30px; margin-left: 20px;">$y$ =</span>
+      <input type="text" id="inputY" class="input-box" readonly onclick="selectInput('y')">
+    </div>
+
+    <br>
+
+    <div>
+      <button class="button" onclick="appendNumber(1)">1</button>
+      <button class="button" onclick="appendNumber(2)">2</button>
+      <button class="button" onclick="appendNumber(3)">3</button>
+      <button class="button" onclick="appendNumber(4)">4</button>
+      <button class="button" onclick="appendNumber(5)">5</button><br>
+      <button class="button" onclick="appendNumber(6)">6</button>
+      <button class="button" onclick="appendNumber(7)">7</button>
+      <button class="button" onclick="appendNumber(8)">8</button>
+      <button class="button" onclick="appendNumber(9)">9</button>
+      <button class="button" onclick="appendNumber(0)">0</button><br>
+      <button class="button" onclick="appendNumber('-')">-</button>
+      <button class="button" onclick="appendNumber('/')">/</button>
+      <button class="button" onclick="clearInput()">C</button>
+      <button class="button" onclick="backspace()">←</button>
+      <button class="button" onclick="checkAnswer()" style="background-color: #3399FF; color: white;">확인</button>
+    </div>
+
+    <hr/>
+    <div id="result1" style="font-size:30px;">정답여부</div>
+    <div id="result2" style="font-size:30px;">0번 정답입니다.</div>
+    <div id="result3" style="font-size:30px;">0번 틀렸습니다.</div>
+
+    <!--정답확인용 1/3-->
+  <div id="answer" style="font-size:28px; margin-top:20px; color:#888;">
+    (정답: x = <span id="showX"></span>, y = <span id="showY"></span>)
+  </div>
+
+
+  </center>
+
+  <script>
+    let currentStage = 1;
+    let selectedInput = 'x';
+    let solutionX = 0;
+    let solutionY = 0;
+    let winCount = 0;
+    let loseCount = 0;
+
+    function gcd(a,b) {
+      while (b) [a,b] = [b,a%b];
+      return Math.abs(a);
+    }
+    function gcd3(a,b,c) { return gcd(gcd(a,b),c); }
+
+    function setStage(stage) {
+      currentStage = stage;
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById("btn" + i).classList.toggle("active", i === stage);
+      }
+      generateProblem();
+    }
+
+    function selectInput(target) {
+      selectedInput = target;
+      document.getElementById('inputX').classList.remove('selected');
+      document.getElementById('inputY').classList.remove('selected');
+      document.getElementById('result1').textContent = "";
+      if (target === 'x') {
+        document.getElementById('inputX').classList.add('selected');
+      } else {
+        document.getElementById('inputY').classList.add('selected');
+      }
+    }
+
+    function appendNumber(num) {
+      const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
+      input.value += num;
+      document.getElementById('result1').textContent = "";
+    }
+
+    function backspace() {
+      const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
+      input.value = input.value.slice(0, -1);
+      document.getElementById('result1').textContent = "";
+    }
+
+    function clearInput() {
+      const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
+      input.value = "";
+      document.getElementById('result1').textContent = "";
+    }
+
+    function generateProblem() {
+      let a,b,c,d,e,f;
+      while (true) {
+    if (currentStage === 1) {
+      // 0이 나오지 않도록 1~9 또는 -1~-9 중에서 선택
+      solutionX = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
+      solutionY = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
+    } else if (currentStage === 2) {
+      solutionX = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
+      solutionY = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
+    } else if (currentStage === 3) {
+      // 분수 세트
+      const fractions = [1/2, 1/3, 2/3, 1/4, 3/4, 1/5, 2/5, 3/5, 4/5, 1/6, 5/6];
+      const fracX = fractions[Math.floor(Math.random() * fractions.length)];
+      const fracY = fractions[Math.floor(Math.random() * fractions.length)];
+      // 부호 랜덤
+      solutionX = Math.random() < 0.5 ? fracX : -fracX;
+      solutionY = Math.random() < 0.5 ? fracY : -fracY;
+    } else {
+      if (Math.random() < 0.5) {
+        solutionX = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
+      solutionY = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
+      } else {
+        const fractions = [1/2, 1/3, 2/3, 1/4, 3/4, 1/5, 2/5, 3/5, 4/5, 1/6, 5/6];
+        const fracX = fractions[Math.floor(Math.random() * fractions.length)];
+        const fracY = fractions[Math.floor(Math.random() * fractions.length)];
+        solutionX = Math.random() < 0.5 ? fracX : -fracX;
+        solutionY = Math.random() < 0.5 ? fracY : -fracY;
+      }
+    }
+
+  a = getNonOneCoeff();
+  b = getNonOneCoeff();
+
+  // d, e 뽑기 전에 a,b 절댓값 배열 준비
+  const absAB = [Math.abs(a), Math.abs(b)];
+
+  // d, e 초기값
+  d = getNonOneCoeff();
+  e = getNonOneCoeff();
+
+  
+  if (currentStage === 1) {
+    // d와 e 중 한 가지는 a와 b의 절댓값과 같음
+    if (Math.random() < 0.5) {
+      d = Math.random() < 0.5 ? Math.abs(a) : -Math.abs(a);
+    } else {
+      e = Math.random() < 0.5 ? Math.abs(b) : -Math.abs(b);
+    }
+  }
+  
+  if (a * e === b * d) continue; // 해가 없거나 무한대인 경우 제외
+
+  c = Math.round(a * solutionX + b * solutionY);
+  f = Math.round(d * solutionX + e * solutionY);
+
+  if (c < -20 || c > 20) continue;
+  if (f < -20 || f > 20) continue;
+
+  if (gcd3(a, b, c) !== 1) continue;
+  if (gcd3(d, e, f) !== 1) continue;
+
+  //정답확인용 2/3
+  showAnswer();
+
+  break;
+}
+
+
+      const showA = a===1 ? '' : (a===-1 ? '-' : a);
+      const showB = b===1 ? '+' : (b===-1 ? '-' : (b>0 ? '+'+b : b));
+      const showD = d===1 ? '' : (d===-1 ? '-' : d);
+      const showE = e===1 ? '+' : (e===-1 ? '-' : (e>0 ? '+'+e : e));
+
+      const latex = `
+        \\[
+        \\left\\{
+        \\begin{array}{l}
+        ${showA}x ${showB}y = ${c} \\\\
+        ${showD}x ${showE}y = ${f}
+        \\end{array}
+        \\right.
+        \\]
+        `;
+
+        document.getElementById("problem").innerHTML = latex;
+        MathJax.typesetPromise();
+
+      document.getElementById("problem").innerHTML = eq1 + "<br>" + eq2;
+      MathJax.typesetPromise();
+
+      document.getElementById("inputX").value = "";
+      document.getElementById("inputY").value = "";
+      selectInput('x');
+      document.getElementById('result1').textContent = "";
+    }
+
+    function getNonOneCoeff() {
+      if (Math.random() < 0.05) {
+        // 5% 확률로 ±1
+        return Math.random() < 0.5 ? 1 : -1;
+      } else {
+        // 80% 확률로 ±2~±9
+        let n = Math.floor(Math.random() * 8) + 2; // 2~9
+        return Math.random() < 0.5 ? n : -n;
+      }
+    }
+
+    function evalFraction(value) {
+      if (value.includes('/')) {
+        const [num, den] = value.split('/');
+        return parseFloat(num)/parseFloat(den);
+      } else return parseFloat(value);
+    }
+
+    function checkAnswer() {
+      const x = evalFraction(document.getElementById('inputX').value.trim());
+      const y = evalFraction(document.getElementById('inputY').value.trim());
+
+      const eps = 1e-6;
+      const xCorrect = Math.abs(x-solutionX)<eps;
+      const yCorrect = Math.abs(y-solutionY)<eps;
+
+      if (xCorrect && yCorrect) {
+        document.getElementById('result1').innerHTML = `\\(x=${solutionX}\\), \\(y=${solutionY}\\), 정답입니다!`;
+        document.getElementById('result1').style.color = "green";
+        winCount++;
+        document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
+
+        setTimeout(() => {
+          document.getElementById('inputX').value = "";
+          document.getElementById('inputY').value = "";
+          selectInput('x');
+          generateProblem();
+        }, 2000);
+
+        MathJax.typesetPromise(); // 수식 다시 렌더링!
+
+      } else {
+        let msg = "";
+        if (!xCorrect && !yCorrect) msg = "x, y 값이 모두 틀렸습니다!";
+        else if (!xCorrect) msg = "x 값이 틀렸습니다!";
+        else msg = "y 값이 틀렸습니다!";
+
+        document.getElementById('result1').textContent = msg;
+        document.getElementById('result1').style.color = "red";
+        loseCount++;
+        document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+      else if (e.key === '-') appendNumber('-');
+      else if (e.key === '/') appendNumber('/');
+      else if (e.key === 'Backspace') backspace();
+      else if (e.key === 'Escape') clearInput();
+      else if (e.key === 'Enter') checkAnswer();
+      else if (e.key === 'Tab') {
+        e.preventDefault();
+    // 현재 선택된 입력이 x이면 y로, y이면 x로 전환
+    if (selectedInput === 'x') {
+      selectInput('y');
+    } else {
+      selectInput('x');
+    }
+  }
+    });
+
+//정답확인용 3/3
+    function showAnswer() {
+      document.getElementById('showX').textContent = solutionX;
+      document.getElementById('showY').textContent = solutionY;
+    }
+
+    window.onload = ()=> setStage(2);
+  </script>
+</body>
+</html>
