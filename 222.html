@@ -316,7 +316,12 @@ function generateProblem() {
       else if (e.key === 'Backspace') backspace();
       else if (e.key === 'Escape') clearInput();
       else if (e.key === 'Enter') checkAnswer();
-      else if (e.code === 'Space') generateProblem();
+      else if (e.code === 'Space') {
+        e.preventDefault();
+        if (!document.getElementById('nextBtn').disabled) {
+          generateProblem();
+        }
+      }
       else if (e.key === 'Tab') {
         e.preventDefault();
         if (selectedInput === 'x') selectInput('y');
