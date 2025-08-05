@@ -88,7 +88,7 @@
     <div style="font-size: 25px;">
       1, 2단계: 정답이 정수<br>
       3단계: 정답이 분수<br>
-      4단계: 정답이 정수 또는 분수<br>
+      4단계: 정답답이 정수 또는 분수<br>
     </div>
   </center>
 
@@ -101,6 +101,10 @@
     let solutionY = 0;
     let winCount = 0;
     let loseCount = 0;
+
+    let lastAnswerX = null;
+    let lastAnswerY = null;
+
 
     function gcd(a,b) {
       while (b) [a,b] = [b,a%b];
@@ -272,42 +276,53 @@ function generateProblem() {
     }
 
     function checkAnswer() {
-      const x = evalFraction(document.getElementById('inputX').value.trim());
-      const y = evalFraction(document.getElementById('inputY').value.trim());
+  const inputX = document.getElementById('inputX').value.trim();
+  const inputY = document.getElementById('inputY').value.trim();
 
-      let trueX, trueY;
-      if (Array.isArray(solutionX)) {
-        trueX = solutionX[0]/solutionX[1];
-        trueY = solutionY[0]/solutionY[1];
-      } else {
-        trueX = solutionX;
-        trueY = solutionY;
-      }
+  if (inputX === lastAnswerX && inputY === lastAnswerY) {
+    return;  // 이전과 동일한 입력이면 무시
+  }
 
-      const eps = 1e-6;
-      const xCorrect = Math.abs(x-trueX)<eps;
-      const yCorrect = Math.abs(y-trueY)<eps;
+  const x = evalFraction(inputX);
+  const y = evalFraction(inputY);
 
-      if (xCorrect && yCorrect) {
-        document.getElementById('result1').innerHTML = `정답입니다!`;
-        document.getElementById("result1").style.backgroundColor = "green";
-        document.getElementById("result1").style.color = "white";
-        winCount++;
-        document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
-        document.getElementById('nextBtn').disabled = false;
-      } else {
-        let msg = "";
-        if (!xCorrect && !yCorrect) msg = "x, y 값이 모두 틀렸습니다!";
-        else if (!xCorrect) msg = "x 값이 틀렸습니다!";
-        else msg = "y 값이 틀렸습니다!";
+  let trueX, trueY;
+  if (Array.isArray(solutionX)) {
+    trueX = solutionX[0]/solutionX[1];
+    trueY = solutionY[0]/solutionY[1];
+  } else {
+    trueX = solutionX;
+    trueY = solutionY;
+  }
 
-        document.getElementById('result1').textContent = msg;
-        document.getElementById("result1").style.backgroundColor = "red";
-        document.getElementById("result1").style.color = "white";
-        loseCount++;
-        document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
-      }
-    }
+  const eps = 1e-6;
+  const xCorrect = Math.abs(x - trueX) < eps;
+  const yCorrect = Math.abs(y - trueY) < eps;
+
+  if (xCorrect && yCorrect) {
+    document.getElementById('result1').innerHTML = `정답입니다!`;
+    document.getElementById("result1").style.backgroundColor = "green";
+    document.getElementById("result1").style.color = "white";
+    winCount++;
+    document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
+    document.getElementById('nextBtn').disabled = false;
+  } else {
+    let msg = "";
+    if (!xCorrect && !yCorrect) msg = "x, y 값이 모두 틀렸습니다!";
+    else if (!xCorrect) msg = "x 값이 틀렸습니다!";
+    else msg = "y 값이 틀렸습니다!";
+
+    document.getElementById('result1').textContent = msg;
+    document.getElementById("result1").style.backgroundColor = "red";
+    document.getElementById("result1").style.color = "white";
+    loseCount++;
+    document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
+  }
+
+  lastAnswerX = inputX;
+  lastAnswerY = inputY;
+}
+
 
     document.addEventListener('keydown', e => {
       if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
