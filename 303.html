@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼각비 시각화</title>
+<script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  body { 
+    font-family: sans-serif; 
+    text-align: center; 
+    margin: 0; 
+    padding: 10px; 
+  }
+
+  /* 반응형 컨테이너 설정 */
+  .container { 
+    display: flex; 
+    justify-content: center; 
+    gap: 30px; 
+    align-items: flex-start; 
+    margin-top: 20px; 
+    flex-wrap: wrap; /* 화면이 좁으면 줄바꿈 허용 */
+  }
+
+  canvas { 
+    border: 1px solid #ccc; 
+    background: #fff; 
+    max-width: 100%; /* 모바일에서 화면 넘어가지 않게 */
+    height: auto; 
+  }
+
+  .info-box { 
+    text-align: left; 
+    padding: 20px; 
+    background: #eee; 
+    border-radius: 10px; 
+    width: 250px;
+    font-size: 18px; 
+    line-height: 1.8;
+  }
+
+  /* 슬라이더 반응형 설정 */
+  input[type=range] { 
+    width: 90%; 
+    max-width: 400px; 
+    margin: 20px; 
+  }
+
+  /* 모바일 화면(폭 700px 이하)에 대한 스타일 */
+  @media (max-width: 700px) {
+    .container {
+      flex-direction: column; /* 세로 정렬로 변경 */
+      align-items: center;    /* 중앙 정렬 */
+      gap: 20px;
+    }
+    
+    .info-box {
+      width: 90%;       /* 모바일에서는 꽉 차게 */
+      max-width: 400px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>삼각비 시각화</h1>
+<p>각도를 조절하여 sin, cos 값의 변화를 관찰하세요.</p>
+
+<input type="range" id="angleSlider" min="0" max="360" value="45" oninput="draw()">
+<div style="font-size: 24px; font-weight: bold; margin-bottom:10px;">
+  $\theta$ = <span id="angleDisplay" style="color:#3399FF">45</span>$^\circ$
+</div>
+
+<div class="container">
+  <!-- 그래프 영역 -->
+  <canvas id="canvas" width="400" height="400"></canvas>
+  
+  <!-- 정보 창 영역 -->
+  <div class="info-box">
+    <div><strong style="color:red">sin $\theta$ (높이/y)</strong> : <span id="valSin"></span></div>
+    <div><strong style="color:blue">cos $\theta$ (밑변/x)</strong> : <span id="valCos"></span></div>
+    <div style="margin-top:10px; font-size:14px; color:#666;">
+      반지름이 1일 때,<br>
+      점 P의 좌표는<br>
+      (cos $\theta$, sin $\theta$) 입니다.
+    </div>
+    <hr>
+    <div><strong>tan $\theta$ (기울기)</strong> : <span id="valTan"></span></div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const w = canvas.width;
+const h = canvas.height;
+const cx = w/2;
+const cy = h/2;
+const r = 150; // 화면상 반지름 픽셀
+
+function draw() {
+  const angleDeg = document.getElementById('angleSlider').value;
+  document.getElementById('angleDisplay').innerText = angleDeg;
+  
+  const angleRad = angleDeg * Math.PI / 180;
+  const cosVal = Math.cos(angleRad);
+  const sinVal = Math.sin(angleRad);
+  const tanVal = Math.tan(angleRad);
+  
+  // 값 표시 (소수점 3자리)
+  document.getElementById('valSin').innerText = sinVal.toFixed(3);
+  document.getElementById('valCos').innerText = cosVal.toFixed(3);
+  document.getElementById('valTan').innerText = (Math.abs(tanVal) > 100) ? "무한대" : tanVal.toFixed(3);
+
+  // 캔버스 초기화
+  ctx.clearRect(0, 0, w, h);
+  
+  // 격자 및 좌표축
+  ctx.strokeStyle = "#ddd";
+  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke(); // X축
+  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke(); // Y축
+
+  // 단위원 그리기
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.stroke();
+
+  // 점 P 좌표 계산
+  // 캔버스는 y축이 아래로 증가하므로 y계산시 -를 곱해줌
+  const px = cx + r * cosVal;
+  const py = cy - r * sinVal;
+
+  // 삼각형 그리기
+  // 밑변 (Blue)
+  ctx.strokeStyle = "blue";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(px, cy);
+  ctx.stroke();
+
+  // 높이 (Red)
+  ctx.strokeStyle = "red";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(px, cy);
+  ctx.lineTo(px, py);
+  ctx.stroke();
+
+  // 빗변 (Black)
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(px, py);
+  ctx.stroke();
+
+  // 점 P
+  ctx.fillStyle = "black";
+  ctx.beginPath();
+  ctx.arc(px, py, 6, 0, Math.PI*2);
+  ctx.fill();
+
+  // 각도 표시 (Arc)
+  ctx.strokeStyle = "#3399FF";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  // 반시계 방향으로 그리기 위해 start/end angle 조정
+  ctx.arc(cx, cy, 40, 0, -angleRad, true); 
+  ctx.stroke();
+}
+
+window.onload = draw;
+</script>
+</body>
+</html>

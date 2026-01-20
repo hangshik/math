@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다각형 내각의 합</title>
+<script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  body { font-family: sans-serif; text-align: center; }
+  canvas { border: 1px solid #ccc; background: #fff; margin-top: 10px; }
+  .controls { width: 300px;margin: 20px; padding: 15px; background: #eee; border-radius: 10px; display: inline-block; }
+  input[type=range] { width: 90%; margin-right: 10px; }
+  .formula-box { font-size: 20px; margin-top: 10px; color: #333; line-height: 1.8; }
+  .highlight-box { 
+    margin-top: 10px; 
+    padding-top: 10px; 
+    border-top: 1px dashed #bbb; 
+    color: #555;
+  }
+</style>
+</head>
+<body>
+
+<h1>다각형의 내각의 합</h1>
+<p>슬라이더를 움직여 다각형을 변화시켜 보세요.</p>
+
+<div class="controls">
+  <label for="nSlider" style="font-size: 20px; font-weight: bold;">변의 개수 (n): <span id="nVal" style="color:blue">3</span></label><br><br>
+  <input type="range" id="nSlider" min="3" max="20" value="3" oninput="draw()">
+</div>
+
+<div class="formula-box">
+  <!-- 내각의 합 -->
+  <div>내부 삼각형의 개수: <span id="triCount" style="color:red; font-weight:bold;">1</span>개</div>
+  <div>
+    내각의 합 = $180^\circ \times$ <span id="formulaN" style="color:blue">3</span> $- 2)$ 
+    = <span id="resultAngle" style="font-weight:bold; color:green;">180</span>$^\circ$
+  </div>
+
+  <!-- 한 내각의 크기 -->
+  <div class="highlight-box">
+    <div>(정다각형일 때) <strong>한 내각의 크기</strong></div>
+    <div id="oneAngleFormula">
+      <!-- 자바스크립트에서 수식 생성 -->
+    </div>
+  </div>
+</div>
+
+<canvas id="canvas" width="400" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const w = canvas.width;
+const h = canvas.height;
+const r = 150; // 반지름
+
+// 최대공약수(GCD) 구하는 함수
+function gcd(a, b) {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+function draw() {
+  const n = parseInt(document.getElementById('nSlider').value);
+  
+  // 1. 내각의 합 계산
+  const sumAngle = 180 * (n - 2);
+  
+  // 2. 한 내각의 크기 결과값 계산 (기약분수 처리)
+  let resultStr = "";
+  
+  const commonDivisor = gcd(sumAngle, n);
+  const numerator = sumAngle / commonDivisor;   // 분자
+  const denominator = n / commonDivisor;        // 분모
+
+  if (denominator === 1) {
+    // 정수인 경우
+    resultStr = `${numerator}^\\circ`;
+  } else {
+    // 분수인 경우 (기약분수)
+    resultStr = `\\dfrac{${numerator}}{${denominator}}^\\circ`;
+  }
+
+  // 텍스트 업데이트 (내각의 합)
+  document.getElementById('nVal').textContent = n;
+  document.getElementById('triCount').textContent = n - 2;
+  document.getElementById('formulaN').textContent = `(${n}`;
+  document.getElementById('resultAngle').textContent = sumAngle;
+  
+  // 텍스트 업데이트 (한 내각의 크기 수식 생성)
+  // 수정된 부분: n은 파란색(\color{blue}), 결과값은 녹색(\color{green}) 적용
+  const formulaHtml = `$\\dfrac{180^\\circ \\times ({\\color{blue}${n}}-2)}{{\\color{blue}${n}}} = {\\color{green}\\mathbf{${resultStr}}}$`;
+  document.getElementById('oneAngleFormula').innerHTML = formulaHtml;
+
+  // 캔버스 초기화
+  ctx.clearRect(0, 0, w, h);
+  
+  const cx = w / 2;
+  const cy = h / 2;
+  
+  // 꼭짓점 좌표 계산
+  const vertices = [];
+  for (let i = 0; i < n; i++) {
+    const theta = (Math.PI * 2 * i) / n - Math.PI / 2;
+    vertices.push({
+      x: cx + r * Math.cos(theta),
+      y: cy + r * Math.sin(theta)
+    });
+  }
+  
+  // 다각형 그리기
+  ctx.beginPath();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "black";
+  ctx.moveTo(vertices[0].x, vertices[0].y);
+  for (let i = 1; i < n; i++) {
+    ctx.lineTo(vertices[i].x, vertices[i].y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  
+  // 대각선 그리기 (빨간 점선)
+  // 20각형일 때 너무 복잡해 보이지 않도록 선 두께 조절
+  ctx.beginPath();
+  ctx.lineWidth = n > 10 ? 1 : 2; 
+  ctx.strokeStyle = "red";
+  ctx.setLineDash([5, 5]); 
+  for (let i = 2; i < n - 1; i++) {
+    ctx.moveTo(vertices[0].x, vertices[0].y);
+    ctx.lineTo(vertices[i].x, vertices[i].y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]); 
+
+  // 기준 꼭짓점
+  ctx.beginPath();
+  ctx.arc(vertices[0].x, vertices[0].y, 6, 0, Math.PI * 2);
+  ctx.fillStyle = "red";
+  ctx.fill();
+  
+  // 기준 텍스트
+  ctx.font = "16px Arial";
+  ctx.fillStyle = "black";
+  ctx.fillText("기준", vertices[0].x - 15, vertices[0].y - 15);
+  
+  // MathJax 수식 렌더링 갱신
+  MathJax.typesetPromise();
+}
+
+window.onload = draw;
+</script>
+</body>
+</html>

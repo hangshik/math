@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>원주각과 중심각</title>
+<script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  body { font-family: sans-serif; text-align: center; user-select: none; }
+  canvas { border: 1px solid #ccc; background: #fff; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  
+  .info { 
+    font-size: 20px; 
+    margin: 10px; 
+    padding: 15px 25px; 
+    background: #f9f9f9; 
+    display: inline-block; 
+    border-radius: 10px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: left; 
+    min-width: 250px;
+  }
+</style>
+</head>
+<body>
+
+<h1>원주각과 중심각</h1>
+<p>점 <b>A, B, P</b>를 모두 드래그할 수 있습니다.</p>
+
+<div class="info">
+  <div style="margin-bottom: 5px;">
+    <strong style="color:red">중심각 ($\angle AOB$)</strong> : <span id="angleC"></span>$^\circ$
+  </div>
+  <div>
+    <strong style="color:blue">원주각 ($\angle APB$)</strong> : <span id="angleP"></span>$^\circ$
+  </div>
+</div>
+<br>
+<canvas id="canvas" width="400" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const cx = 200, cy = 200, r = 150;
+
+// 초기 각도 (Radian, 0~2PI)
+let radA = Math.PI * 0.833; // 약 150도
+let radB = Math.PI * 0.167; // 약 30도
+let radP = Math.PI * 1.5;   // 270도 (-90도)
+
+let draggingPoint = null; 
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1. 각도 정규화 (0 ~ 2PI)
+  const nA = normalize(radA);
+  const nB = normalize(radB);
+  const nP = normalize(radP);
+
+  // 좌표 계산
+  const A = getXY(nA);
+  const B = getXY(nB);
+  const P = getXY(nP);
+  const O = { x: cx, y: cy };
+
+  // --- 중심각 계산 로직 ---
+  // A에서 B까지 시계방향(CW) 호의 길이(각도) 계산
+  let distAB_Clockwise = (nB - nA + 2 * Math.PI) % (2 * Math.PI);
+  let distAP_Clockwise = (nP - nA + 2 * Math.PI) % (2 * Math.PI);
+
+  // P가 "A->B 시계방향 호" 내부에 있는지 확인
+  let isP_In_ClockwiseArc = (distAP_Clockwise < distAB_Clockwise);
+
+  let centralDeg;
+  let arcStart, arcEnd, useCounterClockwise;
+
+  if (isP_In_ClockwiseArc) {
+    // P가 시계방향 호 안에 있음 -> 중심각은 반대쪽(반시계 방향, 큰 각) 호
+    let rawDeg = (2 * Math.PI - distAB_Clockwise) * (180 / Math.PI);
+    centralDeg = Math.round(rawDeg); // 정수 반올림
+    
+    arcStart = nA; 
+    arcEnd = nB;
+    useCounterClockwise = true; 
+  } else {
+    // P가 바깥에 있음 -> 중심각은 시계방향 호(작은 각)
+    let rawDeg = distAB_Clockwise * (180 / Math.PI);
+    centralDeg = Math.round(rawDeg); // 정수 반올림
+    
+    arcStart = nA; 
+    arcEnd = nB;
+    useCounterClockwise = false;
+  }
+  
+  // 예외 처리: 계산상 360도가 되면 0도로 처리하거나 360도로 유지
+  if (centralDeg === 0) centralDeg = 0;
+
+  // 원주각 계산 (중심각의 절반)
+  let inscribedDeg = centralDeg / 2;
+
+  // --- 그리기 ---
+
+  // 1. 원
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = "#ddd";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 2. 선
+  drawLine(O, A, "red", 2);
+  drawLine(O, B, "red", 2);
+  drawLine(P, A, "blue", 3);
+  drawLine(P, B, "blue", 3);
+
+  // 3. 중심각 표시 (빨간 호)
+  ctx.beginPath();
+  ctx.arc(cx, cy, 30, arcStart, arcEnd, useCounterClockwise);
+  ctx.strokeStyle = "red";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // 4. 원주각 표시 (파란 호)
+  const angPA = Math.atan2(A.y - P.y, A.x - P.x);
+  const angPB = Math.atan2(B.y - P.y, B.x - P.x);
+  
+  let diff = angPB - angPA;
+  while (diff <= -Math.PI) diff += 2*Math.PI;
+  while (diff > Math.PI) diff -= 2*Math.PI;
+  
+  ctx.beginPath();
+  if (diff > 0) {
+      ctx.arc(P.x, P.y, 40, angPA, angPB, false);
+  } else {
+      ctx.arc(P.x, P.y, 40, angPA, angPB, true);
+  }
+  
+  ctx.strokeStyle = "blue";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 5. 점 그리기
+  drawPoint(cx, cy, "black", "O");
+  drawPoint(A.x, A.y, draggingPoint === 'A' ? "#ff0000" : "black", "A");
+  drawPoint(B.x, B.y, draggingPoint === 'B' ? "#ff0000" : "black", "B");
+  drawPoint(P.x, P.y, draggingPoint === 'P' ? "#0000ff" : "blue", "P");
+
+  // 6. 텍스트 업데이트
+  // 중심각: 정수
+  document.getElementById('angleC').innerText = centralDeg;
+  // 원주각: 정수 또는 .5 (parseFloat로 불필요한 .0 제거)
+  document.getElementById('angleP').innerText = parseFloat(inscribedDeg.toFixed(1));
+}
+
+function normalize(angle) {
+    let res = angle % (2 * Math.PI);
+    if (res < 0) res += 2 * Math.PI;
+    return res;
+}
+
+function getXY(radian) {
+  return {
+    x: cx + r * Math.cos(radian),
+    y: cy + r * Math.sin(radian)
+  };
+}
+
+function drawLine(p1, p2, color, width) {
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.stroke();
+}
+
+function drawPoint(x, y, color, label) {
+  ctx.beginPath();
+  ctx.arc(x, y, draggingPoint && label === draggingPoint ? 8 : 6, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  
+  ctx.font = "bold 18px Arial";
+  ctx.fillStyle = "black";
+  
+  let tx, ty;
+  if (label === "O") {
+    tx = x - 25; ty = y + 10;
+  } else {
+    const dx = (x - cx) * 0.15;
+    const dy = (y - cy) * 0.15;
+    tx = x + dx - 5; ty = y + dy + 5;
+  }
+  ctx.fillText(label, tx, ty);
+}
+
+// --- 이벤트 핸들링 ---
+function getMousePos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top
+  };
+}
+
+function handleStart(e) {
+  const pos = getMousePos(e);
+  
+  const pA = getXY(radA);
+  const pB = getXY(radB);
+  const pP = getXY(radP);
+  
+  const distA = Math.hypot(pos.x - pA.x, pos.y - pA.y);
+  const distB = Math.hypot(pos.x - pB.x, pos.y - pB.y);
+  const distP = Math.hypot(pos.x - pP.x, pos.y - pP.y);
+  
+  const threshold = 30;
+
+  if (distP < threshold) draggingPoint = 'P';
+  else if (distA < threshold) draggingPoint = 'A';
+  else if (distB < threshold) draggingPoint = 'B';
+}
+
+function handleMove(e) {
+  if (!draggingPoint) return;
+  e.preventDefault();
+  
+  const pos = getMousePos(e);
+  let rawAngle = Math.atan2(pos.y - cy, pos.x - cx);
+  
+  // A, B는 1도 단위 스냅 적용
+  let deg = rawAngle * (180 / Math.PI);
+  let snappedDeg = Math.round(deg);
+  let snappedRad = snappedDeg * (Math.PI / 180);
+
+  if (draggingPoint === 'P') radP = rawAngle; 
+  else if (draggingPoint === 'A') radA = snappedRad; 
+  else if (draggingPoint === 'B') radB = snappedRad;
+
+  draw();
+}
+
+function handleEnd() {
+  draggingPoint = null;
+  draw();
+}
+
+canvas.addEventListener('mousedown', handleStart);
+canvas.addEventListener('mousemove', handleMove);
+canvas.addEventListener('mouseup', handleEnd);
+canvas.addEventListener('mouseleave', handleEnd);
+
+canvas.addEventListener('touchstart', handleStart, {passive: false});
+canvas.addEventListener('touchmove', handleMove, {passive: false});
+canvas.addEventListener('touchend', handleEnd);
+
+window.onload = draw;
+</script>
+</body>
+</html>

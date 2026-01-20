@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>소인수분해</title>
+<script>
+  window.MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  body { 
+    font-family: 'Pretendard', sans-serif; 
+    text-align: center; 
+    text-size-adjust: 100%;
+    background-color: #f9f9f9;
+  }
+  .container { 
+    max-width: 600px; 
+    margin: 0 auto; 
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  .button {
+    width: 60px; height: 60px; font-size: 24px; margin: 5px;
+    border-radius: 10px; border: none; background-color: #DDDDDD; cursor: pointer;
+    transition: background 0.2s;
+    outline: none; 
+  }
+  .button:hover { background-color: #bbb; }
+  .button:active { background-color: #999; }
+  
+  .control-btn { background-color: #3399FF; color: white; width: 100px; font-size: 18px; }
+  .clear-btn { background-color: #ff9800; color: white; } 
+  
+  #inputDisplay {
+    font-size: 30px; width: 300px; height: 50px; text-align: center;
+    margin: 20px 0; border: 2px solid #333; border-radius: 5px;
+    background-color: #fff; cursor: text;
+  }
+  #problem { font-size: 50px; margin: 20px 0; font-weight: bold; color: #333; }
+  
+  /* 정답 확인 스타일 */
+  #result1, #result2, #result3 {
+    font-size: 24px;
+    margin: 8px 0;
+    padding: 5px;
+    border-radius: 5px;
+  }
+  
+  /* 키보드 안내 박스 스타일 */
+  .help-box {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #eee;
+    border-radius: 10px;
+    font-size: 16px;
+    color: #555;
+    text-align: left;
+    display: inline-block;
+    width: 90%;
+  }
+  .key-tag {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 14px;
+    color: #333;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>소인수분해</h1>
+  <p style="font-size: 14px; color: #666;">작은 소수부터 거듭제곱 꼴로 입력하세요 (예: 2^3)</p>
+  
+  <!-- 단계 선택 -->
+  <div>
+    <button class="button control-btn" onclick="setStage(1)">1단계</button>
+    <button class="button control-btn" onclick="setStage(2)">2단계</button>
+    <button class="button control-btn" onclick="setStage(3)">3단계</button>
+  </div>
+
+  <div id="problem">Loading...</div>
+  
+  <div>
+    <input type="text" id="inputDisplay" readonly placeholder="예: 2^3 * 3">
+  </div>
+
+  <!-- 키패드 -->
+  <div>
+    <button class="button" onclick="addChar('2')">2</button>
+    <button class="button" onclick="addChar('3')">3</button>
+    <button class="button" onclick="addChar('5')">5</button>
+    <button class="button" onclick="addChar('7')">7</button><br>
+    
+    <button class="button" onclick="addChar('^')">^</button>
+    <button class="button" onclick="addChar('*')">×</button>
+    <button class="button" onclick="backspace()">←</button>
+    <button class="button clear-btn" onclick="clearInput()">C</button><br>
+    
+    <button class="button control-btn" style="width: 280px; margin-top: 10px;" onclick="checkAnswer()">정답 확인 (Enter)</button>
+  </div>
+  
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;"/>
+
+  <!-- 결과 표시 영역 -->
+  <div id="result1">정답여부</div>
+  <div id="result2">0번 정답입니다.</div>
+  <div id="result3">0번 틀렸습니다.</div>
+  
+  <!-- 키보드 사용법 안내 -->
+  <div class="help-box">
+    <strong>⌨️ 키보드 사용법</strong>
+    <ul style="margin: 5px 0 0 20px; padding: 0;">
+      <li>숫자 입력: <span class="key-tag">0</span> ~ <span class="key-tag">9</span></li>
+      <li>거듭제곱(^): <span class="key-tag">^</span></li>
+      <li>곱하기(×): <span class="key-tag">*</span> 또는 <span class="key-tag">x</span></li>
+      <li>지우기: <span class="key-tag">Backspace</span></li>
+      <li>전체 삭제(C): <span class="key-tag">Esc</span> 또는 <span class="key-tag">c</span></li>
+      <li>정답 확인: <span class="key-tag">Enter</span></li>
+    </ul>
+    <div style="margin-top: 10px; font-size: 14px;">
+      💡 입력 예시: $2^3 \times 5$ 입력 시 <span class="key-tag">2</span> <span class="key-tag">^</span> <span class="key-tag">3</span> <span class="key-tag">*</span> <span class="key-tag">5</span> 순서로 누르세요.
+    </div>
+  </div>
+</div>
+
+<script>
+// 변수 선언
+let targetNum = 0;
+let stage = 1;
+let wincount = 0;
+let losecount = 0;
+var timeout;
+
+// 초기화 및 문제 생성
+function setStage(n) {
+  stage = n;
+  generateProblem();
+}
+
+function generateProblem() {
+  clearInput();
+  
+  // 난이도별 소수 및 개수 설정
+  let primes = [2, 3, 5, 7];
+  let minFactors, maxFactors;
+  
+  if (stage === 1) { 
+    minFactors = 2; maxFactors = 3; 
+  } else if (stage === 2) { 
+    minFactors = 3; maxFactors = 4; 
+  } else { 
+    minFactors = 4; maxFactors = 5; 
+    primes.push(11, 13); 
+  }
+
+  let numFactors = Math.floor(Math.random() * (maxFactors - minFactors + 1)) + minFactors;
+  let result = 1;
+  
+  for(let i=0; i<numFactors; i++) {
+    result *= primes[Math.floor(Math.random() * primes.length)];
+  }
+  
+  targetNum = result;
+  document.getElementById('problem').innerText = targetNum;
+}
+
+// 결과 리셋 함수
+function resultreset() {
+    const r1 = document.getElementById("result1");
+    r1.textContent = "정답여부";
+    r1.style.backgroundColor = "white";
+    r1.style.color = "black";
+}
+
+// 입력 관련 함수
+function addChar(char) {
+  const display = document.getElementById('inputDisplay');
+  display.value += char;
+}
+
+function backspace() {
+  const display = document.getElementById('inputDisplay');
+  display.value = display.value.slice(0, -1);
+}
+
+function clearInput() {
+  const display = document.getElementById('inputDisplay');
+  display.value = "";
+}
+
+// 정답 확인 함수 (순서 및 거듭제곱 체크)
+function checkAnswer() {
+  let input = document.getElementById('inputDisplay').value;
+  if (!input) return; 
+
+  input = input.replace(/x/g, '*').replace(/X/g, '*');
+  
+  let parts = input.split('*');
+  let userVal = 1;
+  let isValidSyntax = true;
+  let bases = [];
+
+  try {
+    for (let part of parts) {
+      if (!part.trim()) continue;
+      
+      let base, exp;
+      if (part.includes('^')) {
+        let baseExp = part.split('^');
+        base = parseInt(baseExp[0]);
+        exp = parseInt(baseExp[1]);
+      } else {
+        base = parseInt(part);
+        exp = 1; 
+      }
+
+      if (isNaN(base) || isNaN(exp)) throw new Error("Invalid");
+      
+      userVal *= Math.pow(base, exp);
+      bases.push(base); 
+    }
+  } catch (e) {
+    userVal = 0;
+    isValidSyntax = false;
+  }
+
+  const r1 = document.getElementById("result1");
+  const r2 = document.getElementById("result2");
+  const r3 = document.getElementById("result3");
+
+  // 1. 계산값 검증
+  if (!isValidSyntax || userVal !== targetNum || targetNum === 0) {
+    losecount++;
+    r1.textContent = "틀렸습니다.";
+    r1.style.backgroundColor = "red";
+    r1.style.color = "white";
+    r3.textContent = losecount + "번 틀렸습니다.";
+    timeout = setTimeout(resultreset, 1000);
+    return;
+  }
+
+  // 2. 순서 및 거듭제곱 사용 여부 검증
+  let isSorted = true;
+  let isCanonical = true; // 거듭제곱 사용 여부
+
+  for (let i = 0; i < bases.length - 1; i++) {
+    // 앞의 밑이 뒤의 밑보다 크면 -> 순서 틀림 (예: 3 * 2)
+    if (bases[i] > bases[i+1]) { 
+      isSorted = false;
+      break;
+    }
+    // 앞의 밑과 뒤의 밑이 같으면 -> 거듭제곱 안 씀 (예: 2 * 2)
+    if (bases[i] === bases[i+1]) {
+      isCanonical = false;
+      break;
+    }
+  }
+
+  if (!isSorted) {
+    losecount++; 
+    r1.textContent = "순서가 틀렸습니다."; 
+    r1.style.backgroundColor = "orange"; 
+    r1.style.color = "white";
+    r3.textContent = losecount + "번 틀렸습니다.";
+    timeout = setTimeout(resultreset, 1500);
+    return;
+  }
+
+  if (!isCanonical) {
+    losecount++; 
+    r1.textContent = "거듭제곱을 사용하세요."; 
+    r1.style.backgroundColor = "orange"; 
+    r1.style.color = "white";
+    r3.textContent = losecount + "번 틀렸습니다.";
+    timeout = setTimeout(resultreset, 1500);
+    return;
+  }
+
+  // 3. 모든 조건 통과
+  wincount++;
+  r1.textContent = "정답입니다.";
+  r1.style.backgroundColor = "green";
+  r1.style.color = "white";
+  r2.textContent = wincount + "번 정답입니다.";
+  timeout = setTimeout(resultreset, 1000);
+  setTimeout(generateProblem, 1000);
+}
+
+// 키보드 입력 처리 및 포커스 관리
+document.addEventListener('keydown', function(event) {
+  const key = event.key;
+  
+  if (key >= '0' && key <= '9') {
+    addChar(key);
+  } 
+  else if (key === '*' || key.toLowerCase() === 'x') {
+    addChar('*');
+  } 
+  else if (key === '^') {
+    addChar('^');
+  } 
+  else if (key === 'Backspace') {
+    backspace();
+  } 
+  else if (key === 'Enter') {
+    event.preventDefault(); 
+    checkAnswer();
+  } 
+  else if (key === 'Escape' || key.toLowerCase() === 'c') {
+    clearInput();
+  }
+});
+
+// 버튼 포커스 해제 (키패드 연속 입력 방지)
+document.addEventListener('DOMContentLoaded', () => {
+    const buttons = document.querySelectorAll('button');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.blur(); 
+        });
+    });
+});
+
+window.onload = () => generateProblem();
+</script>
+</body>
+</html>

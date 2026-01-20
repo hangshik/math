@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주사위 확률 시뮬레이터</title>
+<style>
+  body { font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+  
+  /* 반응형 레이아웃 */
+  .main-container {
+    display: flex; 
+    justify-content: center; 
+    gap: 50px;
+    flex-wrap: wrap; 
+  }
+
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(7, 45px);
+    gap: 4px;
+    justify-content: center;
+    margin: 20px auto;
+  }
+  
+  .cell {
+    width: 45px; height: 45px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #ccc; background: #f9f9f9; font-size: 16px;
+    transition: background-color 0.1s; /* 부드러운 전환 */
+  }
+  .header { background: #333; color: white; font-weight: bold; }
+  .active-roll { background-color: #ff5722 !important; color: white; transform: scale(1.1); font-weight: bold; }
+  
+  /* 통계 박스 스타일 */
+  .stats-box {
+    width: 400px;
+    max-width: 100%;
+    margin-top: 20px;
+  }
+
+  /* 그래프 영역 */
+  .bar-chart {
+    display: flex; align-items: flex-end; justify-content: center;
+    height: 190px; 
+    gap: 5px; margin-top: 20px;
+  }
+  .bar { width: 30px; background: #3399FF; text-align: center; font-size: 12px; color: white; transition: height 0.1s; }
+  
+  /* 분수 스타일 */
+  .fraction {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 11px;
+    line-height: 1.2;
+    color: #555;
+    margin-top: 3px;
+  }
+  .frac-numerator { border-bottom: 1px solid #555; display: block; padding-bottom: 1px; }
+  .frac-denominator { display: block; padding-top: 1px; }
+
+  /* 키보드 안내 */
+  .keyboard-guide {
+    margin-top: 40px; margin-bottom: 20px; padding: 15px;
+    background-color: #f0f0f0; border-radius: 10px;
+    display: inline-block; font-size: 14px; color: #555;
+  }
+  .key-badge {
+    background-color: white; border: 1px solid #ccc; border-radius: 4px;
+    padding: 2px 8px; margin: 0 4px; font-family: monospace; font-weight: bold; color: #333;
+    box-shadow: 0 2px 0 #ddd;
+  }
+
+  /* 버튼 비활성화 스타일 */
+  button:disabled { background-color: #ccc !important; cursor: not-allowed; }
+
+  @media (max-width: 600px) {
+    .main-container { gap: 20px; }
+    .grid-container { transform: scale(0.9); }
+  }
+</style>
+</head>
+<body>
+
+<h1>주사위 확률 시뮬레이터</h1>
+<p>주사위 2개를 던져서 나온 눈의 합을 관찰해봅시다.</p>
+
+<div style="margin-bottom: 20px;">
+  <button id="btn1" onclick="rollOnce()" style="padding:10px 20px; font-size:18px;">1번 던지기</button>
+  <button id="btn100" onclick="autoRoll(100)" style="padding:10px 20px; font-size:18px;">100번 던지기</button>
+  <button id="btnReset" onclick="resetData()" style="padding:10px 20px; font-size:18px; background:#f44336; color:white;">초기화</button>
+</div>
+
+<div class="main-container">
+  
+  <!-- 6x6 Grid -->
+  <div>
+    <h3>모든 경우의 수 (36가지)</h3>
+    <div class="grid-container" id="grid"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-box">
+    <h3>실제 던진 결과 통계 (총 <span id="totalRolls">0</span>회)</h3>
+    <div class="bar-chart" id="chart"></div>
+    <div id="log" style="margin-top:20px; font-size:20px; font-weight:bold; color:#3399FF;"></div>
+  </div>
+
+</div>
+
+<!-- 키보드 사용 안내 -->
+<div class="keyboard-guide">
+  ⌨️ 키보드 사용법:<br>
+  <span class="key-badge">Space</span> 1번 던지기 &nbsp;|&nbsp;
+  <span class="key-badge">Enter</span> 100번 던지기 &nbsp;|&nbsp;
+  <span class="key-badge">Esc</span> 초기화
+</div>
+
+<script>
+  // 초기화 변수
+  const counts = {};
+  for(let i=2; i<=12; i++) counts[i] = 0;
+  let total = 0;
+  let isAnimating = false; // 애니메이션 상태 플래그
+
+  function initGrid() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = "";
+    
+    // 헤더
+    grid.appendChild(createCell("", "header"));
+    for(let i=1; i<=6; i++) grid.appendChild(createCell(i, "header"));
+
+    // 내용
+    for(let r=1; r<=6; r++) {
+      grid.appendChild(createCell(r, "header"));
+      for(let c=1; c<=6; c++) {
+        let cell = createCell(r+c, "cell");
+        cell.id = `cell-${r}-${c}`;
+        cell.dataset.sum = r+c;
+        grid.appendChild(cell);
+      }
+    }
+    updateChart();
+  }
+
+  function createCell(text, className) {
+    const div = document.createElement('div');
+    div.className = `cell ${className}`;
+    div.textContent = text;
+    return div;
+  }
+
+  // 1번 던지기 (애니메이션 중이면 실행 불가)
+  function rollOnce() {
+    if(isAnimating) return; 
+    
+    performRoll();
+  }
+
+  // 실제 주사위 로직 및 UI 업데이트 함수
+  function performRoll() {
+    const d1 = Math.floor(Math.random() * 6) + 1;
+    const d2 = Math.floor(Math.random() * 6) + 1;
+    const sum = d1 + d2;
+    
+    total++;
+    counts[sum]++;
+    
+    // UI 업데이트
+    document.getElementById('totalRolls').textContent = total;
+    document.getElementById('log').innerHTML = `주사위: [${d1}, ${d2}] <br> 합: ${sum}`;
+    
+    // 그리드 하이라이트 (빨간색 애니메이션)
+    document.querySelectorAll('.active-roll').forEach(c => c.classList.remove('active-roll'));
+    const targetCell = document.getElementById(`cell-${d1}-${d2}`);
+    if(targetCell) targetCell.classList.add('active-roll');
+
+    updateChart();
+  }
+
+  // 100번 던지기 애니메이션
+  function autoRoll(n) {
+    if(isAnimating) return;
+    isAnimating = true;
+    
+    // 버튼 비활성화
+    toggleButtons(false);
+    
+    let count = 0;
+    // 15ms 간격으로 매우 빠르게 실행
+    const interval = setInterval(() => {
+      performRoll(); // 로직 재사용
+      count++;
+      
+      if(count >= n) {
+        clearInterval(interval);
+        isAnimating = false;
+        toggleButtons(true); // 버튼 활성화
+        document.getElementById('log').textContent = "100번 완료!";
+      }
+    }, 15);
+  }
+
+  function toggleButtons(enable) {
+    document.getElementById('btn1').disabled = !enable;
+    document.getElementById('btn100').disabled = !enable;
+    document.getElementById('btnReset').disabled = !enable;
+  }
+
+  function updateChart() {
+    const chart = document.getElementById('chart');
+    chart.innerHTML = "";
+    
+    let maxCount = 0;
+    for(let i=2; i<=12; i++) if(counts[i] > maxCount) maxCount = counts[i];
+    if(maxCount === 0) maxCount = 1;
+
+    for(let i=2; i<=12; i++) {
+      const barContainer = document.createElement('div');
+      barContainer.style.display = 'flex';
+      barContainer.style.flexDirection = 'column';
+      barContainer.style.alignItems = 'center';
+      barContainer.style.width = "30px";
+
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      const h = (counts[i] / maxCount) * 120; 
+      bar.style.height = Math.max(h, 20) + "px"; 
+      bar.textContent = counts[i];
+      
+      const label = document.createElement('div');
+      label.textContent = i;
+      label.style.marginTop = "5px";
+      label.style.fontWeight = "bold";
+
+      const probLabel = document.createElement('div');
+      probLabel.style.marginTop = "2px";
+
+      if (total === 0 || counts[i] === 0) {
+        probLabel.innerHTML = "<span style='font-size:12px; color:#555;'>0</span>";
+      } else if (counts[i] === total) {
+        probLabel.innerHTML = "<span style='font-size:12px; color:#555;'>1</span>";
+      } else {
+        probLabel.innerHTML = `
+          <div class="fraction">
+            <span class="frac-numerator">${counts[i]}</span>
+            <span class="frac-denominator">${total}</span>
+          </div>
+        `;
+      }
+
+      barContainer.appendChild(bar);
+      barContainer.appendChild(label);
+      barContainer.appendChild(probLabel);
+      chart.appendChild(barContainer);
+    }
+  }
+
+  function resetData() {
+    if(isAnimating) return;
+    for(let i=2; i<=12; i++) counts[i] = 0;
+    total = 0;
+    document.getElementById('totalRolls').textContent = 0;
+    document.getElementById('log').textContent = "";
+    document.querySelectorAll('.active-roll').forEach(c => c.classList.remove('active-roll'));
+    updateChart();
+  }
+
+  // 키보드 이벤트 리스너 수정됨
+  document.addEventListener('keydown', (e) => {
+    if(isAnimating) return; 
+
+    // Space 키 (1번 던지기)
+    if (e.code === 'Space') {
+      e.preventDefault(); 
+      rollOnce();
+    } 
+    // Enter 키 또는 숫자패드 Enter 키 (100번 던지기)
+    else if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+      autoRoll(100);
+    } 
+    // Esc 키 (초기화)
+    else if (e.code === 'Escape') {
+      resetData();
+    }
+  });
+
+  window.onload = initGrid;
+</script>
+</body>
+</html>

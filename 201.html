@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>일차부등식과 수직선</title>
+<script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  body { 
+    font-family: sans-serif; 
+    text-align: center; 
+    text-size-adjust: 100%;
+    margin: 0;
+    padding: 10px;
+    background-color: #f4f4f4;
+  }
+  .container { 
+    max-width: 700px; 
+    margin: 0 auto; 
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  
+  /* 반응형 그리드 레이아웃 */
+  .canvas-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 기본 2열 */
+    gap: 15px;
+    margin-top: 20px;
+    justify-items: center;
+  }
+  
+  /* 화면이 600px보다 작으면(모바일) 1열로 변경 */
+  @media (max-width: 600px) {
+    .canvas-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .canvas-item {
+    cursor: pointer;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    transition: transform 0.2s, border-color 0.2s;
+    background-color: #fff;
+    
+    /* 캔버스 반응형 설정 */
+    width: 100%; 
+    max-width: 350px; /* 너무 커지지 않게 제한 */
+    height: auto;     /* 비율 유지 */
+    aspect-ratio: 300 / 130; /* 공간 확보 */
+  }
+  
+  .canvas-item:hover {
+    transform: scale(1.02);
+    border-color: #3399FF;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  
+  #problem { 
+    font-size: 32px; 
+    margin: 20px 0; 
+    font-weight: bold; 
+    word-break: break-all;
+  }
+  
+  /* 결과 표시 스타일 */
+  #result1, #result2, #result3 {
+    font-size: 20px;
+    margin: 8px 0;
+    padding: 8px;
+    border-radius: 5px;
+    font-weight: bold;
+  }
+  #result1 { min-height: 30px; }
+  
+  hr { margin: 20px 0; border: 0; border-top: 1px solid #ddd; }
+  
+  h1 { font-size: 24px; margin-bottom: 10px; }
+  p { font-size: 16px; color: #555; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>일차부등식과 수직선</h1>
+  <p>알맞은 수직선 그림을 선택하세요.</p>
+  
+  <div id="problem">$$ -2x + 4 < 10 $$</div>
+
+  <!-- 그림 선택 영역 -->
+  <div class="canvas-grid">
+    <!-- width, height는 내부 해상도용 (고정) -->
+    <canvas id="cvs1" class="canvas-item" width="300" height="130" onclick="checkAnswer(1)"></canvas>
+    <canvas id="cvs2" class="canvas-item" width="300" height="130" onclick="checkAnswer(2)"></canvas>
+    <canvas id="cvs3" class="canvas-item" width="300" height="130" onclick="checkAnswer(3)"></canvas>
+    <canvas id="cvs4" class="canvas-item" width="300" height="130" onclick="checkAnswer(4)"></canvas>
+  </div>
+
+  <hr/>
+  
+  <!-- 결과 및 점수 표시 -->
+  <div id="result1">정답여부</div>
+  <div id="result2">0번 정답입니다.</div>
+  <div id="result3">0번 틀렸습니다.</div>
+</div>
+
+<script>
+// 전역 변수
+let wincount = 0;
+let losecount = 0;
+let answerIndex = 0;
+let isProcessing = false; // 중복 클릭 방지
+
+// 최대공약수 함수 (약분용)
+function gcd(a, b) {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+// 수직선 그리기 함수
+// valueObj: {n: 분자, d: 분모} 형태
+function drawNumberLine(ctx, valueObj, direction, isInclusive) {
+  const w = 300, h = 130;
+  const midY = 70;      // 수직선 y위치
+  const stalkH = 40;    // 깃대 높이
+  const centerX = w / 2;
+  const endX = 280;     // 수직선 끝 x좌표
+  const radius = 6;     // 동그라미 반지름
+
+  ctx.clearRect(0, 0, w, h);
+
+  // 1. 메인 수직선 (가로축) 그리기
+  ctx.beginPath();
+  ctx.moveTo(20, midY);
+  ctx.lineTo(endX, midY);
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // 1-1. 수직선 오른쪽 화살표 (>)
+  ctx.beginPath();
+  ctx.moveTo(endX, midY);
+  ctx.lineTo(endX - 8, midY - 5); 
+  ctx.moveTo(endX, midY);
+  ctx.lineTo(endX - 8, midY + 5); 
+  ctx.stroke();
+
+  // 1-2. x 레이블 표시
+  ctx.font = "italic bold 18px Times New Roman";
+  ctx.fillStyle = "black";
+  ctx.textAlign = "left";
+  ctx.fillText("x", endX + 5, midY + 5);
+
+  // 2. 기준 눈금 (중앙)
+  ctx.beginPath();
+  ctx.moveTo(centerX, midY - 5);
+  ctx.lineTo(centerX, midY + 5);
+  ctx.stroke();
+  
+  // *** 값 그리기 (정수 vs 분수) ***
+  ctx.fillStyle = "black";
+  ctx.textAlign = "center";
+  
+  if (valueObj.d === 1) {
+    // 정수인 경우
+    ctx.font = "16px Arial";
+    ctx.fillText(valueObj.n, centerX, midY + 25);
+  } else {
+    // 분수인 경우
+    ctx.font = "14px Arial";
+    const numStr = valueObj.n.toString();
+    const denStr = valueObj.d.toString();
+    
+    // 분자, 분모 그리기
+    ctx.fillText(numStr, centerX, midY + 25); // 분자
+    
+    // 분수선 그리기
+    const textWidth = Math.max(ctx.measureText(numStr).width, ctx.measureText(denStr).width);
+    const lineWidth = textWidth + 6;
+    
+    ctx.beginPath();
+    ctx.moveTo(centerX - lineWidth/2, midY + 30);
+    ctx.lineTo(centerX + lineWidth/2, midY + 30);
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    ctx.fillText(denStr, centerX, midY + 45); // 분모
+  }
+
+  // 3. 해의 범위 그리기 (빨간색)
+  
+  // (1) 동그라미 (O) 그리기 - 수직선 위에 위치
+  ctx.beginPath();
+  ctx.arc(centerX, midY, radius, 0, Math.PI * 2);
+  
+  ctx.fillStyle = isInclusive ? "red" : "white"; 
+  ctx.fill();
+  
+  ctx.strokeStyle = "red"; 
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // (2) 수직 기둥
+  ctx.beginPath();
+  ctx.strokeStyle = "red";
+  ctx.lineWidth = 3;
+
+  ctx.moveTo(centerX, midY - radius); 
+  ctx.lineTo(centerX, midY - stalkH);
+  
+  // (3) 방향 화살표
+  if (direction === 'right') { 
+    ctx.lineTo(endX, midY - stalkH); 
+  } else { 
+    ctx.lineTo(20, midY - stalkH); 
+  }
+  ctx.stroke();
+}
+
+// 문제 생성 함수
+function nextProblem() {
+  isProcessing = false;
+  resultreset();
+  
+  // 랜덤 부등식 생성: ax + b < c
+  let a = 0;
+  while(a === 0) a = Math.floor(Math.random() * 11) - 5; 
+  let b = Math.floor(Math.random() * 21) - 10;
+  let c = Math.floor(Math.random() * 21) - 10;
+  
+  // 부등호 타입: 0:<, 1:>, 2:<=, 3:>=
+  let type = Math.floor(Math.random() * 4);
+  let operatorStr = ["<", ">", "\\le", "\\ge"][type];
+  
+  // 수식 표시
+  let bStr = b >= 0 ? "+ " + b : "- " + Math.abs(b);
+  let aStr = a === 1 ? "" : (a === -1 ? "-" : a);
+  let tex = `${aStr}x ${bStr} ${operatorStr} ${c}`;
+  
+  const problemDiv = document.getElementById('problem');
+  problemDiv.innerHTML = `$$ ${tex} $$`;
+  MathJax.typesetPromise([problemDiv]);
+
+  // 정답 계산 (분수 형태 유지)
+  let rawNum = c - b;
+  let rawDen = a;
+  
+  // 분모가 음수면 부호 이동
+  if (rawDen < 0) {
+    rawNum = -rawNum;
+    rawDen = -rawDen;
+  }
+  
+  // 기약분수 만들기
+  let common = Math.abs(gcd(rawNum, rawDen));
+  let num = rawNum / common;
+  let den = rawDen / common;
+  
+  let valObj = { n: num, d: den };
+
+  // 방향 결정
+  let isRight;
+  if (type === 0 || type === 2) { // <, <=
+    isRight = (a < 0); 
+  } else { // >, >=
+    isRight = (a > 0);
+  }
+  
+  let isInclusive = (type >= 2); 
+
+  // 보기 4개 생성
+  let configs = [];
+  configs.push({ dir: isRight ? 'right' : 'left', inc: isInclusive, isAns: true });
+  configs.push({ dir: isRight ? 'left' : 'right', inc: isInclusive, isAns: false });
+  configs.push({ dir: isRight ? 'right' : 'left', inc: !isInclusive, isAns: false });
+  configs.push({ dir: isRight ? 'left' : 'right', inc: !isInclusive, isAns: false });
+  
+  configs.sort(() => Math.random() - 0.5);
+  
+  // 캔버스에 그리기
+  for(let i=0; i<4; i++) {
+    const cvs = document.getElementById(`cvs${i+1}`);
+    const ctx = cvs.getContext('2d');
+    
+    drawNumberLine(ctx, valObj, configs[i].dir, configs[i].inc);
+    
+    if (configs[i].isAns) answerIndex = i + 1;
+    cvs.style.borderColor = "#ccc";
+  }
+}
+
+// 결과 초기화
+function resultreset() {
+    const r1 = document.getElementById("result1");
+    r1.textContent = "정답여부";
+    r1.style.backgroundColor = "white";
+    r1.style.color = "black";
+}
+
+// 정답 확인 함수
+function checkAnswer(idx) {
+  if (isProcessing) return; 
+  isProcessing = true;
+
+  const r1 = document.getElementById("result1");
+  const r2 = document.getElementById("result2");
+  const r3 = document.getElementById("result3");
+
+  if (idx === answerIndex) {
+    wincount++;
+    r1.textContent = "정답입니다.";
+    r1.style.backgroundColor = "green";
+    r1.style.color = "white";
+    r2.textContent = wincount + "번 정답입니다.";
+    
+    setTimeout(() => {
+      nextProblem();
+    }, 1000);
+  } else {
+    losecount++;
+    r1.textContent = "틀렸습니다.";
+    r1.style.backgroundColor = "red";
+    r1.style.color = "white";
+    r3.textContent = losecount + "번 틀렸습니다.";
+    
+    setTimeout(() => {
+      resultreset();
+      isProcessing = false;
+    }, 1000);
+  }
+}
+
+window.onload = nextProblem;
+</script>
+</body>
+</html>

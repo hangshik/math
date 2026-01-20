@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>피타고라스 퀴즈</title>
+<script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<style>
+  body { 
+    font-family: sans-serif; 
+    text-align: center; 
+    margin: 0;
+    padding: 10px;
+    background-color: #f9f9f9;
+  }
+  .container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+  
+  /* 그래프 가운데 정렬 수정 */
+  canvas { 
+    background: #fff; 
+    display: block;       /* 블록 요소로 변경 */
+    margin: 0 auto 5px auto; /* 상 우 하 좌 : 좌우 auto로 중앙 정렬 */
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* 입력창 스타일 */
+  .input-display {
+    font-size: 32px;
+    font-weight: bold;
+    padding: 10px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    width: 200px;
+    margin: 10px auto 20px auto; 
+    background-color: #fff;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+  }
+
+  /* 키패드 스타일 (5열 레이아웃) */
+  .keypad-table {
+    margin: 10px auto;
+    width: 100%;
+    max-width: 450px;
+    border-collapse: separate;
+    border-spacing: 6px; 
+  }
+  
+  .keypad-table td {
+    width: 20%; 
+  }
+
+  .key-btn {
+    width: 100%;
+    height: 55px;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    touch-action: manipulation;
+    transition: background 0.2s;
+    padding: 0;
+  }
+  .key-btn:hover { background-color: #ddd; }
+  .key-btn:active { background-color: #ccc; }
+  
+  /* 기능 버튼 색상 */
+  .btn-check { 
+    background-color: #3399FF; color: white; border-color: #2b80d6; 
+  }
+  .btn-check:hover { background-color: #2b80d6; }
+  
+  .btn-clear { background-color: #ff9800; color: white; border-color: #f57c00; }
+  .btn-clear:hover { background-color: #f57c00; }
+
+  .btn-back { background-color: #9e9e9e; color: white; border-color: #757575; }
+  .btn-back:hover { background-color: #757575; }
+
+  /* 점수판 스타일 */
+  #result1, #result2, #result3 {
+    font-size: 20px;
+    margin: 5px 0;
+    padding: 8px;
+    border-radius: 5px;
+    font-weight: bold;
+  }
+  #result1 { min-height: 30px; background-color: white; color: black; border: 1px solid #eee; }
+  
+  /* 키보드 안내 */
+  .keyboard-guide {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+  }
+  .key-badge {
+    background: white; border: 1px solid #bbb; border-radius: 4px;
+    padding: 2px 6px; font-family: monospace; font-weight: bold;
+    color: #333; box-shadow: 0 2px 0 #ddd;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>피타고라스 퀴즈</h1>
+  <p>직각삼각형에서 $x$의 값을 구하세요.</p>
+
+  <canvas id="triCanvas" width="300" height="200"></canvas>
+  
+  <!-- 입력값 표시 영역 -->
+  <div class="input-display" id="displayBox">?</div>
+
+  <!-- 키패드 (5열 배치) -->
+  <table class="keypad-table">
+    <!-- 첫째 줄: 1 ~ 5 -->
+    <tr>
+      <td><button class="key-btn" onclick="addNumber(1)">1</button></td>
+      <td><button class="key-btn" onclick="addNumber(2)">2</button></td>
+      <td><button class="key-btn" onclick="addNumber(3)">3</button></td>
+      <td><button class="key-btn" onclick="addNumber(4)">4</button></td>
+      <td><button class="key-btn" onclick="addNumber(5)">5</button></td>
+    </tr>
+    <!-- 둘째 줄: 6 ~ 0 -->
+    <tr>
+      <td><button class="key-btn" onclick="addNumber(6)">6</button></td>
+      <td><button class="key-btn" onclick="addNumber(7)">7</button></td>
+      <td><button class="key-btn" onclick="addNumber(8)">8</button></td>
+      <td><button class="key-btn" onclick="addNumber(9)">9</button></td>
+      <td><button class="key-btn" onclick="addNumber(0)">0</button></td>
+    </tr>
+    <!-- 셋째 줄: C, <-, 확인(3칸) -->
+    <tr>
+      <td><button class="key-btn btn-clear" onclick="clearAll()">C</button></td>
+      <td><button class="key-btn btn-back" onclick="delNumber()">←</button></td>
+      <!-- colspan=3 으로 3칸 차지하게 설정 -->
+      <td colspan="3"><button class="key-btn btn-check" onclick="checkAnswer()">확인</button></td>
+    </tr>
+  </table>
+
+  <!-- 점수판 -->
+  <div id="result1">정답여부</div>
+  <div id="result2">0번 정답입니다.</div>
+  <div id="result3">0번 틀렸습니다.</div>
+
+  <!-- 키보드 안내 -->
+  <div class="keyboard-guide">
+    ⌨️ <b>키보드 사용법</b><br>
+    <span class="key-badge">0-9</span> 숫자입력 &nbsp; 
+    <span class="key-badge">Enter</span> 확인<br>
+    <span class="key-badge">Backspace</span> 지우기 &nbsp; 
+    <span class="key-badge">Esc</span> 전체삭제(C)
+  </div>
+</div>
+
+<script>
+// 전역 변수
+let sideA, sideB, sideC; // 실제 값 (a, b, c)
+let targetType = 'c';    // 현재 구해야 하는 변수 ('a', 'b', 'c')
+let correctValue = 0;    // 정답 값
+
+let wincount = 0;
+let losecount = 0;
+let problemSequence = 0; // 문제 푼 횟수 (누적)
+let recentHistory = [];  // 최근 출제된 문제 인덱스 저장 (중복 방지용)
+
+let currentInput = "";
+let isProcessing = false;
+
+// 화면 초기화 및 문제 생성
+function nextProblem() {
+  isProcessing = false;
+  currentInput = "";
+  problemSequence++;
+  updateDisplay();
+  resultReset();
+  
+  // 피타고라스 수 (a, b, c)
+  const triples = [
+    [3,4,5], [5,12,13], [6,8,10], [8,15,17], [9,12,15], [7,24,25], [10,24,26], [12,16,20]
+  ];
+  
+  // 중복 방지 로직: 최근 2회 이내에 나온 문제는 제외
+  let selectedIndex;
+  do {
+    selectedIndex = Math.floor(Math.random() * triples.length);
+  } while (recentHistory.includes(selectedIndex));
+
+  // 히스토리 업데이트
+  recentHistory.push(selectedIndex);
+  if (recentHistory.length > 2) {
+    recentHistory.shift(); // 가장 오래된 기록 삭제 (최대 2개 유지)
+  }
+
+  const selected = triples[selectedIndex];
+  
+  // a, b 랜덤 배치 (가로, 세로)
+  if(Math.random() < 0.5) {
+    sideA = selected[0]; sideB = selected[1];
+  } else {
+    sideA = selected[1]; sideB = selected[0];
+  }
+  sideC = selected[2]; // 빗변
+
+  // 문제 유형 결정 (처음 5문제는 빗변, 이후는 랜덤)
+  if (problemSequence <= 5) {
+    targetType = 'c';
+  } else {
+    const types = ['a', 'b', 'c'];
+    targetType = types[Math.floor(Math.random() * types.length)];
+  }
+
+  // 정답 설정
+  if (targetType === 'c') {
+    correctValue = sideC;
+  } else if (targetType === 'a') {
+    correctValue = sideA;
+  } else { // 'b'
+    correctValue = sideB;
+  }
+  
+  drawTriangle();
+}
+
+// 삼각형 그리기
+function drawTriangle() {
+  const canvas = document.getElementById('triCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  const pad = 30;
+  const w = canvas.width - pad*2;
+  const h = canvas.height - pad*2;
+  
+  // 비율 유지하며 크기 조정
+  const scale = Math.min(w/sideA, h/sideB) * 0.85;
+  
+  const drawW = sideA * scale;
+  const drawH = sideB * scale;
+  
+  const startX = 40;
+  const startY = 170; // 캔버스 하단 기준
+  
+  ctx.beginPath();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "black";
+  
+  // 직각삼각형 그리기
+  ctx.moveTo(startX, startY); 
+  ctx.lineTo(startX + drawW, startY); 
+  ctx.lineTo(startX + drawW, startY - drawH); 
+  ctx.closePath();
+  ctx.stroke();
+  
+  // 직각 표시
+  ctx.beginPath();
+  ctx.moveTo(startX + drawW - 15, startY);
+  ctx.lineTo(startX + drawW - 15, startY - 15);
+  ctx.lineTo(startX + drawW, startY - 15);
+  ctx.stroke();
+  
+  // 텍스트 설정
+  
+  // 1. 밑변 (가로) 표시
+  let textA = (targetType === 'a') ? "x" : sideA;
+  let fontA = (targetType === 'a') ? "italic 28px Times New Roman" : "bold 20px Arial";
+  let colorA = (targetType === 'a') ? "red" : "blue";
+  
+  ctx.font = fontA;
+  ctx.fillStyle = colorA;
+  ctx.textAlign = "center";
+  ctx.fillText(textA, startX + drawW/2, startY + 25);
+  
+  // 2. 높이 (세로) 표시
+  let textB = (targetType === 'b') ? "x" : sideB;
+  let fontB = (targetType === 'b') ? "italic 28px Times New Roman" : "bold 20px Arial";
+  let colorB = (targetType === 'b') ? "red" : "blue";
+
+  ctx.font = fontB;
+  ctx.fillStyle = colorB;
+  ctx.textAlign = "left";
+  ctx.fillText(textB, startX + drawW + 10, startY - drawH/2);
+  
+  // 3. 빗변 표시
+  let textC = (targetType === 'c') ? "x" : sideC;
+  let fontC = (targetType === 'c') ? "italic 28px Times New Roman" : "bold 20px Arial";
+  let colorC = (targetType === 'c') ? "red" : "blue";
+
+  ctx.font = fontC;
+  ctx.fillStyle = colorC;
+  ctx.textAlign = "right";
+  ctx.fillText(textC, startX + drawW/2 - 10, startY - drawH/2 - 5);
+}
+
+// 키패드 입력 처리
+function addNumber(num) {
+  if(isProcessing) return;
+  if(currentInput.length < 5) { 
+    currentInput += num;
+    updateDisplay();
+  }
+}
+
+// <- 버튼 (하나 지우기)
+function delNumber() {
+  if(isProcessing) return;
+  currentInput = currentInput.slice(0, -1);
+  updateDisplay();
+}
+
+// C 버튼 (전체 지우기)
+function clearAll() {
+  if(isProcessing) return;
+  currentInput = "";
+  updateDisplay();
+}
+
+function updateDisplay() {
+  const box = document.getElementById('displayBox');
+  if(currentInput === "") {
+    box.textContent = "?";
+    box.style.color = "#ccc";
+  } else {
+    box.textContent = currentInput;
+    box.style.color = "#333";
+  }
+}
+
+// 결과 표시 초기화
+function resultReset() {
+  const r1 = document.getElementById("result1");
+  r1.textContent = "정답여부";
+  r1.style.backgroundColor = "white";
+  r1.style.color = "black";
+  r1.style.border = "1px solid #eee";
+}
+
+// 정답 확인
+function checkAnswer() {
+  if(isProcessing) return;
+  if(currentInput === "") return; 
+
+  const userAns = parseFloat(currentInput);
+  const r1 = document.getElementById("result1");
+  const r2 = document.getElementById("result2");
+  const r3 = document.getElementById("result3");
+
+  if(userAns === correctValue) {
+    isProcessing = true;
+    wincount++;
+    
+    r1.textContent = "정답입니다!";
+    r1.style.backgroundColor = "green";
+    r1.style.color = "white";
+    r1.style.border = "none";
+    r2.textContent = wincount + "번 정답입니다.";
+    
+    setTimeout(nextProblem, 1000);
+  } else {
+    losecount++;
+    
+    r1.textContent = "틀렸습니다. 다시 시도해보세요.";
+    r1.style.backgroundColor = "red";
+    r1.style.color = "white";
+    r1.style.border = "none";
+    r3.textContent = losecount + "번 틀렸습니다.";
+    
+    setTimeout(() => {
+        resultReset();
+    }, 1500);
+  }
+}
+
+// 키보드 이벤트 리스너
+document.addEventListener('keydown', (e) => {
+  if(isProcessing) return;
+
+  // 숫자 키
+  if (e.key >= '0' && e.key <= '9') {
+    addNumber(e.key);
+  }
+  // 백스페이스 (하나 지우기)
+  else if (e.key === 'Backspace') {
+    delNumber();
+  }
+  // Esc (전체 지우기 - C)
+  else if (e.key === 'Escape') {
+    clearAll();
+  }
+  // 엔터 (확인)
+  else if (e.key === 'Enter') {
+    e.preventDefault(); 
+    checkAnswer();
+  }
+});
+
+// 시작 시 첫 문제 로드
+window.onload = function() {
+  problemSequence = 0; 
+  nextProblem();
+};
+</script>
+</body>
+</html>

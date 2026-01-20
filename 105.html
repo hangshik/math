@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>일차방정식</title>
+  <script>
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+  <style>
+    body {
+      text-size-adjust: 50px;
+      font-family: sans-serif;
+    }
+    
+    .container {
+      display: grid;
+      gap: 10px;
+    }
+
+    .button {
+      width: 60px;
+      height: 60px;
+      font-size: 25px;
+      line-height: 60px;
+      margin: 2px 0px;
+      border-radius: 10px;
+      border: none;
+      background-color: #DDDDDD;
+      cursor: pointer;
+    }
+
+    .button:hover {
+      background-color: #bbb;
+    }
+
+    #txt {
+      font-size: 30px;
+      width: 80px;
+      height: 40px;
+      text-align: center;
+      margin-left: 10px;
+    }
+
+    .stage-button {
+      font-size: 20px;
+      margin: 5px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .active {
+      background-color: #3399FF;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <center>
+    <h1>일차방정식</h1>
+
+    <div>
+      <button id="btn1" class="stage-button" onclick="setStage(1)">1단계</button>
+      <button id="btn2" class="stage-button" onclick="setStage(2)">2단계</button>
+      <button id="btn3" class="stage-button" onclick="setStage(3)">3단계</button><br>
+      <button id="btn4" class="stage-button" onclick="setStage(4)">4단계</button>
+      <button id="btn5" class="stage-button" onclick="setStage(5)">5단계</button>
+      <button id="btn6" class="stage-button" onclick="setStage(6)">6단계</button>
+    </div>
+
+    <div id="problem" style="font-size: 30px; margin-top: 20px;">문제</div>
+    <!--<div id="test" style="font-size: 20px; color: gray;">디버그</div>-->
+
+    <div style="margin-top: 20px; text-align: center;display: flex; justify-content: center; align-items: center; ">
+      <font size="10px">$x$ =</font> <input type="text" id="txt" value="" readonly>
+    </div>
+
+    <br>
+    <!-- 숫자 및 기능 버튼 -->
+    <div>
+      <button class="button" onclick="appendNumber(1)">1</button>
+      <button class="button" onclick="appendNumber(2)">2</button>
+      <button class="button" onclick="appendNumber(3)">3</button>
+      <button class="button" onclick="appendNumber(4)">4</button>
+      <button class="button" onclick="appendNumber(5)">5</button><br>
+      <button class="button" onclick="appendNumber(6)">6</button>
+      <button class="button" onclick="appendNumber(7)">7</button>
+      <button class="button" onclick="appendNumber(8)">8</button>
+      <button class="button" onclick="appendNumber(9)">9</button>
+      <button class="button" onclick="appendNumber(0)">0</button><br>
+      <button class="button" onclick="appendNumber('-')">-</button>
+      <button class="button" onclick="appendNumber('/')">/</button>
+      <button class="button" onclick="clearInput()">C</button>
+      <button class="button" onclick="backspace()">←</button>
+      <button class="button" onclick="main()" style="background-color: #3399FF; color: white;">확인</button>
+    </div>
+
+    <hr/>
+    <div id="result1" style="font-size:30px">정답여부</div>
+    <div id="result2" style="font-size:30px">0번 정답입니다.</div>
+    <div id="result3" style="font-size:30px">0번 틀렸습니다.</div>
+    
+    <!--<br><font size="5">
+      1~3단계: ax+b=cx+d<br>
+      4~6단계: a(bx+c)=dx+e 또는 ax+b=c(dx+e)<br>
+      1,4단계: 정답이 정수임<br>
+        2,5단계: 정답이 정수가 아님<br>
+        3,6단계: 정답이 둘 다 가능
+    </font>-->
+    <br>
+    <table align="center" style="font-size:20px; border-collapse:collapse;height:120px;text-align:center;">
+      <tr>
+        <td width="220px"></td>
+        <td width="120px">해가 정수</td>
+        <td width="120px">해가 정수가 아님</td>
+        <td width="120px">해는 모든 수</td>
+      </tr>
+      <tr>
+        <td style=>${ax+b=cx+d}$</td>
+        <td style="border:1px solid #000000;">1단계</td>
+        <td style="border:1px solid #000000;">2단계</td>
+        <td style="border:1px solid #000000;">3단계</td>
+      </tr>
+      <tr>
+        <td style=>${a(bx+c)=dx+e}$</td>
+        <td style="border:1px solid #000000;">4단계</td>
+        <td style="border:1px solid #000000;">5단계</td>
+        <td style="border:1px solid #000000;">6단계</td>
+      </tr>
+    </table>
+  </center>
+
+  <script>
+    // 오른쪽 마우스 금지
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    let currentStage = 1;
+    let wincount = 0;
+    let losecount = 0;
+    let rr = 0;
+
+    function gcd(a, b) {
+      while (b !== 0) {
+        [a, b] = [b, a % b];
+      }
+      return Math.abs(a);
+    }
+
+    function setStage(stage) {
+      currentStage = stage;
+      updateButtonStyles();
+      start(stage);
+    }
+
+    function updateButtonStyles() {
+      for (let i = 1; i <= 6; i++) {
+        const btn = document.getElementById("btn" + i);
+        if (i === currentStage) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      }
+    }
+
+    function start(mode = currentStage) {
+      let x1, x2, x3, x4;
+
+      while (true) {
+        x1 = Math.floor(Math.random() * 18 - 8);
+        x2 = Math.floor(Math.random() * 18 - 8);
+        x3 = Math.floor(Math.random() * 18 - 8);
+        x4 = Math.floor(Math.random() * 18 - 8);
+        sign1 = Math.random();
+        sign2 = Math.random();
+
+        if (x1 < 1) x1 -= 1;
+        if (x2 < 1) x2 -= 1;
+        if (x3 < 1) x3 -= 1;
+        if (x4 < 1) x4 -= 1;
+
+        if (x1 === x3) x3 += (x1 === -1 ? -1 : 1);
+        if (x2 === x4) x4 += (x2 === -1 ? -1 : 1);
+
+        let numerator = x4 - x2;
+        let denominator = x1 - x3;
+        if (denominator === 0) continue;
+
+        
+        x5 = sign1 < 0.5 ? gcd(x1, x2) : gcd(x1, x2)*-1;
+
+        rr = numerator / denominator;
+
+        if (mode === 1 && Number.isInteger(rr)) break;
+        if (mode === 2 && !Number.isInteger(rr)) break;
+        if (mode === 3) break;
+        if (mode === 4 && Number.isInteger(rr) && x5!=1) break;
+        if (mode === 5 && !Number.isInteger(rr) && x5!=1) break;
+        if (mode === 6 && x5!=1) break;
+      }
+
+      const r1 = gcd(x4 - x2, x1 - x3);
+      const r2 = (x4 - x2) / r1;
+      const r3 = (x1 - x3) / r1;
+      rr = r2 / r3;
+
+      if ( mode>3){
+        x1 = x1 / x5;
+        x2 = x2 / x5;
+      }
+
+      const showX1 = x1 === 1 ? "" : x1 === -1 ? "-" : x1;
+      const showX3 = x3 === 1 ? "" : x3 === -1 ? "-" : x3;
+      const showX2 = x2 > 0 ? "+" + x2 : x2;
+      const showX4 = x4 > 0 ? "+" + x4 : x4;
+      const showX5 = x5 === -1 ? "-" : x5;
+      // x 이미지를 수식 x로 대체 (MathJax 사용)
+      if(mode<4){
+        document.getElementById("problem").innerHTML =
+          showX1 + '\\(x\\)' + showX2 +
+          " = " + showX3 + '\\(x\\)' + showX4;
+      } else {
+        if(sign2 < 0.5){
+          document.getElementById("problem").innerHTML =
+            showX5 + "(" + showX1 + '\\(x\\)' + showX2 +
+            ") = " + showX3 + '\\(x\\)' + showX4;
+        } else {
+          document.getElementById("problem").innerHTML =
+            showX3 + '\\(x\\)' + showX4 + "=" + showX5 + "(" + showX1 + '\\(x\\)' + showX2 +
+            ")";
+        }
+      }
+      MathJax.typesetPromise(); // 수식 렌더링
+      // document.getElementById("test").textContent = `${x1}, ${x3}, ${x2}, ${x4}, 정답: ${rr}`;
+    }
+
+    function appendNumber(num) {
+      document.getElementById("txt").value += num;
+    }
+
+    function backspace() {
+      const input = document.getElementById("txt");
+      input.value = input.value.slice(0, -1);
+    }
+
+    function clearInput() {
+      document.getElementById("txt").value = "";
+    }
+
+    function resultreset() {
+      document.getElementById("result1").textContent = "정답여부";
+      document.getElementById("result1").style.backgroundColor = "white";
+    }
+
+    function main() {
+      const input = document.getElementById("txt");
+      let a1 = input.value;
+
+      if (a1.includes("/")) {
+        const parts = a1.split("/");
+        if (parts.length === 2) {
+          const numerator = parseFloat(parts[0]);
+          const denominator = parseFloat(parts[1]);
+          if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
+            a1 = numerator / denominator;
+          } else {
+            a1 = NaN;
+          }
+        } else {
+          a1 = NaN;
+        }
+      } else {
+        a1 = parseFloat(a1);
+      }
+
+      if (!isNaN(a1)) {
+        if (Math.abs(rr - a1) < 1e-10) {
+          wincount++;
+          document.getElementById("result1").textContent = "정답입니다.";
+          document.getElementById("result1").style.backgroundColor = "green";
+          document.getElementById("result1").style.color = "white";
+          document.getElementById("result2").textContent = `${wincount}번 정답입니다.`;
+          setTimeout(resultreset, 1000);
+          start(currentStage);
+        } else {
+          losecount++;
+          document.getElementById("result1").textContent = "틀렸습니다.";
+          document.getElementById("result1").style.backgroundColor = "red";
+          document.getElementById("result1").style.color = "white";
+          document.getElementById("result3").textContent = `${losecount}번 틀렸습니다.`;
+          setTimeout(resultreset, 1000);
+        }
+      }
+
+      input.value = "";
+    }
+
+    // 키보드 입력 처리
+    document.addEventListener('keydown', function (event) {
+      const key = event.key;
+      if (key >= '0' && key <= '9') appendNumber(key);
+      else if (key === '-') appendNumber('-');
+      else if (key === '/') appendNumber('/');
+      else if (key === '.') appendNumber('.');
+      else if (key === 'Backspace') backspace();
+      else if (key === 'Escape') clearInput();
+      else if (key === 'Enter') main();
+    });
+
+    // 초기화
+    window.onload = () => {
+      updateButtonStyles();
+      start(currentStage);
+    };
+  </script>
+</body>
+</html>

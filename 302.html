@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼각비 맞추기</title>
+
+<script>
+  window.MathJax = { tex: { inlineMath: [['$', '$']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f9f9f9;
+    text-align: center;
+    padding: 10px;
+  }
+  .container {
+    max-width: 520px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
+
+  .question {
+    font-size: 30px;
+    margin: 20px 0;
+    font-weight: bold;
+  }
+
+  .choices {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 20px 0;
+  }
+
+  .choice-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .choices button {
+    width: 100%;
+    height: 100px;
+    font-size: 30px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .choice-number {
+    margin-top: 6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid #555;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 24px;
+    text-align: center;
+    color: #555;
+  }
+
+  #result1 {
+    font-size: 24px;
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    background: #eee;
+    color: #000;
+  }
+
+  #result2, #result3 {
+    font-size: 24px;
+    margin: 4px 0;
+  }
+
+  .keyboard-guide {
+    margin-top: 15px;
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 18px;
+    color: #555;
+  }
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>삼각비 맞추기</h1>
+
+  <div class="question" id="questionBox"></div>
+  <div class="choices" id="choicesBox"></div>
+
+  <div id="result1">정답여부</div>
+  <div id="result2">0번 정답입니다.</div>
+  <div id="result3">0번 틀렸습니다.</div>
+
+  <div class="keyboard-guide">
+    ⌨️ 키보드 <b>1~5</b> : 보기 선택
+  </div>
+</div>
+
+<script>
+const values = [
+  { txt: "0", val: 0 },
+  { txt: "1", val: 1 },
+  { txt: "\\frac{1}{2}", val: 0.5 },
+  { txt: "\\frac{\\sqrt2}{2}", val: Math.SQRT1_2 },
+  { txt: "\\frac{\\sqrt3}{2}", val: Math.sqrt(3)/2 },
+  { txt: "\\frac{\\sqrt3}{3}", val: Math.sqrt(3)/3 },
+  { txt: "\\sqrt3", val: Math.sqrt(3) }
+];
+
+const angles = [0, 30, 45, 60, 90];
+const funcs = ["sin", "cos", "tan"];
+
+let correctIndex = 0;
+let win = 0;
+let lose = 0;
+
+function rad(d){ return d*Math.PI/180; }
+function calc(f,a){
+  if(f==="sin") return Math.sin(rad(a));
+  if(f==="cos") return Math.cos(rad(a));
+  if(f==="tan") return Math.tan(rad(a));
+}
+function nearly(a,b){ return Math.abs(a-b)<1e-6; }
+
+function nextQuiz(){
+  const r1=document.getElementById("result1");
+  r1.textContent="정답여부";
+  r1.style.background="#eee";
+  r1.style.color="#000";
+
+  let f,a,v;
+  while(true){
+    f=funcs[Math.floor(Math.random()*3)];
+    a=angles[Math.floor(Math.random()*5)];
+    if(f==="tan"&&a===90) continue;
+    v=calc(f,a);
+    const idx=values.findIndex(x=>nearly(x.val,v));
+    if(idx!==-1){ correctIndex=idx; break; }
+  }
+
+  document.getElementById("questionBox").innerHTML =
+    `$\\boldsymbol{\\mathrm{${f}}}\\,${a}^\\circ$`;
+
+  let pool=[...values];
+  const correct=pool.splice(correctIndex,1)[0];
+  pool.sort(()=>Math.random()-0.5);
+  let choices=[correct,...pool.slice(0,4)];
+  choices.sort(()=>Math.random()-0.5);
+  correctIndex=choices.indexOf(correct);
+
+  const box=document.getElementById("choicesBox");
+  box.innerHTML="";
+  choices.forEach((c,i)=>{
+    const wrap=document.createElement("div");
+    wrap.className="choice-wrap";
+
+    const b=document.createElement("button");
+    b.innerHTML=`$${c.txt}$`;
+    b.onclick=()=>check(i);
+
+    const num=document.createElement("div");
+    num.className="choice-number";
+    num.textContent=i+1;
+
+    wrap.appendChild(b);
+    wrap.appendChild(num);
+    box.appendChild(wrap);
+  });
+
+  MathJax.typesetPromise();
+}
+
+function check(i){
+  const r1=document.getElementById("result1");
+  const btns=document.querySelectorAll(".choices button");
+
+  btns.forEach(b=>{
+    b.style.background="#fff";
+    b.style.color="#000";
+  });
+
+  if(i===correctIndex){
+    win++;
+    btns[i].style.background="#4CAF50";
+    btns[i].style.color="#fff";
+
+    r1.textContent="정답입니다!";
+    r1.style.background="#4CAF50";
+    r1.style.color="#fff";
+
+    document.getElementById("result2").textContent=win+"번 정답입니다.";
+    setTimeout(nextQuiz,1000);
+  }else{
+    lose++;
+    btns[i].style.background="#f44336";
+    btns[i].style.color="#fff";
+
+    r1.textContent="틀렸습니다.";
+    r1.style.background="#f44336";
+    r1.style.color="#fff";
+
+    document.getElementById("result3").textContent=lose+"번 틀렸습니다.";
+  }
+}
+
+document.addEventListener("keydown",e=>{
+  if(e.key>='1'&&e.key<='5'){
+    check(parseInt(e.key)-1);
+  }
+});
+
+window.onload=nextQuiz;
+</script>
+</body>
+</html>

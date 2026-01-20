@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>함수 상자 규칙 찾기</title>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+  <style>
+    body { font-family: sans-serif; text-align: center; }
+    
+    /* 입력칸 스타일 */
+    .input-box {
+      width: 70px; height: 40px; font-size: 24px; text-align: center;
+      margin: 0 5px; border: 2px solid #333; border-radius: 5px;
+      cursor: pointer; background: #fff;
+    }
+    .selected { background-color: #3399FF; color: white; border-color: #0056b3; }
+
+    /* 키패드 버튼 스타일 */
+    .button {
+      width: 60px; height: 60px; font-size: 25px; margin: 2px;
+      border-radius: 10px; border: none; background-color: #DDDDDD; cursor: pointer;
+    }
+    .button:hover { background-color: #bbb; }
+    
+    /* 넓은 버튼 (2배 크기) */
+    .btn-wide {
+      width: 128px; /* 60*2 + margin(4)*2 */
+      background-color: #3399FF; color: white;
+    }
+    .btn-wide:hover { background-color: #2b80d6; }
+
+    /* 다음 문제 버튼 */
+    .btn-new { 
+      font-size: 20px; padding: 10px 20px; border: none; border-radius: 10px; 
+      cursor: pointer; margin-top: 15px; color: white; background-color: #FF9800; width: 320px; 
+    }
+    .btn-new:disabled { background-color: #ccc; cursor: not-allowed; }
+
+    /* 결과 메시지 영역 */
+    #result1 { min-height: 45px; margin-top: 20px; padding: 5px; border-radius: 5px;}
+    
+    /* 함수 상자 및 히스토리 테이블 영역 */
+    .machine-area {
+      display: flex; justify-content: center; align-items: flex-start; gap: 30px; margin: 20px 0;
+    }
+    .machine-box {
+      width: 120px; height: 120px; background: #333; color: #0f0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: bold; border-radius: 15px; border: 4px solid #555;
+      font-family: monospace;
+      flex-shrink: 0; 
+    }
+    
+    /* 히스토리 테이블 (스크롤 제거) */
+    .history-container {
+      min-width: 200px;
+    }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 18px; }
+    th { background-color: #eee; }
+
+    .input-section { margin: 15px 0; }
+  </style>
+</head>
+<body>
+  <center>
+    <h1>함수 상자 규칙 찾기</h1>
+    <p>숫자를 넣고 <b>확인</b>을 눌러보세요.<br>규칙 $y = ax + b$ 를 찾으면 정답을 입력하세요.</p>
+
+    <!-- 기계 및 히스토리 영역 -->
+    <div class="machine-area">
+      <div class="machine-box" id="machineDisplay">f(x)</div>
+      
+      <div class="history-container">
+        <table id="historyTable">
+          <thead><tr><th>입력($x$)</th><th>출력($y$)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 1. 테스트 입력 영역 -->
+    <div class="input-section" style="background: #f0f0f0; padding: 10px; border-radius: 10px; width: 340px;">
+      <span style="font-size: 20px;">$x$ 값 입력 : </span>
+      <input type="text" id="inputTest" class="input-box selected" readonly onclick="selectInput('test')">
+    </div>
+
+    <!-- 2. 정답 추론 영역 -->
+    <div class="input-section">
+      <span style="font-size: 24px;">$y =$</span>
+      <input type="text" id="inputA" class="input-box" readonly onclick="selectInput('a')">
+      <span style="font-size: 24px;">$x +$</span>
+      <input type="text" id="inputB" class="input-box" readonly onclick="selectInput('b')">
+    </div>
+
+    <!-- 키패드 -->
+    <div style="width: 340px;">
+      <button class="button" onclick="appendNumber(1)">1</button>
+      <button class="button" onclick="appendNumber(2)">2</button>
+      <button class="button" onclick="appendNumber(3)">3</button>
+      <button class="button" onclick="appendNumber(4)">4</button>
+      <button class="button" onclick="appendNumber(5)">5</button><br>
+      
+      <button class="button" onclick="appendNumber(6)">6</button>
+      <button class="button" onclick="appendNumber(7)">7</button>
+      <button class="button" onclick="appendNumber(8)">8</button>
+      <button class="button" onclick="appendNumber(9)">9</button>
+      <button class="button" onclick="appendNumber(0)">0</button><br>
+      
+      <!-- 기능키 줄 -->
+      <button class="button" onclick="appendNumber('-')">-</button>
+      <button class="button" onclick="clearInput()">C</button>
+      <button class="button" onclick="backspace()">←</button>
+      <button class="button btn-wide" onclick="handleConfirm()">확인</button>
+      
+      <br>
+      <button id="nextBtn" class="btn-new" onclick="initGame()" disabled>다음 문제 (Space)</button>
+    </div>
+
+    <hr/>
+    <div id="result1" style="font-size:30px;">정답여부</div>
+    <div id="result2" style="font-size:30px;">0번 정답입니다.</div>
+    <div id="result3" style="font-size:30px;">0번 틀렸습니다.</div>
+
+  </center>
+
+  <script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // 상태 변수
+    let targetA = 0;
+    let targetB = 0;
+    let selectedInputId = 'inputTest'; 
+    
+    let winCount = 0;
+    let loseCount = 0;
+
+    // 게임 초기화
+    function initGame() {
+      // a: -9 ~ 9 (0 제외)
+      targetA = 0;
+      while(targetA === 0) targetA = Math.floor(Math.random() * 19) - 9;
+      // b: -20 ~ 20
+      targetB = Math.floor(Math.random() * 41) - 20;
+
+      // UI 초기화
+      document.getElementById('inputTest').value = "";
+      document.getElementById('inputA').value = "";
+      document.getElementById('inputB').value = "";
+      document.querySelector('#historyTable tbody').innerHTML = "";
+      
+      const machine = document.getElementById('machineDisplay');
+      machine.innerText = "f(x)";
+      machine.style.color = "#0f0";
+
+      resetResultMsg();
+      
+      // 입력 포커스 초기화
+      selectInput('test');
+      document.getElementById('nextBtn').disabled = true;
+    }
+
+    // 입력창 선택
+    function selectInput(type) {
+      document.getElementById('inputTest').classList.remove('selected');
+      document.getElementById('inputA').classList.remove('selected');
+      document.getElementById('inputB').classList.remove('selected');
+
+      if (type === 'test') {
+        selectedInputId = 'inputTest';
+      } else if (type === 'a') {
+        selectedInputId = 'inputA';
+      } else if (type === 'b') {
+        selectedInputId = 'inputB';
+      }
+      
+      const target = document.getElementById(selectedInputId);
+      target.classList.add('selected');
+      
+      resetResultMsg();
+    }
+
+    // 결과 메시지 초기화
+    function resetResultMsg() {
+      const res = document.getElementById('result1');
+      res.textContent = "";
+      res.style.backgroundColor = "white";
+      res.style.color = "black";
+    }
+
+    // 키패드 입력 로직 (범위 제한 추가됨)
+    function appendNumber(num) {
+      const input = document.getElementById(selectedInputId);
+      
+      // 마이너스 중복 방지
+      if (num === '-' && input.value.includes('-')) return; 
+      
+      // [범위 제한] x값 입력 시 -999 ~ 999 체크
+      if (selectedInputId === 'inputTest') {
+        let nextStr = input.value + num;
+        
+        // '-'만 있는 경우나 빈 문자열은 허용
+        if (nextStr !== '-' && nextStr !== '') {
+           let nextNum = parseInt(nextStr);
+           // 범위 체크
+           if (!isNaN(nextNum)) {
+             if (nextNum < -999 || nextNum > 999) {
+               return; // 입력 무시
+             }
+           }
+        }
+      }
+
+      input.value += num;
+      resetResultMsg();
+    }
+
+    function backspace() {
+      const input = document.getElementById(selectedInputId);
+      input.value = input.value.slice(0, -1);
+      resetResultMsg();
+    }
+
+    function clearInput() {
+      const input = document.getElementById(selectedInputId);
+      input.value = "";
+      resetResultMsg();
+    }
+
+    // --- 통합된 확인(Confirm) 로직 ---
+    function handleConfirm() {
+      if (selectedInputId === 'inputTest') {
+        testMachine();
+      } else {
+        checkAnswer();
+      }
+    }
+
+    // 1. 값 넣기 (테스트)
+    function testMachine() {
+      const inputVal = document.getElementById('inputTest').value.trim();
+      if (inputVal === "" || inputVal === "-") return;
+
+      const x = parseInt(inputVal);
+      const y = targetA * x + targetB;
+
+      const tbody = document.querySelector('#historyTable tbody');
+      const row = tbody.insertRow(0);
+      const cellX = row.insertCell(0);
+      const cellY = row.insertCell(1);
+      cellX.textContent = x;
+      cellY.innerHTML = `<strong>${y}</strong>`;
+
+      const machine = document.getElementById('machineDisplay');
+      machine.innerText = y;
+      machine.style.color = "#ffeb3b"; 
+      
+      setTimeout(() => {
+        machine.innerText = "f(x)";
+        machine.style.color = "#0f0";
+      }, 800);
+
+      document.getElementById('inputTest').value = "";
+      selectInput('test'); 
+    }
+
+    // 2. 정답 확인
+    function checkAnswer() {
+      const valA = document.getElementById('inputA').value.trim();
+      const valB = document.getElementById('inputB').value.trim();
+
+      if (valA === "" || valB === "") return;
+
+      const userA = parseInt(valA);
+      const userB = parseInt(valB);
+
+      if (userA === targetA && userB === targetB) {
+        const res = document.getElementById('result1');
+        res.textContent = "정답입니다!";
+        res.style.backgroundColor = "green";
+        res.style.color = "white";
+        
+        winCount++;
+        document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
+        document.getElementById('nextBtn').disabled = false;
+        
+      } else {
+        const res = document.getElementById('result1');
+        let msg = "틀렸습니다!";
+        if(userA !== targetA && userB === targetB) msg = "기울기(a)가 틀렸습니다.";
+        else if(userA === targetA && userB !== targetB) msg = "y절편(b)이 틀렸습니다.";
+        
+        res.textContent = msg;
+        res.style.backgroundColor = "red";
+        res.style.color = "white";
+        
+        loseCount++;
+        document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
+      }
+    }
+
+    // 키보드 이벤트
+    document.addEventListener('keydown', e => {
+      // 숫자 키
+      if ((e.key >= '0' && e.key <= '9') || e.key === '-') {
+        appendNumber(e.key);
+      }
+      else if (e.key === 'Backspace') backspace();
+      else if (e.key === 'Escape') clearInput();
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleConfirm(); 
+      }
+      else if (e.code === 'Space') {
+        if (!document.getElementById('nextBtn').disabled) {
+          e.preventDefault();
+          initGame();
+        }
+      }
+      else if (e.key === 'Tab') {
+        e.preventDefault();
+        if (selectedInputId === 'inputTest') selectInput('a');
+        else if (selectedInputId === 'inputA') selectInput('b');
+        else selectInput('test');
+      }
+    });
+
+    // 초기 실행
+    window.onload = initGame;
+  </script>
+</body>
+</html>
