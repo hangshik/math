@@ -196,6 +196,14 @@ function clearInput() {
   display.value = "";
 }
 
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) {
+    if (n % i === 0) return false;
+  }
+  return true;
+}
+
 // 정답 확인 함수 (순서 및 거듭제곱 체크)
 function checkAnswer() {
   let input = document.getElementById('inputDisplay').value;
@@ -225,7 +233,12 @@ function checkAnswer() {
       if (isNaN(base) || isNaN(exp)) throw new Error("Invalid");
       
       userVal *= Math.pow(base, exp);
-      bases.push(base); 
+      if (!isPrime(base)) {
+      isValidSyntax = false;
+      throw new Error("Not prime");
+    }
+
+    bases.push(base);
     }
   } catch (e) {
     userVal = 0;
