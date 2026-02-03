@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=0.8">
 <title>이차방정식</title>
 <script>
   window.MathJax = {
@@ -23,13 +23,14 @@
     font-size: 24px;
     margin-bottom: 20px;
   }
-  .choices {
+    .choices {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
+    flex-direction: row;    /* 가로 정렬 */
+    flex-wrap: wrap;        /* 넘치면 다음 줄로 */
+    justify-content: center; /* 가로 가운데 정렬 */
+    gap: 15px;              /* 버튼 사이 간격 */
+    padding: 20px 0;
+    }
   .choices button {
     width: 200px;
     height: 80px;
@@ -49,7 +50,7 @@
   .wrong { background-color: #f44336 !important; color: white !important; }
   .stage-btn {
     font-size: 18px;
-    padding: 10px 20px;
+    padding: 10px 15px;
     margin: 5px;
     border-radius: 10px;
     border: none;
@@ -480,7 +481,7 @@
   function generateQuiz() {
   answered = false;
   
-  // [추가] 다음 문제 버튼을 비활성화 및 회색으로 초기화
+  // 다음 문제 버튼 초기화
   const nextBtn = document.getElementById('nextBtn');
   nextBtn.disabled = true;
   nextBtn.style.background = "gray";
@@ -490,6 +491,8 @@
 
   const questionBox = document.getElementById('questionBox');
   const choicesBox = document.getElementById('choicesBox');
+  
+  // 이전 문제 보기 삭제
   choicesBox.innerHTML = '';
 
   const question = formatEquation(a, b, c);
@@ -520,8 +523,7 @@
   let distractors = [];
   if (isPerfectSquare(D)) {
     if (isDouble) {
-      distractors = generateRationalDistractorsForRoots(correctRoots, 4);
-      distractors = distractors.map(x => x + " \\quad (중근)");
+      distractors = generateRationalDistractorsForRoots(correctRoots, 4).map(x => x + " \\quad (중근)");
     } else {
       distractors = generateRationalDistractorsForRoots(correctRoots, 4, true);
     }
@@ -537,50 +539,47 @@
 
   const choiceArr = Array.from(choicesSet).sort(() => Math.random() - 0.5);
 
-  choicesBox.innerHTML = "";
-  for (let row = 0; row < 3; row++) {
-    const rowDiv = document.createElement('div');
-    rowDiv.style.display = "flex";
-    rowDiv.style.justifyContent = "center";
-    rowDiv.style.marginBottom = "8px";
-    for (let col = 0; col < 2; col++) {
-      const idx = row * 2 + col;
-      if (idx >= choiceArr.length) break;
-      const opt = choiceArr[idx];
-      const btn = document.createElement('button');
-      btn.innerHTML = `$$x = ${opt}$$`;
-      btn.dataset.correct = (opt === correct) ? "true" : "false";
-      btn.style.margin = "4px";
-      btn.style.minWidth = "120px";
-      btn.style.fontSize = "20px";
+  // 버튼 생성 (CSS .choices가 가로 배치를 제어함)
+  choiceArr.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.innerHTML = `$$x = ${opt}$$`;
+    btn.dataset.correct = (opt === correct) ? "true" : "false";
+    
+    // 버튼 스타일 유지
+    btn.style.width = "190px"; // 필요시 조절
+    btn.style.height = "80px";
+    btn.style.fontSize = "18px";
+    btn.style.borderRadius = "10px";
+    btn.style.border = "1px solid #ccc";
+    btn.style.background = "white";
+    btn.style.cursor = "pointer";
 
-      btn.addEventListener('click', () => {
-        if (answered) return;
-        answered = true;
+    btn.addEventListener('click', () => {
+      if (answered) return;
+      answered = true;
 
-        // [추가] 정답/오답 선택 시 '다음 문제' 버튼 활성화 및 색상 변경
-        nextBtn.disabled = false;
-        nextBtn.style.background = "#3399FF";
-        nextBtn.style.cursor = "pointer";
+      // 다음 문제 버튼 활성화
+      nextBtn.disabled = false;
+      nextBtn.style.background = "#3399FF";
+      nextBtn.style.cursor = "pointer";
 
-        if (btn.dataset.correct === "true") {
-          btn.classList.add('correct');
-          correctTotal++;
-        } else {
-          btn.classList.add('wrong');
-          wrongTotal++;
-          Array.from(choicesBox.querySelectorAll('button')).forEach(b => {
-            if (b.dataset.correct === "true") b.classList.add('correct');
-          });
-        }
-        updateScore();
-        Array.from(choicesBox.querySelectorAll('button')).forEach(b => b.disabled = true);
-      });
+      if (btn.dataset.correct === "true") {
+        btn.classList.add('correct');
+        correctTotal++;
+      } else {
+        btn.classList.add('wrong');
+        wrongTotal++;
+        Array.from(choicesBox.querySelectorAll('button')).forEach(b => {
+          if (b.dataset.correct === "true") b.classList.add('correct');
+        });
+      }
+      updateScore();
+      Array.from(choicesBox.querySelectorAll('button')).forEach(b => b.disabled = true);
+    });
 
-      rowDiv.appendChild(btn);
-    }
-    choicesBox.appendChild(rowDiv);
-  }
+    choicesBox.appendChild(btn);
+  });
+
   MathJax.typesetPromise();
 }
 
