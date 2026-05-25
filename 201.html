@@ -2,144 +2,351 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>일차부등식과 수직선</title>
+<link rel="stylesheet" href="style.css">
 <script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 <style>
-  body { 
-    font-family: sans-serif; 
-    text-align: center; 
-    text-size-adjust: 100%;
-    margin: 0;
-    padding: 10px;
-    background-color: #f4f4f4;
-  }
-  .container { 
-    max-width: 700px; 
-    margin: 0 auto; 
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  
-  /* 반응형 그리드 레이아웃 */
-  .canvas-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 기본 2열 */
-    gap: 15px;
-    margin-top: 20px;
-    justify-items: center;
-  }
-  
-  /* 화면이 600px보다 작으면(모바일) 1열로 변경 */
-  @media (max-width: 600px) {
-    .canvas-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  
-  .canvas-item {
-    cursor: pointer;
-    border: 2px solid #ccc;
-    border-radius: 10px;
-    transition: transform 0.2s, border-color 0.2s;
-    background-color: #fff;
+    /* 일차부등식 퀴즈 고유 디자인 시스템 규격 연동 */
+    body { background: var(--bg); font-family: 'Pretendard', sans-serif; color: var(--text-main); margin: 0; padding: 15px; }
+    .main-wrapper { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
     
-    /* 캔버스 반응형 설정 */
-    width: 100%; 
-    max-width: 350px; /* 너무 커지지 않게 제한 */
-    height: auto;     /* 비율 유지 */
-    aspect-ratio: 300 / 130; /* 공간 확보 */
-  }
-  
-  .canvas-item:hover {
-    transform: scale(1.02);
-    border-color: #3399FF;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  }
-  
-  #problem { 
-    font-size: 32px; 
-    margin: 20px 0; 
-    font-weight: bold; 
-    word-break: break-all;
-  }
-  
-  /* 결과 표시 스타일 */
-  #result1, #result2, #result3 {
-    font-size: 20px;
-    margin: 8px 0;
-    padding: 8px;
-    border-radius: 5px;
-    font-weight: bold;
-  }
-  #result1 { min-height: 30px; }
-  
-  hr { margin: 20px 0; border: 0; border-top: 1px solid #ddd; }
-  
-  h1 { font-size: 24px; margin-bottom: 10px; }
-  p { font-size: 16px; color: #555; }
+    h1 { text-align: center; font-size: 32px; font-weight: 800; margin: 10px 0 5px 0; }
+    
+    /* 공통 컨테이너 베이스 보정 */
+    .container-fixed { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center; border: 1px solid var(--border-color); }
+    
+    /* 영역 2: 문제 출제부 스크린 디자인 */
+    .problem-box { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    #problem { font-size: 34px; font-weight: 800; margin: 12px 0; word-break: break-all; min-height: 50px; color: var(--text-main); }
+
+    /* 대화형 선택지 수직선 6분할 격자 그리드 */
+    .canvas-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        width: 100%;
+        margin-top: 15px;
+    }
+    @media (max-width: 768px) { .canvas-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .canvas-grid { grid-template-columns: 1fr; } }
+
+    /* 동적 드로잉 수직선 개별 카드 카드 */
+    .canvas-item {
+        cursor: pointer;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        background-color: #ffffff;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 300 / 130;
+        box-sizing: border-box;
+    }
+    .canvas-item:hover { transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+
+    /* 결과 피드백 안내 문구 영역 */
+    #result-message {
+        font-size: 17px;
+        font-weight: 700;
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 8px;
+        min-height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .msg-default { background-color: #f8f9fa; color: var(--text-sub); border: 1px solid var(--border-color); }
+    .msg-success { background-color: var(--success); color: #ffffff; }
+    .msg-danger { background-color: var(--danger); color: #ffffff; }
+
+    /* 🌟 [수정 반영] 버튼이 컨테이너의 가로 폭 전체를 완벽하게 100% 채우도록 와이드 배치 구성 */
+    .control-area { 
+        width: 100%; 
+        box-sizing: border-box;
+    }
+    .next-btn {
+        width: 100%; /* 부모의 너비를 완전하게 100% 충족 */
+        height: 54px; /* 모바일 및 데스크톱 터치 접근성을 고려한 최적의 높이 */
+        background-color: var(--active);
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.15s, transform 0.1s;
+        box-shadow: 0 3px 10px rgba(0,123,255,0.2);
+        display: block;
+        margin: 0;
+        box-sizing: border-box;
+    }
+    .next-btn:hover { background-color: var(--active-hover); }
+    .next-btn:active { transform: scale(0.99); } /* 클릭 시 입체적인 반동 피드백 추가 */
+
+    /* 누적 리포트 및 테이블 전용 마크업 구조화 */
+    .record-box-red {
+        border-left: 5px solid #dc3545 !important;
+    }
+    .record-title-red {
+        color: #dc3545 !important;
+    }
+    .record-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
+    .record-header h2 { margin: 0; }
+    
+    .reset-btn {
+        background: #ffffff;
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        padding: 5px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .reset-btn:hover { background-color: var(--danger); color: #ffffff; }
+
+    /* 스코어 강조 디자인 색상 다채널 세분화 */
+    .score-green { color: #28a745 !important; font-weight: 800; } 
+    .score-red { color: var(--danger) !important; font-weight: 800; }   
+    .score-blue { color: #007bff !important; font-weight: 800; }  
+    .score-black { color: var(--text-main) !important; }
+    
+    /* 키보드 단축키 배지 래퍼 */
+    .key-badge {
+        border: 1px solid #b5b5b5;
+        background-color: #fcfcfc;
+        padding: 1px 5px;
+        border-radius: 4px;
+        box-shadow: 0 1.5px 0 #b5b5b5;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0 2px;
+    }
+
+    /* 커스텀 모달 팝업 오버레이 디자인 */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.2s ease; z-index: 1000;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: auto; }
+    .modal-window { background-color: var(--card-bg); padding: 22px; border-radius: 10px; width: 85%; max-width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); text-align: center; }
+    .modal-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
+    .modal-btn { padding: 9px 15px; font-size: 14px; font-weight: 700; border-radius: 6px; cursor: pointer; border: none; flex: 1; }
+    .modal-btn-confirm { background-color: var(--danger); color: #ffffff; }
+    .modal-btn-cancel { background-color: #e0e0e0; color: var(--text-main); }
 </style>
 </head>
-<body>
-<div class="container">
-  <h1>일차부등식과 수직선</h1>
-  <p>알맞은 수직선 그림을 선택하세요.</p>
-  
-  <div id="problem">$$ -2x + 4 < 10 $$</div>
+<body oncontextmenu="return false;">
 
-  <!-- 그림 선택 영역 -->
-  <div class="canvas-grid">
-    <!-- width, height는 내부 해상도용 (고정) -->
-    <canvas id="cvs1" class="canvas-item" width="300" height="130" onclick="checkAnswer(1)"></canvas>
-    <canvas id="cvs2" class="canvas-item" width="300" height="130" onclick="checkAnswer(2)"></canvas>
-    <canvas id="cvs3" class="canvas-item" width="300" height="130" onclick="checkAnswer(3)"></canvas>
-    <canvas id="cvs4" class="canvas-item" width="300" height="130" onclick="checkAnswer(4)"></canvas>
-  </div>
+<div class="main-wrapper">
 
-  <hr/>
-  
-  <!-- 결과 및 점수 표시 -->
-  <div id="result1">정답여부</div>
-  <div id="result2">0번 정답입니다.</div>
-  <div id="result3">0번 틀렸습니다.</div>
+    <div class="puzzle-title-area">
+        <h1>일차부등식과 수직선</h1>
+    </div>
+
+    <div id="stage-area" class="container-fixed" style="display: none; text-align: left;">
+        <h2 style="font-size: 18px; font-weight: 700; margin: 0 0 10px 0;">단계 선택</h2>
+        <div style="display: flex; gap: 8px;">
+            <button style="padding: 10px 18px; font-weight:700; cursor:pointer; background:#fff; border:1px solid var(--border-color); border-radius:6px;" onclick="selectStage(1)">1단계</button>
+        </div>
+    </div>
+
+    <div class="container-fixed problem-box">
+        <div id="problem">$$ -2x &lt; 10 $$</div>
+
+        <div class="canvas-grid">
+            <canvas id="cvs1" class="canvas-item" width="300" height="130" onclick="checkAnswer(1)"></canvas>
+            <canvas id="cvs2" class="canvas-item" width="300" height="130" onclick="checkAnswer(2)"></canvas>
+            <canvas id="cvs3" class="canvas-item" width="300" height="130" onclick="checkAnswer(3)"></canvas>
+            <canvas id="cvs4" class="canvas-item" width="300" height="130" onclick="checkAnswer(4)"></canvas>
+            <canvas id="cvs5" class="canvas-item" width="300" height="130" onclick="checkAnswer(5)"></canvas>
+            <canvas id="cvs6" class="canvas-item" width="300" height="130" onclick="checkAnswer(6)"></canvas>
+        </div>
+        <div class="feedback-row" style="display: flex; gap: 10px; width: 100%; margin-top: 15px; align-items: center;">
+            <button class="keypad-btn" onclick="generateNewProblemAction()" style="width: 370px; min-width: 120px; white-space: nowrap;">새로운 문제</button>
+            <div id="result-message" class="msg-default" style="margin-top: 0;">문제를 풀어보세요!</div>
+        </div>
+        <!-- <div id="result-message" class="msg-default">문제를 풀어보세요!</div> -->
+    </div>
+
+    <!-- <div class="control-area">
+        <button class="keypad-btn" onclick="generateNewProblemAction()">새로운 문제</button>
+    </div> -->
+
+    <div id="record-guide" class="guide-box shortcuts record-box-red">
+        <div class="record-header">
+            <h2 class="guide-title record-title-red">📊 누적 기록</h2>
+            <button class="reset-btn" onclick="openResetModal()">누적기록 초기화</button>
+        </div>
+        <table class="record-table" style="margin-top: 5px;">
+            <thead>
+                <tr>
+                    <th>구분</th>
+                    <th>성공 횟수</th>
+                    <th>실패 횟수</th>
+                    <th>새로운 문제</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: 700;">기록</td>
+                    <td><span id="win-display">0</span>회</td>
+                    <td><span id="lose-display">0</span>회</td>
+                    <td><span id="new-problem-display">0</span>회</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="rule-guide" class="guide-box rules" style="display: none;">
+        <div class="guide-header"><h2 class="guide-title">◈ 퍼즐 규칙 개요</h2></div>
+        <ul style="padding-left: 15px; margin: 5px 0 0 0; line-height: 1.6; color: var(--text-sub);">
+            <li>• 무작위 일차부등식을 암산 혹은 이항 연산을 통해 정밀하게 계산합니다.</li>
+            <li>• 해의 방향성($>$, $<$) 및 경계값 마킹 채움 상태(●, ○)를 매칭합니다.</li>
+        </ul>
+    </div>
+
+    <div id="shortcut-guide" class="guide-box shortcuts" style="display: none;">
+        <div class="guide-header"><h2 class="guide-title">⌨ 키보드 빠른 제어 가이드</h2></div>
+        <ul style="padding-left: 15px; margin: 5px 0 0 0; line-height: 1.6; color: var(--text-sub);">
+            <li>• <span class="key-badge">1</span> ~ <span class="key-badge">6</span> 단축키로 해당하는 번호의 수직선을 바로 제출할 수 있습니다.</li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="custom-modal" class="modal-overlay">
+    <div class="modal-window">
+        <div style="font-size:17px; font-weight:700; margin-bottom:10px;">누적 기록 초기화</div>
+        <div style="font-size:14px; color:var(--text-sub); line-height:1.5;">누적 기록을 모두 삭제하시겠습니까?</div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeResetModal()">취소</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmReset()">초기화</button>
+        </div>
+    </div>
 </div>
 
 <script>
-// 전역 변수
-let wincount = 0;
-let losecount = 0;
-let answerIndex = 0;
-let isProcessing = false; // 중복 클릭 방지
+const CONFIG = {
+  successNotification: 'inline',
+  showStageButtons: false,        
+  showAccumulatedRecord: true,    
+  showPuzzleRules: false,         
+  showKeyboardShortcuts: false    
+};
 
-// 최대공약수 함수 (약분용)
-function gcd(a, b) {
-  return b === 0 ? a : gcd(b, a % b);
+let gameState = {
+  wincount: 0,
+  losecount: 0,
+  newProblemCount: 0, 
+  currentStage: 1,
+  hasActiveProblem: false,
+  problemData: {
+    a: 0, b: 0, c: 0, type: 0,
+    configs: [], 
+    wrongAnswers: [] 
+  }
+};
+
+let answerIndex = 0;
+let isSolved = false; 
+
+function initLayoutByConfig() {
+  document.getElementById('stage-area').style.display = CONFIG.showStageButtons ? 'block' : 'none';
+  document.getElementById('record-guide').style.display = CONFIG.showAccumulatedRecord ? 'block' : 'none';
+  document.getElementById('rule-guide').style.display = CONFIG.showPuzzleRules ? 'block' : 'none';
+  document.getElementById('shortcut-guide').style.display = CONFIG.showKeyboardShortcuts ? 'block' : 'none';
 }
 
-// 수직선 그리기 함수
-// valueObj: {n: 분자, d: 분모} 형태
+function loadSavedData() {
+  const saved = localStorage.getItem('inequality_puzzle_state_v5');
+  if (saved) {
+    try { 
+      gameState = JSON.parse(saved); 
+      if (gameState.newProblemCount === undefined) gameState.newProblemCount = 0;
+    } catch(e) { console.error(e); }
+  }
+  updateRecordDisplay('default');
+}
+
+function saveData() {
+  localStorage.setItem('inequality_puzzle_state_v5', JSON.stringify(gameState));
+}
+
+function updateRecordDisplay(mode = 'default') {
+  const winEl = document.getElementById('win-display');
+  const loseEl = document.getElementById('lose-display');
+  const newProblemEl = document.getElementById('new-problem-display');
+
+  winEl.textContent = gameState.wincount;
+  loseEl.textContent = gameState.losecount;
+  newProblemEl.textContent = gameState.newProblemCount;
+
+  if (mode === 'win') {
+    winEl.className = 'score-green'; loseEl.className = 'score-black'; newProblemEl.className = 'score-black';
+  } else if (mode === 'lose') {
+    winEl.className = 'score-black'; loseEl.className = 'score-red'; newProblemEl.className = 'score-black';
+  } else if (mode === 'new') {
+    winEl.className = 'score-black'; loseEl.className = 'score-black'; newProblemEl.className = 'score-blue';
+  } else {
+    winEl.className = 'score-black'; loseEl.className = 'score-black'; newProblemEl.className = 'score-black';
+  }
+}
+
+function openResetModal() { document.getElementById('custom-modal').classList.add('show'); }
+function closeResetModal() { document.getElementById('custom-modal').classList.remove('show'); }
+function confirmReset() {
+  gameState.wincount = 0; gameState.losecount = 0; gameState.newProblemCount = 0;
+  saveData(); updateRecordDisplay('default');
+  const msgBox = document.getElementById('result-message');
+  msgBox.textContent = "누적 기록이 전면 초기화되었습니다.";
+  msgBox.className = "msg-default";
+  closeResetModal();
+}
+
+function selectStage(stg) {
+  gameState.currentStage = stg; saveData();
+  generateNewProblemAction();
+}
+
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
 function drawNumberLine(ctx, valueObj, direction, isInclusive) {
   const w = 300, h = 130;
-  const midY = 70;      // 수직선 y위치
-  const stalkH = 40;    // 깃대 높이
+  const midY = 60;      
+  const stalkH = 35;    
   const centerX = w / 2;
-  const endX = 280;     // 수직선 끝 x좌표
-  const radius = 6;     // 동그라미 반지름
+  const startX = 20;
+  const endX = 280;     
+  const radius = 6;     
 
   ctx.clearRect(0, 0, w, h);
 
-  // 1. 메인 수직선 (가로축) 그리기
   ctx.beginPath();
-  ctx.moveTo(20, midY);
+  ctx.moveTo(startX, midY);
   ctx.lineTo(endX, midY);
-  ctx.strokeStyle = "black";
+  ctx.strokeStyle = "#222222";
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // 1-1. 수직선 오른쪽 화살표 (>)
+  ctx.beginPath();
+  ctx.moveTo(startX, midY);
+  ctx.lineTo(startX + 8, midY - 5);
+  ctx.moveTo(startX, midY);
+  ctx.lineTo(startX + 8, midY + 5);
+  ctx.stroke();
+
   ctx.beginPath();
   ctx.moveTo(endX, midY);
   ctx.lineTo(endX - 8, midY - 5); 
@@ -147,96 +354,197 @@ function drawNumberLine(ctx, valueObj, direction, isInclusive) {
   ctx.lineTo(endX - 8, midY + 5); 
   ctx.stroke();
 
-  // 1-2. x 레이블 표시
-  ctx.font = "italic bold 18px Times New Roman";
-  ctx.fillStyle = "black";
-  ctx.textAlign = "left";
-  ctx.fillText("x", endX + 5, midY + 5);
-
-  // 2. 기준 눈금 (중앙)
   ctx.beginPath();
   ctx.moveTo(centerX, midY - 5);
   ctx.lineTo(centerX, midY + 5);
   ctx.stroke();
   
-  // *** 값 그리기 (정수 vs 분수) ***
-  ctx.fillStyle = "black";
-  ctx.textAlign = "center";
+  ctx.fillStyle = "#222222";
   
-  if (valueObj.d === 1) {
-    // 정수인 경우
-    ctx.font = "16px Arial";
-    ctx.fillText(valueObj.n, centerX, midY + 25);
+  let nVal = valueObj.n;
+  let dVal = valueObj.d;
+
+  if (dVal === 1) {
+    ctx.font = "bold 24px 'Pretendard', Arial"; 
+    ctx.textAlign = "center";
+    ctx.fillText(nVal, centerX, midY + 32);
   } else {
-    // 분수인 경우
-    ctx.font = "14px Arial";
-    const numStr = valueObj.n.toString();
-    const denStr = valueObj.d.toString();
+    ctx.font = "bold 21px 'Pretendard', Arial"; 
     
-    // 분자, 분모 그리기
-    ctx.fillText(numStr, centerX, midY + 25); // 분자
+    const isNegative = nVal < 0;
+    const absNumStr = Math.abs(nVal).toString();
+    const denStr = dVal.toString();
     
-    // 분수선 그리기
-    const textWidth = Math.max(ctx.measureText(numStr).width, ctx.measureText(denStr).width);
-    const lineWidth = textWidth + 6;
+    const numWidth = ctx.measureText(absNumStr).width;
+    const denWidth = ctx.measureText(denStr).width;
+    const maxFracWidth = Math.max(numWidth, denWidth);
+    const lineLength = maxFracWidth + 8;
     
-    ctx.beginPath();
-    ctx.moveTo(centerX - lineWidth/2, midY + 30);
-    ctx.lineTo(centerX + lineWidth/2, midY + 30);
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    
-    ctx.fillText(denStr, centerX, midY + 45); // 분모
+    if (isNegative) {
+      const minusStr = "-";
+      const minusWidth = ctx.measureText(minusStr).width;
+      const spacing = 4; 
+      const totalWidth = minusWidth + spacing + lineLength;
+      
+      const startDrawX = centerX - totalWidth / 2;
+      const minusX = startDrawX + minusWidth / 2;
+      const fracCenterX = startDrawX + minusWidth + spacing + lineLength / 2;
+      
+      ctx.textAlign = "center";
+      ctx.fillText(minusStr, minusX, midY + 41);
+      ctx.fillText(absNumStr, fracCenterX, midY + 28);
+      ctx.fillText(denStr, fracCenterX, midY + 56);
+      
+      ctx.beginPath();
+      ctx.moveTo(fracCenterX - lineLength / 2, midY + 35);
+      ctx.lineTo(fracCenterX + lineLength / 2, midY + 35);
+      ctx.strokeStyle = "#222222";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    } else {
+      ctx.textAlign = "center";
+      ctx.fillText(absNumStr, centerX, midY + 28);
+      ctx.fillText(denStr, centerX, midY + 56);
+      
+      ctx.beginPath();
+      ctx.moveTo(centerX - lineLength / 2, midY + 35);
+      ctx.lineTo(centerX + lineLength / 2, midY + 35);
+      ctx.strokeStyle = "#222222";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
   }
 
-  // 3. 해의 범위 그리기 (빨간색)
-  
-  // (1) 동그라미 (O) 그리기 - 수직선 위에 위치
+  const highlightColor = "#dc3545";
+
   ctx.beginPath();
   ctx.arc(centerX, midY, radius, 0, Math.PI * 2);
-  
-  ctx.fillStyle = isInclusive ? "red" : "white"; 
+  ctx.fillStyle = isInclusive ? highlightColor : "#ffffff"; 
   ctx.fill();
-  
-  ctx.strokeStyle = "red"; 
+  ctx.strokeStyle = highlightColor; 
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // (2) 수직 기둥
   ctx.beginPath();
-  ctx.strokeStyle = "red";
+  ctx.strokeStyle = highlightColor;
   ctx.lineWidth = 3;
-
   ctx.moveTo(centerX, midY - radius); 
   ctx.lineTo(centerX, midY - stalkH);
   
-  // (3) 방향 화살표
-  if (direction === 'right') { 
-    ctx.lineTo(endX, midY - stalkH); 
-  } else { 
-    ctx.lineTo(20, midY - stalkH); 
+  let targetEndX = (direction === 'right') ? endX : startX;
+  ctx.lineTo(targetEndX, midY - stalkH);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.strokeStyle = highlightColor;
+  ctx.lineWidth = 3;
+  if (direction === 'right') {
+    ctx.moveTo(endX, midY - stalkH);
+    ctx.lineTo(endX - 8, midY - stalkH - 5);
+    ctx.moveTo(endX, midY - stalkH);
+    ctx.lineTo(endX - 8, midY - stalkH + 5);
+  } else {
+    ctx.moveTo(startX, midY - stalkH);
+    ctx.lineTo(startX + 8, midY - stalkH - 5);
+    ctx.moveTo(startX, midY - stalkH);
+    ctx.lineTo(startX + 8, midY - stalkH + 5);
   }
   ctx.stroke();
 }
 
-// 문제 생성 함수
-function nextProblem() {
-  isProcessing = false;
-  resultreset();
+function generateNewProblemAction() {
+  gameState.hasActiveProblem = false; 
+  gameState.newProblemCount++; 
+  saveData();
+  updateRecordDisplay('new');
+  loadOrGenerateProblem();
+}
+
+function loadOrGenerateProblem() {
+  isSolved = false;
+  const msgBox = document.getElementById('result-message');
   
-  // 랜덤 부등식 생성: ax + b < c
-  let a = 0;
-  while(a === 0) a = Math.floor(Math.random() * 11) - 5; 
-  let b = Math.floor(Math.random() * 21) - 10;
-  let c = Math.floor(Math.random() * 21) - 10;
-  
-  // 부등호 타입: 0:<, 1:>, 2:<=, 3:>=
-  let type = Math.floor(Math.random() * 4);
+  if (!gameState.hasActiveProblem) {
+    msgBox.textContent = "부등식의 해에 알맞은 수직선 그래프를 고르세요.";
+    msgBox.className = "msg-default";
+  }
+
+  let a, b, c, type, configs;
+  let valObj, wrongValObj;
+
+  if (gameState.hasActiveProblem && gameState.problemData) {
+    const data = gameState.problemData;
+    a = data.a; b = data.b; c = data.c; type = data.type;
+    configs = data.configs;
+    valObj = data.valObj;
+    wrongValObj = data.wrongValObj;
+  } else {
+    while(a === 0 || !a) a = Math.floor(Math.random() * 11) - 5; 
+    b = Math.floor(Math.random() * 21) - 10;
+    c = Math.floor(Math.random() * 21) - 10;
+    type = Math.floor(Math.random() * 4);
+
+    let isRight = (type === 0 || type === 2) ? (a < 0) : (a > 0);
+    let isInclusive = (type >= 2);
+
+    let rawNum = c - b;
+    let rawDen = a;
+    if (rawDen < 0) { rawNum = -rawNum; rawDen = -rawDen; }
+    let common = Math.abs(gcd(rawNum, rawDen));
+    valObj = { n: rawNum / common, d: rawDen / common };
+
+    let wNum = (c + b); 
+    if (b === 0 || wNum === rawNum) { 
+      wNum = rawNum + (a * 2); 
+    } 
+    let wDen = a;
+    if (wDen < 0) { wNum = -wNum; wDen = -wDen; }
+    let wCommon = Math.abs(gcd(wNum, wDen));
+    wrongValObj = { n: wNum / wCommon, d: wDen / wCommon };
+
+    let allPool = [];
+    const directions = ['left', 'right'];
+    const inclusives = [true, false];
+    const valueOptions = ['correct', 'wrong'];
+
+    directions.forEach(d => {
+      inclusives.forEach(i => {
+        valueOptions.forEach(v => {
+          let isAns = (d === (isRight ? 'right' : 'left') && i === isInclusive && v === 'correct');
+          allPool.push({ dir: d, inc: i, useCorrectVal: (v === 'correct'), isAns: isAns });
+        });
+      });
+    });
+
+    let finalConfigs = [];
+    let ansIdx = allPool.findIndex(item => item.isAns);
+    finalConfigs.push(allPool.splice(ansIdx, 1)[0]);
+
+    allPool.sort(() => Math.random() - 0.5);
+    for(let i = 0; i < 5; i++) {
+      finalConfigs.push(allPool[i]);
+    }
+
+    finalConfigs.sort(() => Math.random() - 0.5);
+    configs = finalConfigs;
+
+    gameState.hasActiveProblem = true;
+    gameState.problemData = {
+      a: a, b: b, c: c, type: type,
+      configs: configs,
+      valObj: valObj,
+      wrongValObj: wrongValObj,
+      wrongAnswers: []
+    };
+    saveData();
+  }
+
   let operatorStr = ["<", ">", "\\le", "\\ge"][type];
   
-  // 수식 표시
-  let bStr = b >= 0 ? "+ " + b : "- " + Math.abs(b);
+  let bStr = "";
+  if (b > 0) { bStr = "+ " + b; } 
+  else if (b < 0) { bStr = "- " + Math.abs(b); }
+  
   let aStr = a === 1 ? "" : (a === -1 ? "-" : a);
   let tex = `${aStr}x ${bStr} ${operatorStr} ${c}`;
   
@@ -244,96 +552,76 @@ function nextProblem() {
   problemDiv.innerHTML = `$$ ${tex} $$`;
   MathJax.typesetPromise([problemDiv]);
 
-  // 정답 계산 (분수 형태 유지)
-  let rawNum = c - b;
-  let rawDen = a;
-  
-  // 분모가 음수면 부호 이동
-  if (rawDen < 0) {
-    rawNum = -rawNum;
-    rawDen = -rawDen;
-  }
-  
-  // 기약분수 만들기
-  let common = Math.abs(gcd(rawNum, rawDen));
-  let num = rawNum / common;
-  let den = rawDen / common;
-  
-  let valObj = { n: num, d: den };
-
-  // 방향 결정
-  let isRight;
-  if (type === 0 || type === 2) { // <, <=
-    isRight = (a < 0); 
-  } else { // >, >=
-    isRight = (a > 0);
-  }
-  
-  let isInclusive = (type >= 2); 
-
-  // 보기 4개 생성
-  let configs = [];
-  configs.push({ dir: isRight ? 'right' : 'left', inc: isInclusive, isAns: true });
-  configs.push({ dir: isRight ? 'left' : 'right', inc: isInclusive, isAns: false });
-  configs.push({ dir: isRight ? 'right' : 'left', inc: !isInclusive, isAns: false });
-  configs.push({ dir: isRight ? 'left' : 'right', inc: !isInclusive, isAns: false });
-  
-  configs.sort(() => Math.random() - 0.5);
-  
-  // 캔버스에 그리기
-  for(let i=0; i<4; i++) {
+  for(let i=0; i<6; i++) {
     const cvs = document.getElementById(`cvs${i+1}`);
     const ctx = cvs.getContext('2d');
+    let targetVal = configs[i].useCorrectVal ? valObj : wrongValObj;
     
-    drawNumberLine(ctx, valObj, configs[i].dir, configs[i].inc);
+    drawNumberLine(ctx, targetVal, configs[i].dir, configs[i].inc);
     
     if (configs[i].isAns) answerIndex = i + 1;
-    cvs.style.borderColor = "#ccc";
+
+    if (gameState.problemData.wrongAnswers && gameState.problemData.wrongAnswers.includes(i + 1)) {
+      cvs.style.borderColor = "var(--danger)";
+    } else {
+      cvs.style.borderColor = "var(--border-color)";
+    }
   }
 }
 
-// 결과 초기화
-function resultreset() {
-    const r1 = document.getElementById("result1");
-    r1.textContent = "정답여부";
-    r1.style.backgroundColor = "white";
-    r1.style.color = "black";
-}
-
-// 정답 확인 함수
 function checkAnswer(idx) {
-  if (isProcessing) return; 
-  isProcessing = true;
+  if (isSolved) return; 
 
-  const r1 = document.getElementById("result1");
-  const r2 = document.getElementById("result2");
-  const r3 = document.getElementById("result3");
+  const msgBox = document.getElementById('result-message');
+  const targetCanvas = document.getElementById(`cvs${idx}`);
 
   if (idx === answerIndex) {
-    wincount++;
-    r1.textContent = "정답입니다.";
-    r1.style.backgroundColor = "green";
-    r1.style.color = "white";
-    r2.textContent = wincount + "번 정답입니다.";
+    isSolved = true; 
+    gameState.wincount++;
+    gameState.hasActiveProblem = false; 
+    gameState.problemData.wrongAnswers = [];
+    saveData();
     
-    setTimeout(() => {
-      nextProblem();
-    }, 1000);
+    updateRecordDisplay('win'); 
+    msgBox.textContent = "🎉 정답입니다! 아주 잘 하셨습니다.";
+    msgBox.className = "msg-success"; 
+    
+    for(let i=1; i<=6; i++) {
+      document.getElementById(`cvs${i}`).style.borderColor = "var(--border-color)";
+    }
+    targetCanvas.style.borderColor = "var(--success)";
+    
+    setTimeout(() => { loadOrGenerateProblem(); }, 1400);
   } else {
-    losecount++;
-    r1.textContent = "틀렸습니다.";
-    r1.style.backgroundColor = "red";
-    r1.style.color = "white";
-    r3.textContent = losecount + "번 틀렸습니다.";
-    
-    setTimeout(() => {
-      resultreset();
-      isProcessing = false;
-    }, 1000);
+    if (targetCanvas.style.borderColor !== "var(--danger)") {
+      gameState.losecount++;
+      if (!gameState.problemData.wrongAnswers.includes(idx)) {
+        gameState.problemData.wrongAnswers.push(idx);
+      }
+      saveData();
+      updateRecordDisplay('lose'); 
+      targetCanvas.style.borderColor = "var(--danger)"; 
+    }
+    msgBox.textContent = "❌ 오답입니다. 다시 풀어 보세요.";
+    msgBox.className = "msg-danger"; 
   }
 }
 
-window.onload = nextProblem;
+window.addEventListener('keydown', (e) => {
+  if (!CONFIG.showKeyboardShortcuts) return;
+  if (e.key >= '1' && e.key <= '6') {
+    checkAnswer(parseInt(e.key));
+  } else if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    if (isSolved) { loadOrGenerateProblem(); } else { generateNewProblemAction(); }
+  }
+});
+
+window.onload = function() {
+  initLayoutByConfig();
+  loadSavedData();
+  loadOrGenerateProblem();
+};
 </script>
 </body>
 </html>

@@ -4,375 +4,464 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>연립방정식 교점 사격</title>
+  
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link rel="stylesheet" href="style.css">
+  
   <script>
     window.MathJax = {
       tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
   <style>
-    body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f9f9f9; color: #333; padding: 20px; user-select: none; }
-    
-    .game-container { 
-      background: white; max-width: 600px; margin: 0 auto; padding: 20px; 
-      border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+    /* 전체 화면을 채우는 5열 균등 키패드 스타일 */
+    .keypad-container {
+      width: 100% !important;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
-    h2 { color: #1976D2; margin-bottom: 10px; }
-
-    .equation-box { 
-      background: #f1f8e9; padding: 15px; border-radius: 10px; display: inline-block; 
-      margin-bottom: 15px; font-size: 22px; border: 2px solid #c5e1a5; color: #33691e;
-      min-width: 200px;
+    .keypad-grid {
+      display: grid !important;
+      grid-template-columns: repeat(5, 1fr) !important; /* 무조건 5열 균등 분할 */
+      gap: 10px !important;
+      width: 100% !important;
     }
 
-    canvas { 
-      background: #fff; border: 2px solid #90caf9; border-radius: 10px; 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    .keypad-btn {
+      width: 100% !important;
+      height: 58px !important;
+      font-size: 19px !important;
+      margin: 0 !important;
+      font-weight: 700;
     }
-    
-    .input-section { margin: 15px 0; display: flex; justify-content: center; align-items: center; gap: 10px; }
-    
-    .input-box {
-      width: 70px; height: 40px; font-size: 24px; text-align: center;
-      border: 2px solid #ccc; border-radius: 5px;
-      cursor: pointer; background: #fff; line-height: 40px;
-    }
-    .selected { background-color: #3399FF; color: white; border-color: #0056b3; }
 
-    .button {
-      width: 60px; height: 60px; font-size: 25px; margin: 3px;
-      border-radius: 10px; border: none; background-color: #e0e0e0; cursor: pointer; color: #333;
-      transition: background 0.1s;
+    /* 다음 문제 버튼 글자 크기 미세 조정 (버튼 크기에 맞춤) */
+    .next-btn-text {
+      font-size: 16px !important;
+      line-height: 1.2;
+      display: block;
     }
-    .button:hover { background-color: #bdbdbd; }
-    
-    .btn-wide {
-      width: 130px; 
-      background-color: #3399FF; color: white;
-    }
-    .btn-wide:hover { background-color: #1976D2; }
 
-    .btn-new { 
-      font-size: 20px; padding: 10px 20px; border: none; border-radius: 10px; 
-      cursor: pointer; margin-top: 15px; color: white; background-color: #FF9800; width: 320px; 
+    /* 💡 가중치 방어: 평상시 및 비활성화 상태일 때 마스터 CSS 명세에 따라 확실히 묵음 처리 */
+    #nextBtn,
+    #nextBtn:disabled,
+    .keypad-btn.next-btn:disabled {
+      background-color: #f8f9fa !important;
+      color: #adb5bd !important;
+      border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      transform: none !important;
     }
-    .btn-new:disabled { background-color: #ccc; cursor: not-allowed; }
 
-    #result1 { min-height: 45px; margin-top: 20px; padding: 5px; border-radius: 5px; font-weight: bold;}
-    .stats { font-size: 20px; margin-top: 5px; color: #555; }
+    /* 💡 정답을 맞춰 'is-active' 클래스가 부여되었을 때 비로소 선명한 파란색으로 활성화 */
+    #nextBtn.is-active,
+    .keypad-btn.next-btn.is-active {
+      background-color: var(--active) !important;
+      color: #ffffff !important;
+      border: none !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3) !important;
+    }
+    #nextBtn.is-active:hover,
+    .keypad-btn.next-btn.is-active:hover {
+      background-color: var(--active-hover) !important;
+    }
   </style>
 </head>
 <body>
 
-<div class="game-container">
-  <h2>🎯 연립방정식 교점 사격</h2>
-  <p>키패드로 교점 $(x, y)$를 입력하고 <b>확인</b>을 누르세요.<br>정확히 조준해야 합니다!</p>
+  <div class="main-wrapper">
+    <h1 class="main-title">연립방정식 교점 사격</h1>
 
-  <div id="equationDisplay" class="equation-box">
-    문제 생성 중...
+    <div class="container-fixed game-card">
+      <div id="equationDisplay">문제 생성 중...</div>
+
+      <div class="canvas-wrapper">
+        <canvas id="canvas" width="400" height="400"></canvas>
+      </div>
+
+      <div class="input-container">
+        <span class="coordinate-bracket">(</span>
+        <input type="text" id="inputX" class="input-box selected" readonly onclick="selectInput('x')" placeholder="x">
+        <span class="coordinate-bracket">,</span>
+        <input type="text" id="inputY" class="input-box" readonly onclick="selectInput('y')" placeholder="y">
+        <span class="coordinate-bracket">)</span>
+      </div>
+
+      <div id="result1" class="msg-default">결과 대기 중</div>
+
+      <div class="keypad-container">
+        <div class="keypad-grid">
+          <button class="keypad-btn" onclick="appendNumber(1)">1</button>
+          <button class="keypad-btn" onclick="appendNumber(2)">2</button>
+          <button class="keypad-btn" onclick="appendNumber(3)">3</button>
+          <button class="keypad-btn" onclick="appendNumber(4)">4</button>
+          <button class="keypad-btn" onclick="appendNumber(5)">5</button>
+        </div>
+        
+        <div class="keypad-grid">
+          <button class="keypad-btn" onclick="appendNumber(6)">6</button>
+          <button class="keypad-btn" onclick="appendNumber(7)">7</button>
+          <button class="keypad-btn" onclick="appendNumber(8)">8</button>
+          <button class="keypad-btn" onclick="appendNumber(9)">9</button>
+          <button class="keypad-btn" onclick="appendNumber(0)">0</button>
+        </div>
+        
+        <div class="keypad-grid">
+          <button id="nextBtn" class="keypad-btn next-btn" onclick="initGame()" disabled><span class="next-btn-text">다음<br>문제</span></button>
+          <button class="keypad-btn" onclick="appendNumber('-')">-</button>
+          <button class="keypad-btn" onclick="backspace()">←</button>
+          <button class="keypad-btn" onclick="clearInput()">C</button>
+          <button class="keypad-btn confirm-btn" onclick="handleConfirm()">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-box record">
+      <div class="guide-header">
+        <div class="guide-title">📊 누적 기록</div>
+        <button class="reset-btn" onclick="openModal()">누적기록 초기화</button>
+      </div>
+      <table class="record-table">
+        <tbody>
+          <tr>
+            <th>구분</th>
+            <th>정답 횟수</th>
+            <th>오답 횟수</th>
+          </tr>
+          <tr>
+            <td>횟수</td>
+            <td id="result2" class="count-highlight">0회</td>
+            <td id="result3" class="count-highlight">0회</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="guide-box rules">
+      <div class="guide-title">🎯 게임 방법</div>
+      <ul class="rules-list">
+        <li>화면에 제시된 두 일차방정식 그래프의 교점 $(x, y)$을 찾는 사격 게임입니다.</li>
+        <li>키패드나 키보드로 정답 좌표를 입력한 후 <b>확인</b> 버튼을 눌러 발사하세요.</li>
+        <li>오답일 경우 정답 위치를 숨겨 다음 도전에 분석 요소를 남겨둡니다.</li>
+        <li>명중(정답) 시 그래프에 타겟 링이 표기되며 다음 문제로 넘어갈 수 있습니다.</li>
+      </ul>
+    </div>
+
+    <div class="guide-box shortcuts">
+      <div class="guide-title">⌨ 키보드 단축키</div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item"><kbd>0</kbd>~<kbd>9</kbd> <span>숫자 입력</span></div>
+        <div class="shortcut-item"><kbd>-</kbd> <span>음수 기호</span></div>
+        <div class="shortcut-item"><kbd>Backspace</kbd> <span>지우기</span></div>
+        <div class="shortcut-item"><kbd>Tab</kbd> <span>x / y 전환</span></div>
+        <div class="shortcut-item"><kbd>Enter</kbd> <span>정답 확인</span></div>
+        <div class="shortcut-item"><kbd>Space</kbd> <span>다음 문제</span></div>
+        <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 초기화</span></div>
+      </div>
+    </div>
   </div>
-  <br>
 
-  <canvas id="canvas" width="400" height="400"></canvas>
-
-  <div class="input-section">
-    <span style="font-size: 24px;">(</span>
-    <input type="text" id="inputX" class="input-box selected" readonly onclick="selectInput('x')" placeholder="x">
-    <span style="font-size: 24px;">,</span>
-    <input type="text" id="inputY" class="input-box" readonly onclick="selectInput('y')" placeholder="y">
-    <span style="font-size: 24px;">)</span>
+  <div id="customModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal-content">
+      <div class="modal-title">누적 기록 초기화</div>
+      <div class="modal-text">누적 기록을 모두 삭제하시겠습니까?</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+        <button class="modal-btn confirm" onclick="resetScore()">초기화</button>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <button class="button" onclick="appendNumber(1)">1</button>
-    <button class="button" onclick="appendNumber(2)">2</button>
-    <button class="button" onclick="appendNumber(3)">3</button>
-    <button class="button" onclick="appendNumber(4)">4</button>
-    <button class="button" onclick="appendNumber(5)">5</button><br>
-    
-    <button class="button" onclick="appendNumber(6)">6</button>
-    <button class="button" onclick="appendNumber(7)">7</button>
-    <button class="button" onclick="appendNumber(8)">8</button>
-    <button class="button" onclick="appendNumber(9)">9</button>
-    <button class="button" onclick="appendNumber(0)">0</button><br>
-    
-    <button class="button" onclick="appendNumber('-')">-</button>
-    <button class="button" onclick="clearInput()">C</button>
-    <button class="button" onclick="backspace()">←</button>
-    <button class="button btn-wide" onclick="handleConfirm()">확인</button>
-    
-    <br>
-    <button id="nextBtn" class="btn-new" onclick="initGame()" disabled>다음 문제 (Space)</button>
-  </div>
+  <script>
+    const cvs = document.getElementById('canvas');
+    const ctx = cvs.getContext('2d');
+    const unit = 20; 
+    const cx = cvs.width / 2;
+    const cy = cvs.height / 2;
 
-  <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-  
-  <div id="result1" style="font-size:30px;">결과 대기 중</div>
-  <div id="result2" class="stats">0번 정답입니다.</div>
-  <div id="result3" class="stats">0번 틀렸습니다.</div>
-</div>
+    let sol = {x:0, y:0};
+    let line1 = {m:0, k:0};
+    let line2 = {m:0, k:0};
+    let selectedInputId = 'inputX'; 
 
-<script>
-const cvs = document.getElementById('canvas');
-const ctx = cvs.getContext('2d');
-const unit = 20; 
-const cx = cvs.width / 2;
-const cy = cvs.height / 2;
+    let winCount = parseInt(localStorage.getItem('shoot_winCount')) || 0;
+    let loseCount = parseInt(localStorage.getItem('shoot_loseCount')) || 0;
+    let isCurrentAnswerCorrect = false;
+    let isInitializing = false;
 
-let sol = {x:0, y:0};
-let line1 = {m:0, k:0};
-let line2 = {m:0, k:0};
-let selectedInputId = 'inputX'; 
+    function initGame() {
+      isCurrentAnswerCorrect = false;
+      isInitializing = true;
 
-let winCount = 0;
-let loseCount = 0;
+      sol.x = Math.floor(Math.random() * 17) - 8;
+      sol.y = Math.floor(Math.random() * 17) - 8;
 
-function initGame() {
-  sol.x = Math.floor(Math.random() * 17) - 8;
-  sol.y = Math.floor(Math.random() * 17) - 8;
+      let m1 = Math.floor(Math.random() * 5) - 2; 
+      let m2 = m1;
+      while(m2 === m1) m2 = Math.floor(Math.random() * 5) - 2;
 
-  let m1 = Math.floor(Math.random() * 5) - 2; 
-  let m2 = m1;
-  while(m2 === m1) m2 = Math.floor(Math.random() * 5) - 2;
+      line1.m = m1; line1.k = sol.y - m1 * sol.x;
+      line2.m = m2; line2.k = sol.y - m2 * sol.x;
 
-  line1.m = m1; line1.k = sol.y - m1 * sol.x;
-  line2.m = m2; line2.k = sol.y - m2 * sol.x;
+      updateEquationDisplay(line1, line2);
 
-  updateEquationDisplay(line1, line2);
-
-  document.getElementById('inputX').value = "";
-  document.getElementById('inputY').value = "";
-  
-  selectInput('x'); 
-  resetResultMsg();
-  document.getElementById('nextBtn').disabled = true;
-  
-  // 정답 여부 초기화 상태로 그리기
-  drawGraph(null, false);
-}
-
-function updateEquationDisplay(l1, l2) {
-  const eq1Str = formatEq(l1.m, l1.k);
-  const eq2Str = formatEq(l2.m, l2.k);
-  
-  const latex = `
-    \\[
-    \\begin{cases}
-      y = ${eq1Str} \\\\
-      y = ${eq2Str}
-    \\end{cases}
-    \\]
-  `;
-  
-  const display = document.getElementById('equationDisplay');
-  display.innerHTML = latex;
-  
-  if (window.MathJax) {
-    MathJax.typesetPromise([display]).catch((err) => console.log(err));
-  }
-}
-
-function formatEq(m, k) {
-  let s = "";
-  if(m === 1) s += "x";
-  else if(m === -1) s += "-x";
-  else if(m !== 0) s += m + "x";
-  
-  if(k > 0) s += (m!==0 ? "+" : "") + k;
-  else if(k < 0) s += k;
-  else if(k === 0 && m === 0) s += "0";
-  
-  return s;
-}
-
-// 입력창 선택 로직 (수정: 선택 시 값 초기화)
-function selectInput(type) {
-  document.getElementById('inputX').classList.remove('selected');
-  document.getElementById('inputY').classList.remove('selected');
-
-  if (type === 'x') selectedInputId = 'inputX';
-  else selectedInputId = 'inputY';
-
-  const target = document.getElementById(selectedInputId);
-  target.classList.add('selected');
-  
-  // [수정 사항 4] 선택 시 기존 값이 있으면 지워줌
-  if (target.value !== "") {
-    target.value = "";
-  }
-  
-  if (document.getElementById('result1').textContent !== "결과 대기 중") {
+      document.getElementById('inputX').value = "";
+      document.getElementById('inputY').value = "";
+      
+      resetTextColors();
+      selectInput('x'); 
       resetResultMsg();
-  }
-}
+      
+      // 💡 새 게임 시작 시 다음 문제 버튼을 다시 비활성화(회색) 처리
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.disabled = true;
+      nextBtn.classList.remove('is-active');
+      
+      drawGraph(null, false);
+      isInitializing = false;
+    }
 
-function resetResultMsg() {
-  const res = document.getElementById('result1');
-  res.textContent = "결과 대기 중";
-  res.style.backgroundColor = "transparent";
-  res.style.color = "#ccc";
-}
+    function updateEquationDisplay(l1, l2) {
+      const eq1Str = formatEq(l1.m, l1.k);
+      const eq2Str = formatEq(l2.m, l2.k);
+      const latex = `\\[\\begin{cases} y = ${eq1Str} \\\\ y = ${eq2Str} \\end{cases}\\]`;
+      
+      const display = document.getElementById('equationDisplay');
+      display.innerHTML = latex;
+      
+      if (window.MathJax) {
+        MathJax.typesetPromise([display]).catch((err) => console.log(err));
+      }
+    }
 
-function appendNumber(num) {
-  const input = document.getElementById(selectedInputId);
-  if (num === '-' && input.value.includes('-')) return;
-  input.value += num;
-  resetResultMsg();
-}
+    function formatEq(m, k) {
+      let s = "";
+      if(m === 1) s += "x";
+      else if(m === -1) s += "-x";
+      else if(m !== 0) s += m + "x";
+      
+      if(k > 0) s += (m!==0 ? "+" : "") + k;
+      else if(k < 0) s += k;
+      else if(k === 0 && m === 0) s += "0";
+      
+      return s;
+    }
 
-function backspace() {
-  const input = document.getElementById(selectedInputId);
-  input.value = input.value.slice(0, -1);
-  resetResultMsg();
-}
+    function selectInput(type) {
+      if (isCurrentAnswerCorrect) return;
+      document.getElementById('inputX').classList.remove('selected');
+      document.getElementById('inputY').classList.remove('selected');
 
-function clearInput() {
-  const input = document.getElementById(selectedInputId);
-  input.value = "";
-  resetResultMsg();
-}
+      if (type === 'x') selectedInputId = 'inputX';
+      else selectedInputId = 'inputY';
 
-// 확인 버튼 (발사)
-function handleConfirm() {
-  const valX = document.getElementById('inputX').value.trim();
-  const valY = document.getElementById('inputY').value.trim();
+      const target = document.getElementById(selectedInputId);
+      target.classList.add('selected');
+      
+      if (!isInitializing) {
+        target.value = "";
+      }
+      
+      if (document.getElementById('result1').textContent !== "결과 대기 중") {
+        resetResultMsg();
+      }
+    }
 
-  if (valX === "" || valY === "" || valX === "-" || valY === "-") return;
+    function resetResultMsg() {
+      const res = document.getElementById('result1');
+      res.textContent = "결과 대기 중";
+      res.className = "msg-default";
+    }
 
-  const userX = parseInt(valX);
-  const userY = parseInt(valY);
+    function resetTextColors() {
+      document.getElementById('result2').className = 'count-highlight';
+      document.getElementById('result3').className = 'count-highlight';
+    }
 
-  const isCorrect = (userX === sol.x && userY === sol.y);
+    function appendNumber(num) {
+      if (isCurrentAnswerCorrect) return;
+      resetTextColors();
+      const input = document.getElementById(selectedInputId);
+      if (num === '-' && input.value.includes('-')) return;
+      input.value += num;
+      resetResultMsg();
+    }
 
-  // 그래프에 발사 표시 (정답 여부 전달)
-  drawGraph({x: userX, y: userY}, isCorrect);
+    function backspace() {
+      if (isCurrentAnswerCorrect) return;
+      resetTextColors();
+      const input = document.getElementById(selectedInputId);
+      input.value = input.value.slice(0, -1);
+      resetResultMsg();
+    }
 
-  const res = document.getElementById('result1');
-  if (isCorrect) {
-    res.textContent = "명중입니다! 정답! 🎯";
-    res.style.backgroundColor = "#4caf50"; 
-    res.style.color = "white";
-    
-    winCount++;
-    document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
-    document.getElementById('nextBtn').disabled = false;
-  } else {
-    // [수정 사항 1] 오답 시 정답 좌표 미노출
-    res.textContent = "빗나갔습니다.";
-    res.style.backgroundColor = "#f44336";
-    res.style.color = "white";
-    
-    loseCount++;
-    document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
-  }
-}
+    function clearInput() {
+      if (isCurrentAnswerCorrect) return;
+      resetTextColors();
+      const input = document.getElementById(selectedInputId);
+      input.value = "";
+      resetResultMsg();
+    }
 
-// 그래프 그리기 (수정: 화살표, 라벨, 정답 은폐)
-function drawGraph(userShot = null, showAnswer = false) {
-  const w = cvs.width;
-  const h = cvs.height;
+    function handleConfirm() {
+      if (isCurrentAnswerCorrect) return;
+      const valX = document.getElementById('inputX').value.trim();
+      const valY = document.getElementById('inputY').value.trim();
 
-  ctx.clearRect(0, 0, w, h);
-  
-  // 그리드
-  ctx.strokeStyle = "#e1f5fe";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for(let i=0; i<=w; i+=unit) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
-  for(let i=0; i<=h; i+=unit) { ctx.moveTo(0,i); ctx.lineTo(w,i); }
-  ctx.stroke();
+      if (valX === "" || valY === "" || valX === "-" || valY === "-") return;
 
-  // X, Y축 및 화살표
-  ctx.strokeStyle = "#546e7a";
-  ctx.fillStyle = "#546e7a";
-  ctx.lineWidth = 2;
-  
-  ctx.beginPath();
-  // X축
-  ctx.moveTo(0, cy); ctx.lineTo(w, cy);
-  // 화살표 (오른쪽)
-  ctx.moveTo(w-10, cy-5); ctx.lineTo(w, cy); ctx.lineTo(w-10, cy+5);
-  
-  // Y축
-  ctx.moveTo(cx, h); ctx.lineTo(cx, 0);
-  // 화살표 (위쪽)
-  ctx.moveTo(cx-5, 10); ctx.lineTo(cx, 0); ctx.lineTo(cx+5, 10);
-  ctx.stroke();
+      const userX = parseInt(valX);
+      const userY = parseInt(valY);
 
-  // [수정 사항 3] 축 라벨 (x, y, O)
-  ctx.font = "bold 16px Arial";
-  ctx.fillText("x", w - 20, cy + 20);
-  ctx.fillText("y", cx + 10, 20);
-  ctx.fillText("O", cx - 20, cy + 20); // 원점
+      const isCorrect = (userX === sol.x && userY === sol.y);
+      drawGraph({x: userX, y: userY}, isCorrect);
 
-  // 직선 그리기
-  drawLine(line1, '#2196F3'); // Blue
-  drawLine(line2, '#FF9800'); // Orange
+      const res = document.getElementById('result1');
+      const winEl = document.getElementById('result2');
+      const loseEl = document.getElementById('result3');
 
-  // 사용자 사격 표시
-  if(userShot) {
-    const px = cx + userShot.x * unit;
-    const py = cy - userShot.y * unit;
-    
-    // 유저 점 (빨강)
-    ctx.fillStyle = "#f44336";
-    ctx.beginPath();
-    ctx.arc(px, py, 6, 0, Math.PI*2);
-    ctx.fill();
-    
-    // [수정 사항 1] 정답 위치(녹색 링)는 정답을 맞췄을 때만 표시
-    if (showAnswer) {
-      const tx = cx + sol.x * unit;
-      const ty = cy - sol.y * unit;
-      ctx.strokeStyle = "#4caf50";
+      if (isCorrect) {
+        res.textContent = "🎉 명중입니다! 정답! 🎯";
+        res.className = "feedback-success";
+        
+        winCount++;
+        localStorage.setItem('shoot_winCount', winCount);
+        winEl.textContent = `${winCount}회`;
+        
+        winEl.classList.add('win-active');
+        loseEl.classList.remove('lose-active');
+
+        isCurrentAnswerCorrect = true;
+        
+        // 💡 [핵심 교정] 정답 판정 시 disabled 해제와 동시에 'is-active' 클래스를 붙여 파란색으로 변경!
+        const nextBtn = document.getElementById('nextBtn');
+        nextBtn.disabled = false;
+        nextBtn.classList.add('is-active');
+      } else {
+        res.textContent = "❌ 빗나갔습니다. 좌표를 다시 조준해 보세요!";
+        res.className = "feedback-danger";
+        
+        loseCount++;
+        localStorage.setItem('shoot_loseCount', loseCount);
+        loseEl.textContent = `${loseCount}회`;
+
+        loseEl.classList.add('lose-active');
+        winEl.classList.remove('win-active');
+      }
+    }
+
+    function drawGraph(userShot = null, showAnswer = false) {
+      const w = cvs.width;
+      const h = cvs.height;
+      ctx.clearRect(0, 0, w, h);
+      
+      ctx.strokeStyle = "#f0f2f5";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for(let i=0; i<=w; i+=unit) { ctx.moveTo(i,0); ctx.lineTo(i,h); }
+      for(let i=0; i<=h; i+=unit) { ctx.moveTo(0,i); ctx.lineTo(w,i); }
+      ctx.stroke();
+
+      ctx.strokeStyle = "#546e7a";
+      ctx.fillStyle = "#546e7a";
+      ctx.lineWidth = 2;
+      
+      ctx.beginPath();
+      ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+      ctx.moveTo(w-10, cy-5); ctx.lineTo(w, cy); ctx.lineTo(w-10, cy+5);
+      
+      ctx.moveTo(cx, h); ctx.lineTo(cx, 0);
+      ctx.moveTo(cx-5, 10); ctx.lineTo(cx, 0); ctx.lineTo(cx+5, 10);
+      ctx.stroke();
+
+      ctx.font = "bold 14px Pretendard, Arial";
+      ctx.fillText("x", w - 18, cy + 18);
+      ctx.fillText("y", cx + 10, 18);
+      ctx.fillText("O", cx - 18, cy + 18);
+
+      drawLine(line1, '#2196F3');
+      drawLine(line2, '#FF9800');
+
+      if(userShot) {
+        const px = cx + userShot.x * unit;
+        const py = cy - userShot.y * unit;
+        
+        ctx.fillStyle = "#dc3545";
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI*2);
+        ctx.fill();
+        
+        if (showAnswer) {
+          const tx = cx + sol.x * unit;
+          const ty = cy - sol.y * unit;
+          ctx.strokeStyle = "#28a745";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(tx, ty, 9, 0, Math.PI*2);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawLine(line, color) {
+      ctx.strokeStyle = color;
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(tx, ty, 10, 0, Math.PI*2);
+      const x1 = -20, y1 = line.m * x1 + line.k;
+      const x2 = 20, y2 = line.m * x2 + line.k;
+      
+      ctx.moveTo(cx + x1*unit, cy - y1*unit);
+      ctx.lineTo(cx + x2*unit, cy - y2*unit);
       ctx.stroke();
     }
-  }
-}
 
-function drawLine(line, color) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  const x1 = -20, y1 = line.m * x1 + line.k;
-  const x2 = 20, y2 = line.m * x2 + line.k;
-  
-  ctx.moveTo(cx + x1*unit, cy - y1*unit);
-  ctx.lineTo(cx + x2*unit, cy - y2*unit);
-  ctx.stroke();
-}
+    function openModal() { document.getElementById('customModal').classList.add('show'); }
+    function closeModal() { document.getElementById('customModal').classList.remove('show'); }
+    function closeModalOnOverlay(e) { if(e.target.id === 'customModal') closeModal(); }
 
-// [수정 사항 2] 캔버스 클릭 입력 기능 제거됨 (이벤트 리스너 삭제)
-
-// 키보드 이벤트 핸들링
-document.addEventListener('keydown', e => {
-  if ((e.key >= '0' && e.key <= '9') || e.key === '-') {
-    appendNumber(e.key);
-  }
-  else if (e.key === 'Backspace') backspace();
-  else if (e.key === 'Escape') clearInput();
-  else if (e.key === 'Enter') {
-    e.preventDefault();
-    handleConfirm();
-  }
-  else if (e.code === 'Space') {
-    if (!document.getElementById('nextBtn').disabled) {
-      e.preventDefault();
+    function resetScore() {
+      winCount = 0;
+      loseCount = 0;
+      localStorage.setItem('shoot_winCount', 0);
+      localStorage.setItem('shoot_loseCount', 0);
+      
+      document.getElementById('result2').textContent = "0회";
+      document.getElementById('result3').textContent = "0회";
+      resetTextColors();
+      closeModal();
       initGame();
     }
-  }
-  else if (e.key === 'Tab') {
-    e.preventDefault();
-    if (selectedInputId === 'inputX') selectInput('y');
-    else selectInput('x');
-  }
-});
 
-window.onload = initGame;
-</script>
+    document.addEventListener('keydown', e => {
+      if (e.key >= '0' && e.key <= '9') { resetTextColors(); appendNumber(e.key); }
+      else if (e.key === '-') { resetTextColors(); appendNumber('-'); }
+      else if (e.key === 'Backspace') { resetTextColors(); backspace(); }
+      else if (e.key === 'Escape') { resetTextColors(); clearInput(); }
+      else if (e.key === 'Enter') { e.preventDefault(); handleConfirm(); }
+      else if (e.code === 'Space') {
+        if (!document.getElementById('nextBtn').disabled) {
+          e.preventDefault();
+          initGame();
+        }
+      }
+      else if (e.key === 'Tab') {
+        e.preventDefault();
+        if (selectedInputId === 'inputX') selectInput('y');
+        else selectInput('x');
+      }
+    });
+
+    window.onload = () => {
+      document.getElementById('result2').textContent = `${winCount}회`;
+      document.getElementById('result3').textContent = `${loseCount}회`;
+      initGame();
+    };
+  </script>
 </body>
 </html>

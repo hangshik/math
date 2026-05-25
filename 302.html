@@ -1,233 +1,213 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>삼각비 맞추기</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>삼각비 맞추기</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <script>
+    window.MathJax = { 
+      tex: { inlineMath: [['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+  <style>
+    /* 문제 폰트: 일반 글씨체(정체) 및 크기 */
+    .question-display {
+      font-size: 60px;
+      font-weight: 500;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+      font-style: normal; /* 기울임 제거 */
+    }
 
-<script>
-  window.MathJax = { tex: { inlineMath: [['$', '$']] } };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    .inline-feedback-msg {
+      display: block; font-size: 18px; font-weight: 700; color: var(--text-main);
+      background-color: #f1f5f9 !important; border: 1px solid #e2e8f0;
+      padding: 12px; border-radius: var(--radius-sm); margin-bottom: 12px;
+      text-align: center; width: 100%; box-sizing: border-box;
+    }
+    .inline-feedback-msg.success-theme { background-color: var(--success) !important; border-color: var(--success); color: #ffffff !important; }
+    .inline-feedback-msg.danger-theme { background-color: var(--danger) !important; border-color: var(--danger); color: #ffffff !important; }
 
-<style>
-  body {
-    font-family: sans-serif;
-    background: #f9f9f9;
-    text-align: center;
-    padding: 10px;
-  }
-  .container {
-    max-width: 520px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  }
-
-  .question {
-    font-size: 30px;
-    margin: 20px 0;
-    font-weight: bold;
-  }
-
-  .choices {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    margin: 20px 0;
-  }
-
-  .choice-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .choices button {
-    width: 100%;
-    height: 100px;
-    font-size: 30px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    background: #fff;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .choice-number {
-    margin-top: 6px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid #555;
-    font-size: 16px;
-    font-weight: bold;
-    line-height: 24px;
-    text-align: center;
-    color: #555;
-  }
-
-  #result1 {
-    font-size: 24px;
-    margin: 10px 0;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: bold;
-    background: #eee;
-    color: #000;
-  }
-
-  #result2, #result3 {
-    font-size: 24px;
-    margin: 4px 0;
-  }
-
-  .keyboard-guide {
-    margin-top: 15px;
-    background: #f0f0f0;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 18px;
-    color: #555;
-  }
-</style>
+    /* 보기 버튼: 세로 높이 설정 */
+    .button { 
+      font-size: 36px; 
+      min-height: 100px; /* 여기서 높이 조절 가능 */
+      position: relative; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .key-badge {
+      position: absolute; top: 6px; left: 6px;
+      background: var(--btn-gray, #e4e6eb); color: var(--text-sub, #555555);
+      font-size: 12px; font-weight: 700; padding: 2px 6px;
+      border-radius: 4px; border: 1px solid var(--border-color, #e1e4e8);
+    }
+    
+    .button.correct { border: 3px solid var(--success) !important; color: var(--success) !important; font-weight: 700; }
+    .button.wrong { border: 3px solid var(--danger) !important; color: var(--danger) !important; font-weight: 700; animation: shake 0.4s ease-in-out; }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); }
+    }
+  </style>
 </head>
 
 <body>
-<div class="container">
-  <h1>삼각비 맞추기</h1>
+  <div class="main-container">
+    <h1 class="main-title">삼각비 맞추기</h1>
 
-  <div class="question" id="questionBox"></div>
-  <div class="choices" id="choicesBox"></div>
+    <div class="container-fixed">
+      <div class="question-display" id="questionBox">결과 대기 중</div>
+      <div class="inline-feedback-msg" id="inlineFeedback">문제를 보고 정답을 선택해보세요!</div>
+      <div class="choices-grid" id="choicesBox" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%;"></div>
+    </div>
 
-  <div id="result1">정답여부</div>
-  <div id="result2">0번 정답입니다.</div>
-  <div id="result3">0번 틀렸습니다.</div>
+    <div class="guide-box record">
+      <div class="guide-header">
+        <h2 class="guide-title">📊 누적 기록</h2>
+        <button class="reset-btn" onclick="openModal()">누적기록 초기화</button>
+      </div>
+      <table class="record-table">
+        <thead><tr><th>구분</th><th>성공 횟수</th><th>실패 횟수</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>기록</td>
+            <td id="statCorrect" class="count-highlight">0회</td>
+            <td id="statWrong" class="count-highlight">0회</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  <div class="keyboard-guide">
-    ⌨️ 키보드 <b>1~5</b> : 보기 선택
+    <div class="guide-box rules">
+      <div class="guide-header"><h2 class="guide-title">💡 퍼즐 설명</h2></div>
+      <ul class="rules-list">
+        <li>특수각($0^\circ, 30^\circ, 45^\circ, 60^\circ, 90^\circ$)에 대한 삼각비 값을 무작위로 출제합니다.</li>
+      </ul>
+    </div>
+
+    <div class="guide-box shortcuts">
+      <div class="guide-header"><h2 class="guide-title">⌨ 키보드 단축키</h2></div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item"><kbd>1</kbd> ~ <kbd>5</kbd> <span>해당 보기 즉시 선택</span></div>
+      </div>
+    </div>
   </div>
-</div>
 
-<script>
-const values = [
-  { txt: "0", val: 0 },
-  { txt: "1", val: 1 },
-  { txt: "\\frac{1}{2}", val: 0.5 },
-  { txt: "\\frac{\\sqrt2}{2}", val: Math.SQRT1_2 },
-  { txt: "\\frac{\\sqrt3}{2}", val: Math.sqrt(3)/2 },
-  { txt: "\\frac{\\sqrt3}{3}", val: Math.sqrt(3)/3 },
-  { txt: "\\sqrt3", val: Math.sqrt(3) }
-];
+  <div id="resetModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title">누적 기록 초기화</div>
+      <div class="modal-text">누적 기록을 모두 삭제하시겠습니까?</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+        <button class="modal-btn confirm" onclick="resetStats()">초기화</button>
+      </div>
+    </div>
+  </div>
 
-const angles = [0, 30, 45, 60, 90];
-const funcs = ["sin", "cos", "tan"];
+  <script>
+    const values = [
+      { txt: "0", val: 0 }, { txt: "1", val: 1 }, { txt: "\\frac{1}{2}", val: 0.5 },
+      { txt: "\\frac{\\sqrt2}{2}", val: Math.SQRT1_2 }, { txt: "\\frac{\\sqrt3}{2}", val: Math.sqrt(3)/2 },
+      { txt: "\\frac{\\sqrt3}{3}", val: Math.sqrt(3)/3 }, { txt: "\\sqrt3", val: Math.sqrt(3) }
+    ];
+    const angles = [0, 30, 45, 60, 90];
+    const funcs = ["sin", "cos", "tan"];
+    let correctIndex = 0, win = 0, lose = 0, answered = false;
 
-let correctIndex = 0;
-let win = 0;
-let lose = 0;
+    function rad(d){ return d * Math.PI / 180; }
+    function calc(f, a){ return (f==="sin") ? Math.sin(rad(a)) : (f==="cos") ? Math.cos(rad(a)) : Math.tan(rad(a)); }
+    function nearly(a, b){ return Math.abs(a - b) < 1e-6; }
 
-function rad(d){ return d*Math.PI/180; }
-function calc(f,a){
-  if(f==="sin") return Math.sin(rad(a));
-  if(f==="cos") return Math.cos(rad(a));
-  if(f==="tan") return Math.tan(rad(a));
-}
-function nearly(a,b){ return Math.abs(a-b)<1e-6; }
+    function updateScoreUI(type) {
+      const correctTd = document.getElementById("statCorrect");
+      const wrongTd = document.getElementById("statWrong");
+      correctTd.textContent = `${win}회`;
+      wrongTd.textContent = `${lose}회`;
+      correctTd.className = (type === "correct") ? "count-highlight win-active" : "count-highlight";
+      wrongTd.className = (type === "wrong") ? "count-highlight lose-active" : "count-highlight";
+    }
 
-function nextQuiz(){
-  const r1=document.getElementById("result1");
-  r1.textContent="정답여부";
-  r1.style.background="#eee";
-  r1.style.color="#000";
+    function nextQuiz(){
+      answered = false;
+      const feedback = document.getElementById("inlineFeedback");
+      feedback.textContent = "문제를 보고 정답을 선택해보세요!";
+      feedback.className = "inline-feedback-msg";
+      
+      let f, a, v;
+      while(true){
+        f = funcs[Math.floor(Math.random() * 3)];
+        a = angles[Math.floor(Math.random() * 5)];
+        if(f==="tan" && a===90) continue;
+        v = calc(f, a);
+        const idx = values.findIndex(x => nearly(x.val, v));
+        if(idx !== -1){ correctIndex = idx; break; }
+      }
+      
+      // 문제 출력: 수식 없이 텍스트로
+      document.getElementById("questionBox").innerText = `${f} ${a}°`;
+      
+      let pool = [...values];
+      const correct = pool.splice(correctIndex, 1)[0];
+      pool.sort(() => Math.random() - 0.5);
+      let choices = [correct, ...pool.slice(0, 4)].sort(() => Math.random() - 0.5);
+      correctIndex = choices.indexOf(correct);
+      
+      const box = document.getElementById("choicesBox");
+      box.innerHTML = "";
+      choices.forEach((c, i) => {
+        const btn = document.createElement("button");
+        btn.className = "button";
+        btn.innerHTML = `<span class="key-badge">${i+1}</span>$${c.txt}$`;
+        btn.onclick = () => checkChoice(i, btn);
+        box.appendChild(btn);
+      });
+      MathJax.typesetPromise();
+    }
 
-  let f,a,v;
-  while(true){
-    f=funcs[Math.floor(Math.random()*3)];
-    a=angles[Math.floor(Math.random()*5)];
-    if(f==="tan"&&a===90) continue;
-    v=calc(f,a);
-    const idx=values.findIndex(x=>nearly(x.val,v));
-    if(idx!==-1){ correctIndex=idx; break; }
-  }
+    function checkChoice(i, btn) {
+      if(answered) return;
+      const feedback = document.getElementById("inlineFeedback");
+      if(i === correctIndex){
+        answered = true; win++;
+        btn.classList.add("correct");
+        feedback.textContent = "🎉 정답입니다!";
+        feedback.className = "inline-feedback-msg success-theme";
+        updateScoreUI("correct");
+        setTimeout(nextQuiz, 1000);
+      } else {
+        lose++;
+        btn.classList.add("wrong");
+        btn.disabled = true;
+        feedback.textContent = "❌ 틀렸습니다. 다시 시도하세요!";
+        feedback.className = "inline-feedback-msg danger-theme";
+        updateScoreUI("wrong");
+      }
+    }
 
-  document.getElementById("questionBox").innerHTML =
-    `$\\boldsymbol{\\mathrm{${f}}}\\,${a}^\\circ$`;
+    window.addEventListener('keydown', (e) => {
+        const key = parseInt(e.key);
+        if (key >= 1 && key <= 5) {
+            const buttons = document.querySelectorAll('.choices-grid button');
+            if(buttons[key-1]) buttons[key-1].click();
+        }
+    });
 
-  let pool=[...values];
-  const correct=pool.splice(correctIndex,1)[0];
-  pool.sort(()=>Math.random()-0.5);
-  let choices=[correct,...pool.slice(0,4)];
-  choices.sort(()=>Math.random()-0.5);
-  correctIndex=choices.indexOf(correct);
+    function openModal() { document.getElementById('resetModal').classList.add('show'); }
+    function closeModal() { document.getElementById('resetModal').classList.remove('show'); }
+    function resetStats() { win=0; lose=0; updateScoreUI(); closeModal(); nextQuiz(); }
 
-  const box=document.getElementById("choicesBox");
-  box.innerHTML="";
-  choices.forEach((c,i)=>{
-    const wrap=document.createElement("div");
-    wrap.className="choice-wrap";
-
-    const b=document.createElement("button");
-    b.innerHTML=`$${c.txt}$`;
-    b.onclick=()=>check(i);
-
-    const num=document.createElement("div");
-    num.className="choice-number";
-    num.textContent=i+1;
-
-    wrap.appendChild(b);
-    wrap.appendChild(num);
-    box.appendChild(wrap);
-  });
-
-  MathJax.typesetPromise();
-}
-
-function check(i){
-  const r1=document.getElementById("result1");
-  const btns=document.querySelectorAll(".choices button");
-
-  btns.forEach(b=>{
-    b.style.background="#fff";
-    b.style.color="#000";
-  });
-
-  if(i===correctIndex){
-    win++;
-    btns[i].style.background="#4CAF50";
-    btns[i].style.color="#fff";
-
-    r1.textContent="정답입니다!";
-    r1.style.background="#4CAF50";
-    r1.style.color="#fff";
-
-    document.getElementById("result2").textContent=win+"번 정답입니다.";
-    setTimeout(nextQuiz,1000);
-  }else{
-    lose++;
-    btns[i].style.background="#f44336";
-    btns[i].style.color="#fff";
-
-    r1.textContent="틀렸습니다.";
-    r1.style.background="#f44336";
-    r1.style.color="#fff";
-
-    document.getElementById("result3").textContent=lose+"번 틀렸습니다.";
-  }
-}
-
-document.addEventListener("keydown",e=>{
-  if(e.key>='1'&&e.key<='5'){
-    check(parseInt(e.key)-1);
-  }
-});
-
-window.onload=nextQuiz;
-</script>
+    window.onload = nextQuiz;
+  </script>
 </body>
 </html>

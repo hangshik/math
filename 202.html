@@ -4,338 +4,567 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>연립방정식</title>
+  
+  <link rel="stylesheet" href="style.css" />
+  
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  
   <script>
     window.MathJax = {
-      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      startup: {
+        pageReady: () => {
+          return MathJax.startup.defaultPageReady().then(() => {
+            if (window.generateProblem) {
+              window.generateProblem(false);
+            }
+          });
+        }
+      }
     };
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-  <style>
-    body { font-family: sans-serif; }
-    .stage-button {
-      font-size: 20px; margin: 5px; padding: 10px 20px;
-      border: none; border-radius: 10px; cursor: pointer;
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
+
+<style>
+    /* 마스터 명세와 구조가 겹치지 않는 레이아웃 속성 지정 */
+    .problem-card { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    
+    #problem { 
+      font-size: 30px; 
+      min-height: 110px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      width: 100%; 
+      background: transparent; 
+      border: none; 
+      padding: 5px 15px; 
     }
-    .active {
-      background-color: #3399FF; color: white;
+
+    .keypad-container { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+    .keypad-row { display: flex; gap: 8px; width: 100%; }
+    .keypad-btn { flex: 1; }
+
+    /* 💡 ID 선택자(#nextBtn) 가중치 간섭 차단 묵음 처리 */
+    #nextBtn,
+    #nextBtn:disabled,
+    .keypad-btn.next-btn:disabled {
+      background-color: #f8f9fa !important;
+      color: #adb5bd !important;
+      border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      transform: none !important;
     }
-    .input-box {
-      width: 80px; height: 40px; font-size: 30px; text-align: center;
-      margin: 0 10px; border: 2px solid #333; border-radius: 5px;
+
+    /* 💡 정답을 맞혀 'is-active' 상태가 되었을 때의 파란색 활성화 */
+    #nextBtn.is-active,
+    .keypad-btn.next-btn.is-active {
+      background-color: var(--active) !important;
+      color: #ffffff !important;
+      border: none !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3) !important;
     }
-    .selected { background-color: #3399FF; color: white; }
-    .button {
-      width: 60px; height: 60px; font-size: 25px; margin: 2px 0;
-      border-radius: 10px; border: none; background-color: #DDDDDD; cursor: pointer;
+    #nextBtn.is-active:hover,
+    .keypad-btn.next-btn.is-active:hover {
+      background-color: var(--active-hover) !important;
     }
-    .button:hover { background-color: #bbb; }
-    #result1 { min-height: 45px; }
-    #nextBtn:disabled {
-      background-color: #aaa !important;
-      cursor: not-allowed;
-    }
-  </style>
+</style>
 </head>
 <body>
-  <center>
-    <h1>연립방정식</h1>
-    <div>
-      <button id="btn1" class="stage-button" onclick="setStage(1)">1단계</button>
-      <button id="btn2" class="stage-button" onclick="setStage(2)">2단계</button>
-      <button id="btn3" class="stage-button" onclick="setStage(3)">3단계</button>
-      <button id="btn4" class="stage-button" onclick="setStage(4)">4단계</button>
+
+  <div class="main-container">
+    <h1 class="main-title">연립방정식</h1>
+
+    <div id="stageCard" class="game-card">
+      <div class="stage-grid">
+        <button id="btn1" class="stage-button" onclick="setStage(1, event)">1단계</button>
+        <button id="btn2" class="stage-button" onclick="setStage(2, event)">2단계</button>
+        <button id="btn3" class="stage-button" onclick="setStage(3, event)">3단계</button>
+        <button id="btn4" class="stage-button" onclick="setStage(4, event)">4단계</button>
+      </div>
     </div>
 
-    <div id="problem" style="font-size: 30px; margin-top: 20px;">문제</div>
+    <div class="game-card problem-card">
+      <div id="problem">문제 생성 중...</div>
 
-    <div style="margin-top: 20px; display: flex; justify-content: center; align-items: center;">
-      <span style="font-size: 30px;">$x$ =</span>
-      <input type="text" id="inputX" class="input-box selected" readonly onclick="selectInput('x')">
-      <span style="font-size: 30px; margin-left: 20px;">$y$ =</span>
-      <input type="text" id="inputY" class="input-box" readonly onclick="selectInput('y')">
+      <div class="input-container">
+        <div class="input-wrapper">
+          <span class="input-label">$x$ =</span>
+          <input type="text" id="inputX" class="input-box selected" readonly onclick="selectInput('x', event)">
+        </div>
+        <div class="input-wrapper">
+          <span class="input-label">$y$ =</span>
+          <input type="text" id="inputY" class="input-box" readonly onclick="selectInput('y', event)">
+        </div>
+      </div>
+
+      <div id="result1" class="msg-default">문제를 보고 정답을 입력하세요.</div>
+
+      <div class="keypad-container">
+        <div class="keypad-row">
+          <button class="keypad-btn" onclick="appendNumber(1, event)">1</button>
+          <button class="keypad-btn" onclick="appendNumber(2, event)">2</button>
+          <button class="keypad-btn" onclick="appendNumber(3, event)">3</button>
+          <button class="keypad-btn" onclick="appendNumber(4, event)">4</button>
+          <button class="keypad-btn" onclick="appendNumber(5, event)">5</button>
+        </div>
+        <div class="keypad-row">
+          <button class="keypad-btn" onclick="appendNumber(6, event)">6</button>
+          <button class="keypad-btn" onclick="appendNumber(7, event)">7</button>
+          <button class="keypad-btn" onclick="appendNumber(8, event)">8</button>
+          <button class="keypad-btn" onclick="appendNumber(9, event)">9</button>
+          <button class="keypad-btn" onclick="appendNumber(0, event)">0</button>
+        </div>
+        <div class="keypad-row">
+          <button class="keypad-btn" onclick="appendNumber('-', event)">-</button>
+          <button class="keypad-btn" onclick="appendNumber('/', event)">/</button>
+          <button class="keypad-btn" onclick="backspace(event)">←</button>
+          <button class="keypad-btn" onclick="clearInput(event)">C</button>
+          <button class="keypad-btn confirm-btn" onclick="checkAnswer(event)">확인</button>
+        </div>
+        <div class="keypad-row" style="margin-top: 4px;">
+          <button id="nextBtn" class="keypad-btn next-btn" onclick="generateProblem(true, event)" disabled>다음 문제 (Space)</button>
+        </div>
+      </div>
     </div>
 
-    <br>
-
-    <div>
-      <button class="button" onclick="appendNumber(1)">1</button>
-      <button class="button" onclick="appendNumber(2)">2</button>
-      <button class="button" onclick="appendNumber(3)">3</button>
-      <button class="button" onclick="appendNumber(4)">4</button>
-      <button class="button" onclick="appendNumber(5)">5</button><br>
-      <button class="button" onclick="appendNumber(6)">6</button>
-      <button class="button" onclick="appendNumber(7)">7</button>
-      <button class="button" onclick="appendNumber(8)">8</button>
-      <button class="button" onclick="appendNumber(9)">9</button>
-      <button class="button" onclick="appendNumber(0)">0</button><br>
-      <button class="button" onclick="appendNumber('-')">-</button>
-      <button class="button" onclick="appendNumber('/')">/</button>
-      <button class="button" onclick="clearInput()">C</button>
-      <button class="button" onclick="backspace()">←</button>
-      <button class="button" onclick="checkAnswer()" style="background-color: #3399FF; color: white;">확인</button><br><br>
-      <button id="nextBtn" class="button" onclick="generateProblem()" style="background-color: #3399FF; color: white; width: 320px;" disabled>다음 문제(Space)</button>
+    <div id="recordCard" class="guide-box record">
+      <div class="guide-header">
+        <div class="guide-title">📊 누적 기록</div>
+        <button class="reset-btn" onclick="openModal(event)">누적기록 초기화</button>
+      </div>
+      <table class="record-table">
+        <tbody>
+          <tr>
+            <th>구분</th>
+            <th>정답 횟수</th>
+            <th>오답 횟수</th>
+          </tr>
+          <tr>
+            <td>횟수</td>
+            <td id="result2" class="count-highlight">0회</td>
+            <td id="result3" class="count-highlight">0회</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <hr/>
-    <div id="result1" style="font-size:30px;">정답여부</div>
-    <div id="result2" style="font-size:30px;">0번 정답입니다.</div>
-    <div id="result3" style="font-size:30px;">0번 틀렸습니다.</div>
-
-    <!-- 정답확인용 1/3 -->
-    <!-- <div id="answer" style="font-size:28px; margin-top:20px; color:#888;">
-      (정답: x = <span id="showX"></span>, y = <span id="showY"></span>)
-    </div> -->
-    <br><br><br>
-    <div style="font-size: 25px;">
-      1, 2단계: 정답이 정수<br>
-      3단계: 정답이 분수<br>
-      4단계: 정답이 정수 또는 분수<br>
+    <div id="rulesCard" class="guide-box rules">
+      <div class="guide-title">◈ 퍼즐 규칙</div>
+      <ul class="rules-list">
+        <li>1단계, 2단계: 방정식의 해가 깔끔한 정수로 떨어집니다.</li>
+        <li>3단계: 방정식의 해가 분수 형태로 나옵니다. (예: 1/2, -3/4)</li>
+        <li>4단계: 정수와 분수 중 무작위로 혼합되어 출제됩니다.</li>
+        <li>분수를 답으로 입력 시 분수 기호(/)를 사용하세요.</li>
+      </ul>
     </div>
-  </center>
+
+    <div id="shortcutsCard" class="guide-box shortcuts">
+      <div class="guide-title">⌨ 키보드 단축키</div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item"><kbd>0</kbd>~<kbd>9</kbd> <span>숫자 입력</span></div>
+        <div class="shortcut-item"><kbd>-</kbd> <span>음수 기호</span></div>
+        <div class="shortcut-item"><kbd>/</kbd> <span>분수 기호</span></div>
+        <div class="shortcut-item"><kbd>Backspace</kbd> <span>지우기</span></div>
+        <div class="shortcut-item"><kbd>Tab</kbd> <span>x / y 전환</span></div>
+        <div class="shortcut-item"><kbd>Enter</kbd> <span>정답 확인</span></div>
+        <div class="shortcut-item"><kbd>Space</kbd> <span>다음 문제</span></div>
+        <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 초기화</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="customModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal-content">
+      <div class="modal-title">누적 기록 초기화</div>
+      <div class="modal-text">누적 기록을 모두 삭제하시겠습니까?</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal(event)">취소</button>
+        <button class="modal-btn confirm" onclick="resetScore(event)">초기화</button>
+      </div>
+    </div>
+  </div>
 
   <script>
+    const CONFIG = {
+      showStages: true,      
+      showRecords: true,      
+      showRules: true,        
+      showShortcuts: true,    
+      successAlertInline: true 
+    };
+
+    if(!CONFIG.showStages) document.getElementById('stageCard').classList.add('hidden');
+    if(!CONFIG.showRecords) document.getElementById('recordCard').classList.add('hidden');
+    if(!CONFIG.showRules) document.getElementById('rulesCard').classList.add('hidden');
+    if(!CONFIG.showShortcuts) document.getElementById('shortcutsCard').classList.add('hidden');
+
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    let currentStage = 1;
+    let currentStage = parseInt(localStorage.getItem('equations_stage')) || 1;
+    let winCount = parseInt(localStorage.getItem('equations_winCount')) || 0;
+    let loseCount = parseInt(localStorage.getItem('equations_loseCount')) || 0;
+
     let selectedInput = 'x';
     let solutionX = 0;
     let solutionY = 0;
-    let winCount = 0;
-    let loseCount = 0;
-
     let lastAnswerX = null;
     let lastAnswerY = null;
+    let isCurrentAnswerCorrect = false;
+    let currentProblemData = null;
 
-
-    function gcd(a,b) {
-      while (b) [a,b] = [b,a%b];
+    function gcd(a, b) {
+      while (b) [a, b] = [b, a % b];
       return Math.abs(a);
     }
-    function gcd3(a,b,c) { return gcd(gcd(a,b),c); }
-    function lcm(a,b) { return Math.abs(a*b) / gcd(a,b); }
+    function gcd3(a, b, c) { return gcd(gcd(a, b), c); }
+    function lcm(a, b) { return Math.abs(a * b) / gcd(a, b); }
 
-    function setStage(stage) {
+    function blurTarget(e) {
+      if (e && e.target && typeof e.target.blur === 'function') {
+        e.target.blur();
+      }
+    }
+
+    function setStage(stage, e) {
+      blurTarget(e);
       currentStage = stage;
+      localStorage.setItem('equations_stage', stage);
+      
       for (let i = 1; i <= 4; i++) {
         document.getElementById("btn" + i).classList.toggle("active", i === stage);
       }
-      generateProblem();
-    }
 
-    function selectInput(target) {
-  selectedInput = target;
-  document.getElementById('inputX').classList.remove('selected');
-  document.getElementById('inputY').classList.remove('selected');
-  document.getElementById('result1').textContent = "";
-  document.getElementById('result1').style.backgroundColor = "white";
-  document.getElementById('result1').style.color = "black";
-  if (target === 'x') {
-    document.getElementById('inputX').classList.add('selected');
-    document.getElementById('inputX').value = "";
-  } else {
-    document.getElementById('inputY').classList.add('selected');
-    document.getElementById('inputY').value = "";
-  }
-}
-
-
-function appendNumber(num) {
-  const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
-  input.value += num;
-
-  // 정답여부 메시지 초기화 + 배경색, 글자색 초기화
-  const res = document.getElementById('result1');
-  res.textContent = "";
-  res.style.backgroundColor = "white";
-  res.style.color = "black";
-}
-
-function backspace() {
-  const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
-  input.value = input.value.slice(0, -1);
-
-  // 정답여부 메시지 초기화 + 배경색, 글자색 초기화
-  const res = document.getElementById('result1');
-  res.textContent = "";
-  res.style.backgroundColor = "white";
-  res.style.color = "black";
-}
-
-function clearInput() {
-  const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
-  input.value = "";
-
-  // 정답여부 메시지 초기화 + 배경색, 글자색 초기화
-  const res = document.getElementById('result1');
-  res.textContent = "";
-  res.style.backgroundColor = "white";
-  res.style.color = "black";
-}
-
-
-    // a,b,d,e는 0이 나오면 다시 뽑기,  c,f도 -20~20 범위만 허용
-function getNonZeroCoeff() {
-  let val;
-  do {
-    val = getNonOneCoeff();
-  } while(val === 0);
-  return val;
-}
-
-function generateProblem() {
-  document.getElementById('nextBtn').disabled = true;
-
-  let a,b,c,d,e,f;
-  while (true) {
-    if (currentStage <= 2) {
-      solutionX = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
-      solutionY = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 9) + 1);
-    } else {
-      const fractions = [ [1,2],[1,3],[2,3],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[1,6],[5,6] ];
-      let fracX = fractions[Math.floor(Math.random() * fractions.length)];
-      let fracY = fractions[Math.floor(Math.random() * fractions.length)];
-      solutionX = [ (Math.random() < 0.5 ? 1 : -1) * fracX[0], fracX[1] ];
-      solutionY = [ (Math.random() < 0.5 ? 1 : -1) * fracY[0], fracY[1] ];
-    }
-
-    a = getNonZeroCoeff();
-    b = getNonZeroCoeff();
-    d = getNonZeroCoeff();
-    e = getNonZeroCoeff();
-
-    if (currentStage === 1) {
-      if (Math.random() < 0.5) d = Math.sign(a) * Math.abs(a);
-      else e = Math.sign(b) * Math.abs(b);
-    }
-
-    if (a*e === b*d) continue;
-
-    if (currentStage <= 2) {
-      c = a * solutionX + b * solutionY;
-      f = d * solutionX + e * solutionY;
-    } else {
-      let lcmXY = lcm(solutionX[1], solutionY[1]);
-      let xInt = solutionX[0] * (lcmXY/solutionX[1]);
-      let yInt = solutionY[0] * (lcmXY/solutionY[1]);
-
-      c = a * xInt + b * yInt;
-      f = d * xInt + e * yInt;
-
-      a *= lcmXY; b *= lcmXY; d *= lcmXY; e *= lcmXY;
-    }
-
-    // 0 제외, -20~20 범위 체크
-    if ([a,b,c,d,e,f].some(v => v === 0 || v < -20 || v > 20)) continue;
-
-    if (gcd3(a,b,c) !== 1) continue;
-    if (gcd3(d,e,f) !== 1) continue;
-
-    // 정답확인용 2/3
-    // showAnswer();
-    break;
-  }
-
-  const showA = (a === 1) ? '' : (a === -1) ? '-' : a;
-  const showB = (b === 1) ? '+': (b === -1) ? '-' : (b > 0 ? `+${b}` : b);
-  const showD = (d === 1) ? '' : (d === -1) ? '-' : d;
-  const showE = (e === 1) ? '+' : (e === -1) ? '-' : (e > 0 ? `+${e}` : e);
-
-  const latex = `
-    \\[
-    \\left\\{
-    \\begin{array}{l}
-    ${showA}x ${showB}y = ${c} \\\\
-    ${showD}x ${showE}y = ${f}
-    \\end{array}
-    \\right.
-    \\]
-  `;
-  document.getElementById("problem").innerHTML = latex;
-  MathJax.typesetPromise();
-
-  document.getElementById("inputX").value = "";
-  document.getElementById("inputY").value = "";
-  selectInput('x');
-  document.getElementById('result1').textContent = "";
-}
-
-
-    function getNonOneCoeff() {
-      if (Math.random() < 0.05) {
-        return Math.random() < 0.5 ? 1 : -1;
+      const savedProblem = localStorage.getItem('equations_currentProblem_' + stage);
+      if (savedProblem) {
+        loadSavedProblem();
       } else {
-        let n = Math.floor(Math.random() * 8) + 2;
-        return Math.random() < 0.5 ? n : -n;
+        generateProblem(true);
       }
+    }
+
+    function selectInput(target, e) {
+      if (e) blurTarget(e);
+      selectedInput = target;
+      document.getElementById('inputX').classList.remove('selected');
+      document.getElementById('inputY').classList.remove('selected');
+      
+      const res = document.getElementById('result1');
+      if(!isCurrentAnswerCorrect) {
+        res.textContent = "답안을 입력 중입니다...";
+        res.className = "msg-default";
+        res.removeAttribute("style");
+      }
+
+      const activeInput = document.getElementById(target === 'x' ? 'inputX' : 'inputY');
+      activeInput.classList.add('selected');
+
+      if (!isCurrentAnswerCorrect) {
+        activeInput.value = "";
+      }
+    }
+
+    function resetTextColors() {
+      document.getElementById('result2').className = 'count-highlight';
+      document.getElementById('result3').className = 'count-highlight';
+    }
+
+    function appendNumber(num, e) {
+      if (e) blurTarget(e);
+      if (isCurrentAnswerCorrect) return;
+      resetTextColors(); 
+      const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
+      input.value += num;
+      resetMsg();
+    }
+
+    function backspace(e) {
+      if (e) blurTarget(e);
+      if (isCurrentAnswerCorrect) return;
+      resetTextColors(); 
+      const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
+      input.value = input.value.slice(0, -1);
+      resetMsg();
+    }
+
+    function clearInput(e) {
+      if (e) blurTarget(e);
+      if (isCurrentAnswerCorrect) return;
+      resetTextColors(); 
+      const input = selectedInput === 'x' ? document.getElementById('inputX') : document.getElementById('inputY');
+      input.value = "";
+      resetMsg();
+    }
+
+    function resetMsg() {
+      const res = document.getElementById('result1');
+      res.textContent = "원하는 값을 입력 후 확인을 누르세요.";
+      res.className = "msg-default";
+      res.removeAttribute("style");
+    }
+
+    function getNonZeroCoeff() {
+      let val;
+      do {
+        val = Math.floor(Math.random() * 11) - 5; 
+      } while (val === 0);
+      return val;
+    }
+
+    window.generateProblem = function(forceGenerate = false, e) {
+      if (e) blurTarget(e);
+      if (!forceGenerate) {
+        const savedProblem = localStorage.getItem('equations_currentProblem_' + currentStage);
+        if (savedProblem) {
+          loadSavedProblem();
+          return;
+        }
+      }
+
+      document.getElementById('nextBtn').disabled = true;
+      document.getElementById('nextBtn').classList.remove('is-active');
+      isCurrentAnswerCorrect = false;
+
+      let a, b, c, d, eCoeff, f;
+      
+      while (true) {
+        let isFractionMode = false;
+        if (currentStage === 3) isFractionMode = true;
+        if (currentStage === 4 && Math.random() >= 0.5) isFractionMode = true;
+
+        if (!isFractionMode) {
+          solutionX = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
+          solutionY = (Math.random() < 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
+        } else {
+          const fractions = [[1,2], [1,3], [2,3], [1,4], [3,4], [1,5], [2,5]];
+          let fracX = fractions[Math.floor(Math.random() * fractions.length)];
+          let fracY = fractions[Math.floor(Math.random() * fractions.length)];
+          solutionX = [(Math.random() < 0.5 ? 1 : -1) * fracX[0], fracX[1]];
+          solutionY = [(Math.random() < 0.5 ? 1 : -1) * fracY[0], fracY[1]];
+        }
+
+        a = getNonZeroCoeff();
+        b = getNonZeroCoeff();
+        d = getNonZeroCoeff();
+        eCoeff = getNonZeroCoeff();
+
+        if (currentStage === 1) {
+          if (Math.random() < 0.5) {
+            d = Math.random() < 0.5 ? a : -a;
+          } else {
+            eCoeff = Math.random() < 0.5 ? b : -b;
+          }
+        }
+
+        if (a * eCoeff === b * d) continue;
+
+        if (!isFractionMode) {
+          c = a * solutionX + b * solutionY;
+          f = d * solutionX + eCoeff * solutionY;
+        } else {
+          let commonLcm = lcm(solutionX[1], solutionY[1]);
+          let xNum = solutionX[0] * (commonLcm / solutionX[1]);
+          let yNum = solutionY[0] * (commonLcm / solutionY[1]);
+
+          c = a * xNum + b * yNum;
+          f = d * xNum + eCoeff * yNum;
+
+          a *= commonLcm; b *= commonLcm; d *= commonLcm; eCoeff *= commonLcm;
+        }
+
+        if ([a, b, c, d, eCoeff, f].some(v => v === 0 || v < -30 || v > 30)) continue;
+        if (gcd3(Math.abs(a), Math.abs(b), Math.abs(c)) !== 1) continue;
+        if (gcd3(Math.abs(d), Math.abs(eCoeff), Math.abs(f)) !== 1) continue;
+
+        break;
+      }
+
+      currentProblemData = { a, b, c, d, e: eCoeff, f, solutionX, solutionY };
+      localStorage.setItem('equations_currentProblem_' + currentStage, JSON.stringify(currentProblemData));
+
+      renderLaTeXProblem(a, b, c, d, eCoeff, f);
+
+      document.getElementById("inputX").value = "";
+      document.getElementById("inputY").value = "";
+      lastAnswerX = null;
+      lastAnswerY = null;
+      selectedInput = 'x';
+      document.getElementById('inputY').classList.remove('selected');
+      document.getElementById('inputX').classList.add('selected');
+      resetMsg();
+    }
+
+    function renderLaTeXProblem(a, b, c, d, e, f) {
+      const formatX = (coeff) => coeff === 1 ? 'x' : coeff === -1 ? '-x' : coeff + 'x';
+      const formatY = (coeff) => coeff === 1 ? '+y' : coeff === -1 ? '-y' : coeff > 0 ? `+${coeff}y` : `${coeff}y`;
+
+      const mathContainer = document.getElementById("problem");
+      mathContainer.innerHTML = `$$\\begin{cases} ${formatX(a)}${formatY(b)} = ${c} \\\\ ${formatX(d)}${formatY(e)} = ${f} \\end{cases}$$`;
+      
+      if(window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([mathContainer]).catch(function (err) {
+          console.log(err.message);
+        });
+      }
+    }
+
+    function loadSavedProblem() {
+      const saved = localStorage.getItem('equations_currentProblem_' + currentStage);
+      if (!saved) {
+        generateProblem(true);
+        return;
+      }
+      currentProblemData = JSON.parse(saved);
+      solutionX = currentProblemData.solutionX;
+      solutionY = currentProblemData.solutionY;
+      isCurrentAnswerCorrect = false;
+      
+      document.getElementById('nextBtn').disabled = true;
+      document.getElementById('nextBtn').classList.remove('is-active');
+
+      renderLaTeXProblem(currentProblemData.a, currentProblemData.b, currentProblemData.c, currentProblemData.d, currentProblemData.e, currentProblemData.f);
+      document.getElementById("inputX").value = "";
+      document.getElementById("inputY").value = "";
+      lastAnswerX = null;
+      lastAnswerY = null;
+      selectedInput = 'x';
+      document.getElementById('inputY').classList.remove('selected');
+      document.getElementById('inputX').classList.add('selected');
+      resetMsg();
     }
 
     function evalFraction(value) {
       if (value.includes('/')) {
-        const [num, den] = value.split('/');
-        return parseFloat(num)/parseFloat(den);
-      } else return parseFloat(value);
+        const parts = value.split('/');
+        if(parts.length !== 2) return NaN;
+        const num = parseFloat(parts[0]);
+        const den = parseFloat(parts[1]);
+        if(den === 0) return NaN;
+        return num / den;
+      } 
+      return parseFloat(value);
     }
 
-    function checkAnswer() {
-  const inputX = document.getElementById('inputX').value.trim();
-  const inputY = document.getElementById('inputY').value.trim();
+    function checkAnswer(e) {
+      if (e) blurTarget(e);
+      if (isCurrentAnswerCorrect) return;
 
-  if (inputX === lastAnswerX && inputY === lastAnswerY) {
-    return;  // 이전과 동일한 입력이면 무시
-  }
+      const inputX = document.getElementById('inputX').value.trim();
+      const inputY = document.getElementById('inputY').value.trim();
 
-  const x = evalFraction(inputX);
-  const y = evalFraction(inputY);
+      const resEl = document.getElementById('result1');
+      const winEl = document.getElementById('result2');
+      const loseEl = document.getElementById('result3');
 
-  let trueX, trueY;
-  if (Array.isArray(solutionX)) {
-    trueX = solutionX[0]/solutionX[1];
-    trueY = solutionY[0]/solutionY[1];
-  } else {
-    trueX = solutionX;
-    trueY = solutionY;
-  }
+      if (!inputX || !inputY) {
+        resEl.textContent = "x 값과 y 값을 모두 입력해 주세요.";
+        resEl.className = "msg-default";
+        resEl.style.border = "2px solid var(--danger)";
+        resEl.style.color = "var(--danger)";
+        return;
+      }
 
-  const eps = 1e-6;
-  const xCorrect = Math.abs(x - trueX) < eps;
-  const yCorrect = Math.abs(y - trueY) < eps;
+      if (inputX === lastAnswerX && inputY === lastAnswerY) return;
 
-  if (xCorrect && yCorrect) {
-    document.getElementById('result1').innerHTML = `정답입니다!`;
-    document.getElementById("result1").style.backgroundColor = "green";
-    document.getElementById("result1").style.color = "white";
-    winCount++;
-    document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
-    document.getElementById('nextBtn').disabled = false;
-  } else {
-    let msg = "";
-    if (!xCorrect && !yCorrect) msg = "x, y 값이 모두 틀렸습니다!";
-    else if (!xCorrect) msg = "x 값이 틀렸습니다!";
-    else msg = "y 값이 틀렸습니다!";
+      const x = evalFraction(inputX);
+      const y = evalFraction(inputY);
 
-    document.getElementById('result1').textContent = msg;
-    document.getElementById("result1").style.backgroundColor = "red";
-    document.getElementById("result1").style.color = "white";
-    loseCount++;
-    document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
-  }
+      let trueX = Array.isArray(solutionX) ? (solutionX[0] / solutionX[1]) : solutionX;
+      let trueY = Array.isArray(solutionY) ? (solutionY[0] / solutionY[1]) : solutionY;
 
-  lastAnswerX = inputX;
-  lastAnswerY = inputY;
-}
+      const eps = 1e-5;
+      const xCorrect = !isNaN(x) && Math.abs(x - trueX) < eps;
+      const yCorrect = !isNaN(y) && Math.abs(y - trueY) < eps;
 
+      resEl.style.border = "none"; 
+
+      if (xCorrect && yCorrect) {
+        resEl.textContent = `🎉 정답입니다! 다음 문제를 진행할 수 있습니다.`;
+        resEl.className = "feedback-success"; 
+        
+        winCount++;
+        localStorage.setItem('equations_winCount', winCount);
+        winEl.textContent = `${winCount}회`;
+        
+        winEl.classList.add('win-active'); 
+        loseEl.classList.remove('lose-active');
+
+        isCurrentAnswerCorrect = true;
+        
+        const nextBtn = document.getElementById('nextBtn');
+        nextBtn.disabled = false;
+        nextBtn.classList.add('is-active');
+        
+        localStorage.removeItem('equations_currentProblem_' + currentStage);
+      } else {
+        let msg = "";
+        if (!xCorrect && !yCorrect) msg = "❌ x, y 값이 모두 틀렸습니다!";
+        else if (!xCorrect) msg = "❌ x 값이 틀렸습니다!";
+        else msg = "❌ y 값이 틀렸습니다!";
+
+        resEl.textContent = msg;
+        resEl.className = "feedback-danger"; 
+        
+        loseCount++;
+        localStorage.setItem('equations_loseCount', loseCount);
+        loseEl.textContent = `${loseCount}회`;
+        
+        loseEl.classList.add('lose-active');
+        winEl.classList.remove('win-active');
+      }
+
+      lastAnswerX = inputX;
+      lastAnswerY = inputY;
+    }
+
+    function openModal(e) {
+      if (e) blurTarget(e);
+      document.getElementById('customModal').classList.add('show');
+    }
+
+    function closeModal(e) {
+      if (e) blurTarget(e);
+      document.getElementById('customModal').classList.remove('show');
+    }
+
+    function closeModalOnOverlay(e) {
+      if(e.target.id === 'customModal') closeModal();
+    }
+
+    function resetScore(e) {
+      if (e) blurTarget(e);
+      winCount = 0;
+      loseCount = 0;
+      localStorage.setItem('equations_winCount', 0);
+      localStorage.setItem('equations_loseCount', 0);
+      
+      for(let i = 1; i <= 4; i++){
+        localStorage.removeItem('equations_currentProblem_' + i);
+      }
+      
+      document.getElementById('result2').textContent = "0회";
+      document.getElementById('result3').textContent = "0회";
+      resetTextColors();
+      closeModal();
+      generateProblem(true);
+    }
 
     document.addEventListener('keydown', e => {
-      if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
-      else if (e.key === '-') appendNumber('-');
-      else if (e.key === '/') appendNumber('/');
-      else if (e.key === 'Backspace') backspace();
-      else if (e.key === 'Escape') clearInput();
-      else if (e.key === 'Enter') checkAnswer();
+      if (e.key >= '0' && e.key <= '9') { resetTextColors(); appendNumber(e.key); }
+      else if (e.key === '-') { resetTextColors(); appendNumber('-'); }
+      else if (e.key === '/') { resetTextColors(); appendNumber('/'); }
+      else if (e.key === 'Backspace') { resetTextColors(); backspace(); }
+      else if (e.key === 'Escape') { resetTextColors(); clearInput(); }
+      else if (e.key === 'Enter') { e.preventDefault(); checkAnswer(); }
       else if (e.code === 'Space') {
         e.preventDefault();
         if (!document.getElementById('nextBtn').disabled) {
-          generateProblem();
+          generateProblem(true);
         }
       }
       else if (e.key === 'Tab') {
@@ -345,18 +574,14 @@ function generateProblem() {
       }
     });
 
-    // 정답확인용 3/3
-    // function showAnswer() {
-    //   if (Array.isArray(solutionX)) {
-    //     document.getElementById('showX').textContent = `${solutionX[0]}/${solutionX[1]}`;
-    //     document.getElementById('showY').textContent = `${solutionY[0]}/${solutionY[1]}`;
-    //   } else {
-    //     document.getElementById('showX').textContent = solutionX;
-    //     document.getElementById('showY').textContent = solutionY;
-    //   }
-    // }
-
-    window.onload = ()=> setStage(1);
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('result2').textContent = `${winCount}회`;
+      document.getElementById('result3').textContent = `${loseCount}회`;
+      
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById("btn" + i).classList.toggle("active", i === currentStage);
+      }
+    });
   </script>
 </body>
 </html>

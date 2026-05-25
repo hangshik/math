@@ -1,197 +1,357 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>약수를 찾아라!</title>
-  <style>
-    body {
-      font-family: 'Arial', sans-serif;
-      text-align: center;
-      background: #f0f8ff;
-    }
-    h1 {
-      margin-top: 30px;
-    }
-    #targetNumber {
-      font-size: 2em;
-      margin: 20px;
-    }
-    #buttonsContainer {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    .numberButton {
-      padding: 15px;
-      background-color: #e0e0e0;
-      border: none;
-      font-size: 1.2em;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: background 0.3s;
-    }
-    .numberButton:hover {
-      background-color: #b0c4de;
-    }
-    .disabled {
-      pointer-events: none;
-      opacity: 0.5;
-    }
-    #score {
-      margin-top: 20px;
-      font-size: 1.2em;
-    }
-    #nextButton {
-      margin: 20px;
-      padding: 10px 20px;
-      font-size: 1em;
-      cursor: pointer;
-      display: none; /* 초기에는 숨김 */
-    }
-    #message {
-      font-size: 1.2em;
-      margin-top: 10px;
-      color: green;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>약수를 찾아라!</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 🌟 기존 style.css를 수정하지 않고 index.html 내부에서 우선순위 덮어쓰기 적용 */
+        
+        /* [요청 반영] 기본 PC/태블릿 화면에서는 숫자 버튼을 한 줄에 10개씩 배치 */
+        #buttonsContainer {
+            display: grid !important;
+            grid-template-columns: repeat(10, 1fr) !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin: 10px 0 !important;
+        }
+        
+        /* 약수 선택용 입체 숫자 카드 고유 테마 보정 */
+        .numberButton {
+            height: 52px !important;
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            border-radius: var(--radius-sm) !important;
+            border: 2px solid var(--border-color) !important;
+            background-color: #ffffff !important;
+            color: var(--text-main) !important;
+            cursor: pointer !important;
+            transition: var(--transition-fast) !important;
+        }
+        .numberButton:hover {
+            border-color: var(--text-sub) !important;
+            background-color: #f8f9fa !important;
+        }
+        .numberButton.selected {
+            background-color: var(--active) !important;
+            color: #ffffff !important;
+            border-color: var(--active) !important;
+            box-shadow: 0 3px 8px rgba(0, 123, 255, 0.3) !important;
+        }
+        
+        /* 🌟 [요청 반영] 모바일처럼 가로 폭이 좁은 소형 해상도 뷰포트 강제 분기 제어 */
+        @media (max-width: 576px) {
+            /* 1. 상단 문제 노출 레이아웃을 블록 형식으로 변경하여 안전하게 2줄 개행 유도 */
+            #problem {
+                font-size: 24px !important;
+                display: block !important;
+                text-align: center !important;
+                line-height: 1.5 !important;
+                word-break: keep-all !important;
+            }
+            #problem span {
+                display: inline-block !important; /* 대상 타겟 숫자가 부자연스럽게 잘리지 않도록 보호 */
+            }
+            
+            /* 2. 숫자 버튼을 한 줄에 5개씩 그리드 재배치 */
+            #buttonsContainer {
+                grid-template-columns: repeat(5, 1fr) !important;
+                gap: 6px !important;
+            }
+            .numberButton {
+                height: 46px !important;
+                font-size: 16px !important;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>약수를 찾아라!</h1>
-  <div id="targetNumber">로딩 중...</div>
-  <!-- 게임 시작 버튼 삭제됨 -->
-  <button id="nextButton">다음 문제</button>
-  <div id="buttonsContainer"></div>
-  <div id="score">점수: 0</div>
-  <div id="message"></div>
 
-  <script>
-    // 마우스 오른쪽 버튼 클릭 금지
-    document.addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-    });
+<div class="wrapper">
+    <h1 class="main-title">약수를 찾아라!</h1>
+    
+    <div class="container-fixed problem-card">
+        <div id="problem">로딩 중...</div>
+        
+        <div id="buttonsContainer"></div>
+        
+        <div id="message-box" class="msg-default">모든 약수를 선택한 후 정답 확인을 누르세요.</div>
+        
+        <div class="control-area">
+            <button class="keypad-btn" onclick="generateNewTarget(true)">새로운 문제</button>
+            <button class="keypad-btn" onclick="clearInput()">초기화</button>
+            <button id="checkBtn" class="keypad-btn confirm-btn" onclick="checkAnswer()" disabled>정답 확인</button>
+        </div>
+    </div>
 
-    const nextButton = document.getElementById("nextButton");
-    const targetNumberDisplay = document.getElementById("targetNumber");
-    const buttonsContainer = document.getElementById("buttonsContainer");
-    const scoreDisplay = document.getElementById("score");
-    const messageDisplay = document.getElementById("message");
+    <div class="guide-box record">
+        <div class="guide-header">
+            <h2 class="guide-title">📊 누적 기록</h2>
+            <button class="reset-btn" onclick="confirmResetStats()">누적기록 초기화</button>
+        </div>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>구분</th>
+                    <th>성공 횟수</th>
+                    <th>실패 횟수</th>
+                    <th>새 문제 횟수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>기록</td>
+                    <td id="statSuccess" class="count-highlight">0</td>
+                    <td id="statFail" class="count-highlight">0</td>
+                    <td id="statNew" class="count-highlight">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-    let targetNumber = 0;
-    let score = 0;
-    let divisorSet = new Set();
-    let foundDivisors = new Set();
+    <div class="guide-box rules">
+        <div class="guide-header">
+            <h2 class="guide-title">◈ 게임 방법</h2>
+        </div>
+        <ul class="rules-list">
+            <li>주어진 숫자의 모든 약수를 누락이나 잘못된 선택 없이 골라야 정답 처리됩니다.</li>
+            <li>숫자 키패(1~0)를 누르면 해당 순서 번호의 약수 카드가 편리하게 토글됩니다.</li>
+        </ul>
+    </div>
 
-    function isComposite(n) {
-      if (n < 4) return false;
-      for (let i = 2; i <= Math.sqrt(n); i++) {
-        if (n % i === 0) return true;
-      }
-      return false;
-    }
+    <div class="guide-box shortcuts">
+        <div class="guide-header">
+            <h2 class="guide-title">⌨ 키보드 단축키</h2>
+        </div>
+        <div class="shortcut-grid">
+            <div class="shortcut-item">
+                <kbd>1</kbd> ~ <kbd>0</kbd> <span>순서대로 버튼 토글 선택</span>
+            </div>
+            <div class="shortcut-item">
+                <kbd>R</kbd> <span>새로운 문제 생성</span>
+            </div>
+            <div class="shortcut-item">
+                <kbd>Esc</kbd> <span>선택 초기화</span>
+            </div>
+            <div class="shortcut-item">
+                <kbd>Enter</kbd> / <kbd>Space</kbd> <span>정답 확인 진행</span>
+            </div>
+        </div>
+    </div>
+</div>
 
-    function getRandomTarget(min = 10, max = 60) {
-      let validTarget, divisors;
-      let isValidComposite;
+<div id="modal" class="modal-overlay">
+    <div class="modal-content">
+        <h2 id="modalTitle" class="modal-title">누적 기록 초기화</h2>
+        <p id="failReason" class="modal-text">누적 기록을 모두 삭제하시겠습니까?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+            <button class="modal-btn confirm" onclick="handleModalAction()">초기화</button>
+        </div>
+    </div>
+</div>
 
-      do {
-        validTarget = Math.floor(Math.random() * (max - min + 1)) + min;
-        divisors = getDivisors(validTarget);
-        isValidComposite = isComposite(validTarget);
-      } while (
-        divisors.length < 2 ||
-        divisors.length > 5 ||
-        (Math.random() < 0.8 && !isValidComposite) ||
-        (Math.random() >= 0.8 && isValidComposite)
-      );
+<script>
+    const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47];
+    const COMPOSITES = [
+        4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 27, 28, 
+        30, 32, 33, 34, 35, 36, 38, 39, 40, 42, 44, 45, 46, 48, 49, 50, 51, 52
+    ];
 
-      return validTarget;
-    }
+    let state = { success: 0, fail: 0, newProblems: 0, lastResult: null, target: 12, found: [] };
+    let isAnswerChecked = false;
 
-    function getDivisors(n) {
-      const divisors = [];
-      for (let i = 1; i <= n; i++) {
-        if (n % i === 0) divisors.push(i);
-      }
-      return divisors;
-    }
-
-    function generateButtons() {
-      buttonsContainer.innerHTML = "";
-
-      const numbers = new Set();
-
-      divisorSet.forEach(num => numbers.add(num));
-
-      while (numbers.size < 20) {
-        numbers.add(Math.floor(Math.random() * 50) + 1);
-      }
-
-      const numberArray = Array.from(numbers);
-      for (let i = numberArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [numberArray[i], numberArray[j]] = [numberArray[j], numberArray[i]];
-      }
-
-      numberArray.forEach(num => {
-        const btn = document.createElement("button");
-        btn.className = "numberButton";
-        btn.textContent = num;
-        btn.onclick = () => checkAnswer(num, btn);
-        buttonsContainer.appendChild(btn);
-      });
-    }
-
-    function disableAllButtons() {
-      const allButtons = document.querySelectorAll(".numberButton");
-      allButtons.forEach(btn => btn.classList.add("disabled"));
-    }
-
-    function checkAnswer(num, button) {
-      if (divisorSet.has(num)) {
-        if (!foundDivisors.has(num)) {
-          button.style.backgroundColor = "#90ee90";
-          score += 10;
-          foundDivisors.add(num);
+    try {
+        const savedData = localStorage.getItem('divisorGameData');
+        if (savedData) {
+            const parsed = JSON.parse(savedData);
+            state = Object.assign({}, state, parsed);
         }
-      } else {
-        button.style.backgroundColor = "#ff7f7f";
-        score -= 5;
-      }
-
-      scoreDisplay.textContent = `점수: ${score}`;
-
-      if (foundDivisors.size === divisorSet.size) {
-        disableAllButtons();
-        messageDisplay.textContent = "약수를 모두 찾았습니다!";
-        nextButton.style.display = "inline-block";
-      }
+    } catch (e) {
+        console.warn("로컬스토리지에 접근할 수 없습니다.", e);
     }
 
-    function startRound() {
-      nextButton.style.display = "none";
-      messageDisplay.textContent = "";
-      targetNumber = getRandomTarget();
-      const divisors = getDivisors(targetNumber);
-      divisorSet = new Set(divisors);
-      foundDivisors = new Set();
-      targetNumberDisplay.textContent = `다음 수의 약수를 클릭하세요: ${targetNumber}`;
-      generateButtons();
+    function save() { 
+        try {
+            localStorage.setItem('divisorGameData', JSON.stringify(state)); 
+        } catch (e) { }
     }
 
-    nextButton.onclick = () => {
-      startRound();
+    function generateNewTarget(isUserClick = false) {
+        if (isUserClick) {
+            state.newProblems = (state.newProblems || 0) + 1;
+            state.lastResult = 'new';
+        }
+
+        const rand = Math.random();
+        if (rand < 0.3) {
+            state.target = PRIMES[Math.floor(Math.random() * PRIMES.length)];
+        } else {
+            state.target = COMPOSITES[Math.floor(Math.random() * COMPOSITES.length)];
+        }
+        
+        state.found = [];
+        isAnswerChecked = false;
+        save();
+        updateUI();
+        resetMessageBox();
+    }
+
+    function toggleNumber(n) {
+        if (n > state.target || isAnswerChecked) return;
+        resetMessageBox();
+
+        if (state.found.includes(n)) {
+            state.found = state.found.filter(val => val !== n);
+        } else {
+            state.found.push(n);
+        }
+        updateUI();
+    }
+
+    function resetMessageBox() {
+        const msgBox = document.getElementById('message-box');
+        if (msgBox) {
+            msgBox.className = "msg-default";
+            msgBox.innerText = "모든 약수를 선택한 후 정답 확인을 누르세요.";
+        }
+    }
+
+    function updateUI() {
+        const problemEl = document.getElementById('problem');
+        if (!problemEl) return;
+
+        problemEl.innerHTML = `숫자 <span style="color:var(--active); font-size:44px; font-weight:900; margin:0 4px;">${state.target}</span>의 약수를 모두 클릭하세요!`;
+        
+        const statSuccessEl = document.getElementById('statSuccess');
+        const statFailEl = document.getElementById('statFail');
+        const statNewEl = document.getElementById('statNew');
+        
+        if (statSuccessEl && statFailEl && statNewEl) {
+            // (최근) 텍스트를 제거하고 숫자 값만 표시하도록 수정
+            statSuccessEl.className = 'count-highlight' + (state.lastResult === 'success' ? ' win-active' : '');
+            statFailEl.className = 'count-highlight' + (state.lastResult === 'fail' ? ' lose-active' : '');
+            
+            statSuccessEl.innerHTML = state.success;
+            statFailEl.innerHTML = state.fail;
+
+            if (state.lastResult === 'new') {
+                statNewEl.style.color = 'var(--active)';
+            } else {
+                statNewEl.style.color = '';
+            }
+            statNewEl.innerHTML = state.newProblems || 0;
+        }
+        
+        const container = document.getElementById('buttonsContainer');
+        if (container) {
+            container.innerHTML = '';
+            for (let i = 1; i <= state.target; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'numberButton' + (state.found.includes(i) ? ' selected' : '');
+                btn.innerText = i;
+                btn.onclick = () => toggleNumber(i);
+                container.appendChild(btn);
+            }
+        }
+        
+        const checkBtn = document.getElementById('checkBtn');
+        if (checkBtn) {
+            checkBtn.disabled = !state.found || state.found.length === 0 || isAnswerChecked;
+        }
+    }
+
+    function checkAnswer() {
+        if (isAnswerChecked) return;
+
+        let correct = [];
+        for(let i = 1; i <= state.target; i++) {
+            if(state.target % i === 0) correct.push(i);
+        }
+        
+        let isSuccess = (state.found.length === correct.length && state.found.every(n => correct.includes(n)));
+        const msgBox = document.getElementById('message-box');
+        
+        if (isSuccess) {
+            state.success++;
+            state.lastResult = 'success';
+            isAnswerChecked = true;
+            
+            msgBox.className = "feedback-success";
+            msgBox.innerText = `🎉 정답입니다! ${state.target}의 모든 약수는 [ ${correct.join(', ')} ] 입니다.`;
+            
+            setTimeout(() => { generateNewTarget(false); }, 1800);
+        } else {
+            state.fail++;
+            state.lastResult = 'fail';
+            
+            msgBox.className = "feedback-danger";
+            const hasWrongPick = state.found.filter(n => !correct.includes(n)).length > 0;
+            if (hasWrongPick) {
+                msgBox.innerText = "❌ 오답입니다. 약수가 아닌 숫자가 선택되어 있습니다. 다시 확인해 보세요!";
+            } else {
+                msgBox.innerText = "❌ 오답입니다. 아직 발견하지 못한 약수가 남아있습니다. 더 찾아보세요!";
+            }
+        }
+        save();
+        updateUI();
+    }
+
+    function confirmResetStats() {
+        document.getElementById('modal').classList.add('show');
+    }
+
+    function handleModalAction() {
+        document.getElementById('modal').classList.remove('show');
+        state.success = 0; 
+        state.fail = 0; 
+        state.newProblems = 0; 
+        state.lastResult = null; 
+        save(); 
+        updateUI(); 
+        resetMessageBox();
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('show');
+    }
+
+    function clearInput() { 
+        if (isAnswerChecked) return;
+        state.found = []; 
+        updateUI(); 
+        resetMessageBox();
+    }
+
+    window.onkeydown = (e) => {
+        const modal = document.getElementById('modal');
+        if(modal && modal.classList.contains('show')) {
+            if(e.key === 'Enter' || e.key === ' ') { 
+                e.preventDefault(); 
+                handleModalAction(); 
+            }
+            if(e.key === 'Escape') {
+                e.preventDefault();
+                closeModal();
+            }
+        } else {
+            if(e.key >= '0' && e.key <= '9') {
+                let n = (e.key === '0') ? 10 : parseInt(e.key);
+                toggleNumber(n);
+            }
+            if(e.key === 'r' || e.key === 'R') generateNewTarget(true);
+            if(e.key === 'Escape') resetGame();
+            
+            const checkBtn = document.getElementById('checkBtn');
+            if(checkBtn && !checkBtn.disabled && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                checkAnswer();
+            }
+        }
     };
 
-    // 게임 자동 시작 로직
-    window.onload = () => {
-      score = 0;
-      scoreDisplay.textContent = `점수: ${score}`;
-      messageDisplay.textContent = "";
-      startRound();
-    };
-  </script>
+    updateUI();
+</script>
 </body>
 </html>

@@ -2,347 +2,456 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>소인수분해</title>
-<script>
-  window.MathJax = { tex: { inlineMath: [['$', '$']] } };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<link rel="stylesheet" href="style.css">
 <style>
-  body { 
-    font-family: 'Pretendard', sans-serif; 
-    text-align: center; 
-    text-size-adjust: 100%;
-    background-color: #f9f9f9;
-  }
-  .container { 
-    max-width: 600px; 
-    margin: 0 auto; 
-    background: white;
-    padding: 20px;
-    border-radius: 20px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  }
-  .button {
-    width: 60px; height: 60px; font-size: 24px; margin: 5px;
-    border-radius: 10px; border: none; background-color: #DDDDDD; cursor: pointer;
-    transition: background 0.2s;
-    outline: none; 
-  }
-  .button:hover { background-color: #bbb; }
-  .button:active { background-color: #999; }
-  
-  .control-btn { background-color: #3399FF; color: white; width: 100px; font-size: 18px; }
-  .clear-btn { background-color: #ff9800; color: white; } 
-  
-  #inputDisplay {
-    font-size: 30px; width: 300px; height: 50px; text-align: center;
-    margin: 20px 0; border: 2px solid #333; border-radius: 5px;
-    background-color: #fff; cursor: text;
-  }
-  #problem { font-size: 50px; margin: 20px 0; font-weight: bold; color: #333; }
-  
-  /* 정답 확인 스타일 */
-  #result1, #result2, #result3 {
-    font-size: 24px;
-    margin: 8px 0;
-    padding: 5px;
-    border-radius: 5px;
-  }
-  
-  /* 키보드 안내 박스 스타일 */
-  .help-box {
-    margin-top: 20px;
-    padding: 15px;
-    background-color: #eee;
-    border-radius: 10px;
-    font-size: 16px;
-    color: #555;
-    text-align: left;
-    display: inline-block;
-    width: 90%;
-  }
-  .key-tag {
-    background: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-weight: bold;
-    font-family: monospace;
-    font-size: 14px;
-    color: #333;
-  }
+    /* 소인수분해 퍼즐 고유 인터페이스 최적화 */
+    
+    /* 문제와 입력창을 가로 한 줄 및 화면 정중앙 배치 */
+    .formula-row-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    /* 한 줄 마진 제거 및 중앙 정렬 구조 변경 */
+    #problem { 
+        font-size: 56px; 
+        font-weight: 800; 
+        text-align: center;
+        margin: 0;
+        min-height: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 0;
+        word-break: break-all;
+    }
+
+    /* 중간 등호(=) 스타일 */
+    .formula-equal {
+        font-size: 48px;
+        font-weight: 800;
+        color: var(--text-main);
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 입력창 영역의 중앙 정렬 배치 설정 */
+    .input-wrapper-inline {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* 상시 파란 테두리 및 그림자 효과 유지 하도록 수정 */
+    #inputDisplay { 
+        width: 100%;
+        max-width: 280px;
+        height: 64px;
+        font-size: 32px; 
+        font-weight: 700; 
+        text-align: center; 
+        border: 2px solid var(--active); /* 상시 파란색 테두리 */
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* 상시 부드러운 푸른 그림자 */
+        border-radius: 12px; 
+        background-color: #ffffff;
+        outline: none;
+        cursor: pointer; /* 클릭 가능하다는 느낌을 주도록 포인터 추가 */
+    }
+    
+    /* 가상 키패드 및 제어 영역이 전체 폭을 채우도록 너비 확장 */
+    .full-width-container {
+        width: 100%;
+    }
+
+    /* 3단계 구조를 위한 무대 선택 그리드 */
+    .stage-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: 100%;
+    }
+
+    /* [요청 반영] 2번 항목: "새 문제", "정답 확인" 버튼이 가로 전체폭을 채우도록 그리드 컨테이너화 */
+    .control-grid-layout {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 1:1 비율 균등 분할 배치 */
+        gap: 12px;
+        width: 100%;
+    }
+
+    /* 새 문제 버튼 고유 디자인 고도화 */
+    .btn-new-prob {
+        border: 1px solid #b0b5b9 !important;
+        background-color: #ffffff !important;
+        color: #495057 !important;
+        font-weight: 700 !important;
+        height: 54px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-new-prob:hover {
+        background-color: #f8f9fa !important;
+        border-color: #6c757d !important;
+    }
+
+    /* [요청 반영] 3번 항목: "정답 확인" 버튼을 완벽한 전역 테마 파란색으로 빌드 */
+    .btn-confirm-blue {
+        background-color: var(--active) !important;
+        color: #ffffff !important;
+        border: none !important;
+        font-weight: 700 !important;
+        height: 54px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 3px 6px rgba(0, 123, 255, 0.2) !important;
+    }
+    .btn-confirm-blue:hover:not(:disabled) {
+        background-color: #0056b3 !important; /* 호버 시 안정적인 딥블루 테마로 보정 */
+    }
+    .btn-confirm-blue:disabled {
+        background-color: #e9ecef !important;
+        color: #adb5bd !important;
+        border: 1px solid var(--border-color) !important;
+        box-shadow: none !important;
+        cursor: not-allowed;
+    }
+
+    /* [요청 반영] 1번 항목: 새 문제 횟수가 최근일 때 초록색이 아닌 파란색 전용 활성화 스타일 선언 */
+    .skip-active-blue {
+        background-color: rgba(0, 123, 255, 0.15) !important;
+        color: var(--active) !important;
+        font-weight: 800 !important;
+        border: 1px solid rgba(0, 123, 255, 0.3) !important;
+    }
+
+    /* 반응형 대응: 모바일 환경 레이아웃 */
+    @media (max-width: 480px) {
+        #problem {
+            font-size: 38px;
+        }
+        .formula-equal {
+            font-size: 32px;
+        }
+        #inputDisplay {
+            height: 54px;
+            font-size: 24px;
+        }
+        .btn-new-prob, .btn-confirm-blue {
+            height: 48px;
+            font-size: 15px;
+        }
+    }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>소인수분해</h1>
-  <p style="font-size: 14px; color: #666;">작은 소수부터 거듭제곱 꼴로 입력하세요 (예: 2^3)</p>
-  
-  <!-- 단계 선택 -->
-  <div>
-    <button class="button control-btn" onclick="setStage(1)">1단계</button>
-    <button class="button control-btn" onclick="setStage(2)">2단계</button>
-    <button class="button control-btn" onclick="setStage(3)">3단계</button>
-  </div>
 
-  <div id="problem">Loading...</div>
-  
-  <div>
-    <input type="text" id="inputDisplay" readonly placeholder="예: 2^3 * 3">
-  </div>
-
-  <!-- 키패드 -->
-  <div>
-    <button class="button" onclick="addChar('2')">2</button>
-    <button class="button" onclick="addChar('3')">3</button>
-    <button class="button" onclick="addChar('5')">5</button>
-    <button class="button" onclick="addChar('7')">7</button><br>
-    
-    <button class="button" onclick="addChar('^')">^</button>
-    <button class="button" onclick="addChar('*')">×</button>
-    <button class="button" onclick="backspace()">←</button>
-    <button class="button clear-btn" onclick="clearInput()">C</button><br>
-    
-    <button class="button control-btn" style="width: 280px; margin-top: 10px;" onclick="checkAnswer()">정답 확인 (Enter)</button>
-  </div>
-  
-  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;"/>
-
-  <!-- 결과 표시 영역 -->
-  <div id="result1">정답여부</div>
-  <div id="result2">0번 정답입니다.</div>
-  <div id="result3">0번 틀렸습니다.</div>
-  
-  <!-- 키보드 사용법 안내 -->
-  <div class="help-box">
-    <strong>⌨️ 키보드 사용법</strong>
-    <ul style="margin: 5px 0 0 20px; padding: 0;">
-      <li>숫자 입력: <span class="key-tag">0</span> ~ <span class="key-tag">9</span></li>
-      <li>거듭제곱(^): <span class="key-tag">^</span></li>
-      <li>곱하기(×): <span class="key-tag">*</span> 또는 <span class="key-tag">x</span></li>
-      <li>지우기: <span class="key-tag">Backspace</span></li>
-      <li>전체 삭제(C): <span class="key-tag">Esc</span> 또는 <span class="key-tag">c</span></li>
-      <li>정답 확인: <span class="key-tag">Enter</span></li>
-    </ul>
-    <div style="margin-top: 10px; font-size: 14px;">
-      💡 입력 예시: $2^3 \times 5$ 입력 시 <span class="key-tag">2</span> <span class="key-tag">^</span> <span class="key-tag">3</span> <span class="key-tag">*</span> <span class="key-tag">5</span> 순서로 누르세요.
+<div id="modal" class="modal-overlay">
+    <div class="modal-content" style="border-top: 6px solid var(--danger);">
+        <h2 id="modalTitle" class="modal-title">누적 기록 초기화</h2>
+        <p id="failReason" class="modal-text">누적 기록을 모두 삭제하시겠습니까?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+            <button class="modal-btn confirm" onclick="confirmReset()">초기화</button>
+        </div>
     </div>
-  </div>
+</div>
+
+<div class="wrapper">
+    <h1 class="main-title">소인수분해</h1>
+    
+    <div class="container-fixed">
+        <div class="stage-grid-3">
+            <button class="stage-btn" id="s1" onclick="switchStage(1)">1단계</button>
+            <button class="stage-btn" id="s2" onclick="switchStage(2)">2단계</button>
+            <button class="stage-btn" id="s3" onclick="switchStage(3)">3단계</button>
+        </div>
+    </div>
+
+    <div class="container-fixed" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        
+        <div class="formula-row-container">
+            <div id="problem">로딩 중...</div>
+            <div class="formula-equal">=</div>
+            <div class="input-wrapper-inline">
+                <input type="text" id="inputDisplay" readonly placeholder="예: 2^3*3" onclick="handleInputClick()">
+            </div>
+        </div>
+        
+        <div class="full-width-container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <button class="keypad-btn" onclick="addChar('2')">2</button>
+            <button class="keypad-btn" onclick="addChar('3')">3</button>
+            <button class="keypad-btn" onclick="addChar('5')">5</button>
+            <button class="keypad-btn" onclick="addChar('7')">7</button>
+            <button class="keypad-btn" onclick="addChar('^')">^</button>
+            <button class="keypad-btn" onclick="addChar('*')">×</button>
+            <button class="keypad-btn" onclick="backspace()">←</button>
+            <button class="keypad-btn" onclick="clearInput()">C</button>
+        </div>
+        
+        <div class="control-grid-layout full-width-container" style="margin-top: 5px;">
+            <button class="btn-new-prob" onclick="clickNewProblem()">새 문제</button>
+            <button class="btn-confirm-blue" id="checkBtn" onclick="checkAnswer()" disabled>정답 확인</button>
+        </div>
+        
+        <div id="result1" class="msg-default">수식을 입력한 후 정답 확인을 눌러주세요.</div>
+    </div>
+
+    <div class="guide-box record">
+        <div class="guide-header">
+            <h2 class="guide-title">📊 누적 기록</h2>
+            <button class="reset-btn" onclick="openModal()">누적기록 초기화</button>
+        </div>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>구분</th>
+                    <th>성공 횟수</th>
+                    <th>실패 횟수</th>
+                    <th>새 문제 횟수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>기록</td>
+                    <td id="winCount" class="count-highlight">0</td>
+                    <td id="loseCount" class="count-highlight">0</td>
+                    <td id="skipCount" class="count-highlight">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="guide-box rules">
+        <div class="guide-header">
+            <h2 class="guide-title">◈ 게임 방법</h2>
+        </div>
+        <ul class="rules-list">
+            <li>소수는 밑이 작은 순서대로 입력하세요.</li>
+            <li>거듭제곱은 '^' 기호를 사용하여 표현하세요.</li>
+        </ul>
+    </div>
+
+    <div class="guide-box shortcuts">
+        <div class="guide-header">
+            <h2 class="guide-title">⌨ 키보드 단축키</h2>
+        </div>
+        <div class="shortcut-grid">
+            <div class="shortcut-item"><kbd>0</kbd> ~ <kbd>9</kbd> <span>숫자 입력</span></div>
+            <div class="shortcut-item"><kbd>*</kbd> <span>곱하기 기호(×)</span></div>
+            <div class="shortcut-item"><kbd>^</kbd> <span>거듭제곱 지수</span></div>
+            <div class="shortcut-item"><kbd>Backspace</kbd> <span>한 글자 지우기</span></div>
+            <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 삭제 / 모달 취소</span></div>
+            <div class="shortcut-item"><kbd>Enter</kbd> / <kbd>Space</kbd> <span>정답 확인 / 모달 확인</span></div>
+        </div>
+    </div>
 </div>
 
 <script>
-// 변수 선언
-let targetNum = 0;
-let stage = 1;
-let wincount = 0;
-let losecount = 0;
-var timeout;
+let data = JSON.parse(localStorage.getItem('mathGame')) || { stage: 1, wins: 0, loses: 0, skips: 0, lastResult: null, problems: { 1: 0, 2: 0, 3: 0 }};
+let isWrongState = false; // 현재 오답 피드백 상태인지 기억하는 플래그
 
-// 초기화 및 문제 생성
-function setStage(n) {
-  stage = n;
-  generateProblem();
+function save() { localStorage.setItem('mathGame', JSON.stringify(data)); }
+
+function updateBtnState() {
+    let btn = document.getElementById('checkBtn');
+    let hasInput = document.getElementById('inputDisplay').value.length > 0;
+    if (btn) {
+        btn.disabled = !hasInput;
+    }
 }
 
-function generateProblem() {
-  clearInput();
-  
-  // 난이도별 소수 및 개수 설정
-  let primes = [2, 3, 5, 7];
-  let minFactors, maxFactors;
-  
-  if (stage === 1) { 
-    minFactors = 2; maxFactors = 3; 
-  } else if (stage === 2) { 
-    minFactors = 3; maxFactors = 4; 
-  } else { 
-    minFactors = 4; maxFactors = 5; 
-    primes.push(11, 13); 
-  }
+function updateUI() {
+    document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
+    const activeStageBtn = document.getElementById('s' + data.stage);
+    if (activeStageBtn) activeStageBtn.classList.add('active');
+    
+    const winCountEl = document.getElementById('winCount');
+    const loseCountEl = document.getElementById('loseCount');
+    const skipCountEl = document.getElementById('skipCount');
 
-  let numFactors = Math.floor(Math.random() * (maxFactors - minFactors + 1)) + minFactors;
-  let result = 1;
-  
-  for(let i=0; i<numFactors; i++) {
-    result *= primes[Math.floor(Math.random() * primes.length)];
-  }
-  
-  targetNum = result;
-  document.getElementById('problem').innerText = targetNum;
+    if (winCountEl && loseCountEl && skipCountEl) {
+        // [요청 반영] 1번 항목: 새 문제(skip) 액티브 시 'win-active(녹색)' 대신 고유의 'skip-active-blue(파란색)' 주입 
+        winCountEl.className = 'count-highlight' + (data.lastResult === 'win' ? ' win-active' : '');
+        loseCountEl.className = 'count-highlight' + (data.lastResult === 'lose' ? ' lose-active' : '');
+        skipCountEl.className = 'count-highlight' + (data.lastResult === 'skip' ? ' skip-active-blue' : '');
+
+        winCountEl.innerHTML = data.lastResult === 'win' ? `${data.wins}` : data.wins;
+        loseCountEl.innerHTML = data.lastResult === 'lose' ? `${data.loses}` : data.loses;
+        skipCountEl.innerHTML = data.lastResult === 'skip' ? `${data.skips}` : data.skips;
+    }
 }
 
-// 결과 리셋 함수
-function resultreset() {
-    const r1 = document.getElementById("result1");
-    r1.textContent = "정답여부";
-    r1.style.backgroundColor = "white";
-    r1.style.color = "black";
+function switchStage(n) {
+    resetFeedback();
+    data.stage = n; 
+    updateUI();
+    if (!data.problems || data.problems[n] === 0) {
+        generateProblem(false);
+    } else {
+        const problemEl = document.getElementById('problem');
+        if (problemEl) problemEl.innerText = data.problems[n];
+    }
 }
 
-// 입력 관련 함수
-function addChar(char) {
-  const display = document.getElementById('inputDisplay');
-  display.value += char;
+function generateProblem(isSkipAction = false) {
+    if (isSkipAction) {
+        data.skips++;
+        data.lastResult = 'skip';
+    }
+    
+    let primes = data.stage === 3 ? [2,3,5,7,11,13] : [2,3,5,7];
+    let count = data.stage === 1 ? 2 : (data.stage === 2 ? 3 : 4);
+    let res = 1;
+    for(let i=0; i<count; i++) res *= primes[Math.floor(Math.random() * primes.length)];
+    
+    if (!data.problems) data.problems = { 1: 0, 2: 0, 3: 0 };
+    data.problems[data.stage] = res;
+    
+    const problemEl = document.getElementById('problem');
+    if (problemEl) problemEl.innerText = res;
+    
+    clearInput(); save(); updateUI();
 }
 
-function backspace() {
-  const display = document.getElementById('inputDisplay');
-  display.value = display.value.slice(0, -1);
+function clickNewProblem() {
+    generateProblem(true);
 }
 
-function clearInput() {
-  const display = document.getElementById('inputDisplay');
-  display.value = "";
-}
-
-function isPrime(n) {
-  if (n < 2) return false;
-  for (let i = 2; i * i <= n; i++) {
-    if (n % i === 0) return false;
-  }
-  return true;
-}
-
-// 정답 확인 함수 (순서 및 거듭제곱 체크)
 function checkAnswer() {
-  let input = document.getElementById('inputDisplay').value;
-  if (!input) return; 
+    let input = document.getElementById('inputDisplay').value;
+    let r1 = document.getElementById("result1");
+    if (!r1) return;
+    
+    try {
+        let val = eval(input.replace(/\^/g, '**').replace(/x/g, '*').replace(/X/g, '*'));
+        
+        let parts = input.split('*');
+        let bases = [];
+        for (let part of parts) {
+            let base = part.split('^')[0];
+            if (isNaN(base) || base === "") throw new Error();
+            bases.push(parseInt(base));
+        }
 
-  input = input.replace(/x/g, '*').replace(/X/g, '*');
-  
-  let parts = input.split('*');
-  let userVal = 1;
-  let isValidSyntax = true;
-  let bases = [];
+        let isSorted = true;
+        for (let i = 0; i < bases.length - 1; i++) {
+            if (bases[i] >= bases[i + 1]) { isSorted = false; break; }
+        }
 
-  try {
-    for (let part of parts) {
-      if (!part.trim()) continue;
-      
-      let base, exp;
-      if (part.includes('^')) {
-        let baseExp = part.split('^');
-        base = parseInt(baseExp[0]);
-        exp = parseInt(baseExp[1]);
-      } else {
-        base = parseInt(part);
-        exp = 1; 
-      }
-
-      if (isNaN(base) || isNaN(exp)) throw new Error("Invalid");
-      
-      userVal *= Math.pow(base, exp);
-      if (!isPrime(base)) {
-      isValidSyntax = false;
-      throw new Error("Not prime");
+        if(val === data.problems[data.stage] && isSorted) {
+            data.wins++;
+            data.lastResult = 'win';
+            isWrongState = false; // 정답이므로 오답 상태 해제
+            r1.textContent = "🎉 정답입니다!"; 
+            r1.className = "feedback-success";
+            data.problems[data.stage] = 0;
+            save(); updateUI();
+            setTimeout(() => { generateProblem(false); }, 1000);
+        } else throw new Error();
+    } catch(e) {
+        data.loses++;
+        data.lastResult = 'lose';
+        isWrongState = true; // 오답 상태 활성화
+        r1.textContent = "❌ 오답입니다! (입력칸을 누르면 지워집니다)"; 
+        r1.className = "feedback-danger";
+        save(); updateUI();
     }
-
-    bases.push(base);
-    }
-  } catch (e) {
-    userVal = 0;
-    isValidSyntax = false;
-  }
-
-  const r1 = document.getElementById("result1");
-  const r2 = document.getElementById("result2");
-  const r3 = document.getElementById("result3");
-
-  // 1. 계산값 검증
-  if (!isValidSyntax || userVal !== targetNum || targetNum === 0) {
-    losecount++;
-    r1.textContent = "틀렸습니다.";
-    r1.style.backgroundColor = "red";
-    r1.style.color = "white";
-    r3.textContent = losecount + "번 틀렸습니다.";
-    timeout = setTimeout(resultreset, 1000);
-    return;
-  }
-
-  // 2. 순서 및 거듭제곱 사용 여부 검증
-  let isSorted = true;
-  let isCanonical = true; // 거듭제곱 사용 여부
-
-  for (let i = 0; i < bases.length - 1; i++) {
-    // 앞의 밑이 뒤의 밑보다 크면 -> 순서 틀림 (예: 3 * 2)
-    if (bases[i] > bases[i+1]) { 
-      isSorted = false;
-      break;
-    }
-    // 앞의 밑과 뒤의 밑이 같으면 -> 거듭제곱 안 씀 (예: 2 * 2)
-    if (bases[i] === bases[i+1]) {
-      isCanonical = false;
-      break;
-    }
-  }
-
-  if (!isSorted) {
-    losecount++; 
-    r1.textContent = "순서가 틀렸습니다."; 
-    r1.style.backgroundColor = "orange"; 
-    r1.style.color = "white";
-    r3.textContent = losecount + "번 틀렸습니다.";
-    timeout = setTimeout(resultreset, 1500);
-    return;
-  }
-
-  if (!isCanonical) {
-    losecount++; 
-    r1.textContent = "거듭제곱을 사용하세요."; 
-    r1.style.backgroundColor = "orange"; 
-    r1.style.color = "white";
-    r3.textContent = losecount + "번 틀렸습니다.";
-    timeout = setTimeout(resultreset, 1500);
-    return;
-  }
-
-  // 3. 모든 조건 통과
-  wincount++;
-  r1.textContent = "정답입니다.";
-  r1.style.backgroundColor = "green";
-  r1.style.color = "white";
-  r2.textContent = wincount + "번 정답입니다.";
-  timeout = setTimeout(resultreset, 1000);
-  setTimeout(generateProblem, 1000);
 }
 
-// 키보드 입력 처리 및 포커스 관리
-document.addEventListener('keydown', function(event) {
-  const key = event.key;
-  
-  if (key >= '0' && key <= '9') {
-    addChar(key);
-  } 
-  else if (key === '*' || key.toLowerCase() === 'x') {
-    addChar('*');
-  } 
-  else if (key === '^') {
-    addChar('^');
-  } 
-  else if (key === 'Backspace') {
-    backspace();
-  } 
-  else if (key === 'Enter') {
-    event.preventDefault(); 
-    checkAnswer();
-  } 
-  else if (key === 'Escape' || key.toLowerCase() === 'c') {
-    clearInput();
-  }
+function handleInputClick() {
+    if (isWrongState) {
+        clearInput();
+    }
+}
+
+function resetFeedback() {
+    let r1 = document.getElementById("result1");
+    if (r1) {
+        r1.textContent = "수식을 입력한 후 정답 확인을 눌러주세요.";
+        r1.className = "msg-default";
+    }
+    isWrongState = false; // 상태 초기화
+}
+
+function openModal() { 
+    const modal = document.getElementById('modal');
+    if (modal) modal.classList.add('show'); 
+}
+
+function closeModal() { 
+    const modal = document.getElementById('modal');
+    if (modal) modal.classList.remove('show'); 
+}
+
+function confirmReset() {
+    data = { stage: 1, wins: 0, loses: 0, skips: 0, lastResult: null, problems: { 1: 0, 2: 0, 3: 0 }};
+    save(); updateUI(); switchStage(1);
+    closeModal();
+}
+
+function addChar(c) { 
+    if (isWrongState) {
+        // 오답인 상태에서 키패드를 새로 누르면 깔끔하게 지우고 새로 입력 시작
+        document.getElementById('inputDisplay').value = "";
+    }
+    resetFeedback();
+    document.getElementById('inputDisplay').value += c; 
+    updateBtnState(); 
+}
+
+function backspace() { 
+    if (isWrongState) {
+        clearInput();
+        return;
+    }
+    let d = document.getElementById('inputDisplay'); 
+    d.value = d.value.slice(0, -1); 
+    updateBtnState(); 
+}
+
+function clearInput() { 
+    resetFeedback();
+    document.getElementById('inputDisplay').value = ""; 
+    updateBtnState(); 
+}
+
+document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('modal');
+    if(modal && modal.classList.contains('show')) {
+        if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); confirmReset(); }
+        if(e.key === 'Escape') { e.preventDefault(); closeModal(); }
+    } else {
+        if(e.key >= '0' && e.key <= '9') addChar(e.key);
+        else if(e.key === '*') addChar('*');
+        else if(e.key === '^') addChar('^');
+        else if(e.key === 'Backspace') backspace();
+        else if(e.key === 'Enter' || e.key === ' ') { 
+            e.preventDefault(); 
+            const checkBtn = document.getElementById('checkBtn');
+            if(checkBtn && !checkBtn.disabled) checkAnswer(); 
+        }
+        else if(e.key === 'Escape') clearInput();
+    }
 });
 
-// 버튼 포커스 해제 (키패드 연속 입력 방지)
-document.addEventListener('DOMContentLoaded', () => {
-    const buttons = document.querySelectorAll('button');
-    buttons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            this.blur(); 
-        });
-    });
-});
-
-window.onload = () => generateProblem();
+window.onload = () => { updateUI(); switchStage(data.stage); };
 </script>
 </body>
 </html>

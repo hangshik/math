@@ -1,180 +1,396 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>삼각비 시각화</title>
-<script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-<style>
-  body { 
-    font-family: sans-serif; 
-    text-align: center; 
-    margin: 0; 
-    padding: 10px; 
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>삼각비 시각화</title>
 
-  /* 반응형 컨테이너 설정 */
-  .container { 
-    display: flex; 
-    justify-content: center; 
-    gap: 30px; 
-    align-items: flex-start; 
-    margin-top: 20px; 
-    flex-wrap: wrap; /* 화면이 좁으면 줄바꿈 허용 */
-  }
+  <link rel="stylesheet" href="style.css" />
 
-  canvas { 
-    border: 1px solid #ccc; 
-    background: #fff; 
-    max-width: 100%; /* 모바일에서 화면 넘어가지 않게 */
-    height: auto; 
-  }
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 
-  .info-box { 
-    text-align: left; 
-    padding: 20px; 
-    background: #eee; 
-    border-radius: 10px; 
-    width: 250px;
-    font-size: 18px; 
-    line-height: 1.8;
-  }
+  <script>
+    window.MathJax = { 
+      tex: { inlineMath: [['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 
-  /* 슬라이더 반응형 설정 */
-  input[type=range] { 
-    width: 90%; 
-    max-width: 400px; 
-    margin: 20px; 
-  }
-
-  /* 모바일 화면(폭 700px 이하)에 대한 스타일 */
-  @media (max-width: 700px) {
-    .container {
-      flex-direction: column; /* 세로 정렬로 변경 */
-      align-items: center;    /* 중앙 정렬 */
-      gap: 20px;
+  <style>
+    /* 마스터 디자인 시스템 하단에 유연하게 대응하기 위한 추가 튜닝 시각화 클래스 */
+    .viz-layout {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      align-items: flex-start;
+      width: 100%;
+      flex-wrap: wrap;
     }
-    
-    .info-box {
-      width: 90%;       /* 모바일에서는 꽉 차게 */
-      max-width: 400px;
+
+    .range-control-box {
+      width: 100%;
+      text-align: center;
+      padding: 10px 0;
     }
-  }
-</style>
+
+    .master-range {
+      width: 100%;
+      max-width: 450px;
+      height: 6px;
+      background: #e1e4e8;
+      border-radius: 9999px;
+      appearance: none;
+      outline: none;
+      margin: 16px 0;
+      cursor: pointer;
+    }
+
+    .master-range::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--active);
+      transition: var(--transition-fast);
+    }
+
+    .master-range::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .data-row {
+      width: 100%;
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .data-val {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 2px;
+      letter-spacing: -0.5px;
+    }
+
+    /* 캔버스 마우스 스타일 */
+    #canvas {
+      cursor: grab;
+      background-color: var(--card-bg);
+      border-radius: var(--radius-md);
+    }
+    #canvas:active {
+      cursor: grabbing;
+    }
+
+    @media (max-width: 720px) {
+      .viz-layout {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<h1>삼각비 시각화</h1>
-<p>각도를 조절하여 sin, cos 값의 변화를 관찰하세요.</p>
+  <div class="main-container">
+    <h1 class="main-title">삼각비 시각화</h1>
+    <!-- <p style="text-align: center; color: var(--text-sub); font-size: 15px; margin-bottom: 4px;">
+      슬라이더를 움직이거나 <strong>원 위의 검은 점을 마우스로 직접 잡고 돌려보세요!</strong>
+    </p> -->
 
-<input type="range" id="angleSlider" min="0" max="360" value="45" oninput="draw()">
-<div style="font-size: 24px; font-weight: bold; margin-bottom:10px;">
-  $\theta$ = <span id="angleDisplay" style="color:#3399FF">45</span>$^\circ$
-</div>
-
-<div class="container">
-  <!-- 그래프 영역 -->
-  <canvas id="canvas" width="400" height="400"></canvas>
-  
-  <!-- 정보 창 영역 -->
-  <div class="info-box">
-    <div><strong style="color:red">sin $\theta$ (높이/y)</strong> : <span id="valSin"></span></div>
-    <div><strong style="color:blue">cos $\theta$ (밑변/x)</strong> : <span id="valCos"></span></div>
-    <div style="margin-top:10px; font-size:14px; color:#666;">
-      반지름이 1일 때,<br>
-      점 P의 좌표는<br>
-      (cos $\theta$, sin $\theta$) 입니다.
+    <div class="game-card" style="padding: 20px; gap: 4px;">
+      <div class="range-control-box">
+        <input type="range" id="angleSlider" class="master-range" min="0" max="360" value="45" oninput="updateFromSlider()">
+      </div>
+      <div style="font-size: 28px; font-weight: 800;">
+        $\theta$ = <span id="angleDisplay" style="color: var(--active);">45</span>$^\circ$
+      </div>
     </div>
-    <hr>
-    <div><strong>tan $\theta$ (기울기)</strong> : <span id="valTan"></span></div>
+
+    <div class="viz-layout">
+      
+      <div class="canvas-wrapper" style="padding: 0; flex: 1; max-width: 400px;">
+        <canvas id="canvas" width="400" height="460"></canvas>
+      </div>
+      
+    <div class="guide-box rules" style="flex: 1; min-width: 260px; padding: 20px; gap: 16px;">
+      <div class="guide-title"">📐 삼각비의 값</div>
+      
+      <div class="trig-grid" style="display: grid; gap: 12px; font-family: 'Pretendard', sans-serif;">
+        <div class="data-row" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+          <span style="color: red; font-weight: 700;">$\sin \theta =$</span>
+          <div id="valSin" class="data-val" style="color: red;">0.707</div>
+        </div>
+        <div class="data-row" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+          <span style="color: #0022ff; font-weight: 700;">$\cos \theta =$</span>
+          <div id="valCos" class="data-val" style="color: #0022ff;">0.707</div>
+        </div>
+        <div class="data-row" style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: green; font-weight: 700;">$\tan \theta =$</span>
+          <div id="valTan" class="data-val" style="color: green;">1.000</div>
+        </div>
+      </div>
+
+      <div class="rules-list" style="font-size: 20px; line-height: 1.6; margin-top: 16px; font-weight: 500;">
+        <p>• <b>$\sin \theta$</b>: 직각삼각형의 <b>높이</b></p>
+        <p>• <b>$\cos \theta$</b>: 직각삼각형의 <b>밑변</b></p>
+        <p>• <b>$\tan \theta$</b>: <b>기울기</b> (접선 길이)</p>
+      </div>
+    </div>
+
+    </div>
   </div>
-</div>
 
-<script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const w = canvas.width;
-const h = canvas.height;
-const cx = w/2;
-const cy = h/2;
-const r = 150; // 화면상 반지름 픽셀
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('angleSlider');
+    const w = canvas.width;
+    const h = canvas.height;
+    const cx = w/2;
+    const cy = h/2; // 세로 460px의 중앙인 230px을 원점 좌표로 설정하여 상하 대칭 확보
+    const r = 115;  // 단위원의 반지름 스케일 설정
 
-function draw() {
-  const angleDeg = document.getElementById('angleSlider').value;
-  document.getElementById('angleDisplay').innerText = angleDeg;
-  
-  const angleRad = angleDeg * Math.PI / 180;
-  const cosVal = Math.cos(angleRad);
-  const sinVal = Math.sin(angleRad);
-  const tanVal = Math.tan(angleRad);
-  
-  // 값 표시 (소수점 3자리)
-  document.getElementById('valSin').innerText = sinVal.toFixed(3);
-  document.getElementById('valCos').innerText = cosVal.toFixed(3);
-  document.getElementById('valTan').innerText = (Math.abs(tanVal) > 100) ? "무한대" : tanVal.toFixed(3);
+    let currentAngleDeg = 45; 
+    let isDragging = false;   
 
-  // 캔버스 초기화
-  ctx.clearRect(0, 0, w, h);
-  
-  // 격자 및 좌표축
-  ctx.strokeStyle = "#ddd";
-  ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke(); // X축
-  ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke(); // Y축
+    // 축 끝에 화살표를 그리기 위한 함수
+    function drawArrow(context, fromx, fromy, tox, toy) {
+      const headlen = 8; 
+      const dx = tox - fromx;
+      const dy = toy - fromy;
+      const angle = Math.atan2(dy, dx);
+      context.beginPath();
+      context.moveTo(fromx, fromy);
+      context.lineTo(tox, toy);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(tox, toy);
+      context.lineTo(tox - headlen * Math.cos(angle - Math.PI / 6), toy - headlen * Math.sin(angle - Math.PI / 6));
+      context.lineTo(tox - headlen * Math.cos(angle + Math.PI / 6), toy - headlen * Math.sin(angle + Math.PI / 6));
+      context.closePath();
+      context.fill();
+    }
 
-  // 단위원 그리기
-  ctx.strokeStyle = "#333";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI*2);
-  ctx.stroke();
+    function updateFromSlider() {
+      currentAngleDeg = parseInt(slider.value);
+      draw();
+    }
 
-  // 점 P 좌표 계산
-  // 캔버스는 y축이 아래로 증가하므로 y계산시 -를 곱해줌
-  const px = cx + r * cosVal;
-  const py = cy - r * sinVal;
+    // 핵심 드로잉 함수
+    function draw() {
+      document.getElementById('angleDisplay').innerText = currentAngleDeg;
+      
+      const angleRad = currentAngleDeg * Math.PI / 180;
+      const cosVal = Math.cos(angleRad);
+      const sinVal = Math.sin(angleRad);
+      const tanVal = Math.tan(angleRad);
+      
+      document.getElementById('valSin').innerText = sinVal.toFixed(3);
+      document.getElementById('valCos').innerText = cosVal.toFixed(3);
+      document.getElementById('valTan').innerText = (Math.abs(tanVal) > 50) ? "정의되지 않음" : tanVal.toFixed(3);
 
-  // 삼각형 그리기
-  // 밑변 (Blue)
-  ctx.strokeStyle = "blue";
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.lineTo(px, cy);
-  ctx.stroke();
+      ctx.clearRect(0, 0, w, h);
+      
+      // 1. 가이드 레이어: 화살표가 있는 x축 및 y축 그리기
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.fillStyle = "#cbd5e1";
+      ctx.lineWidth = 1.5;
+      drawArrow(ctx, 15, cy, w - 15, cy); // X축
+      drawArrow(ctx, cx, h - 15, cx, 15); // Y축
 
-  // 높이 (Red)
-  ctx.strokeStyle = "red";
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(px, cy);
-  ctx.lineTo(px, py);
-  ctx.stroke();
+      // 2. 가이드 레이어: 원점 O 및 축 문자(x, y) 레이블 표시
+      ctx.fillStyle = "#64748b";
+      ctx.font = "italic 14px Pretendard, sans-serif";
+      ctx.textAlign = "start";
+      ctx.fillText("O", cx - 15, cy + 18);  
+      ctx.fillText("x", w - 12, cy + 15);   
+      ctx.fillText("y", cx - 15, 15);       
 
-  // 빗변 (Black)
-  ctx.strokeStyle = "black";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.lineTo(px, py);
-  ctx.stroke();
+      // 3. [요청 반영] 가이드 레이어: x축과 y축에 1, -1 숫자 표기 추가
+      ctx.font = "normal 12px Pretendard, sans-serif";
+      ctx.fillStyle = "#94a3b8";
+      
+      // X축 위의 1과 -1 (원점에서 양옆으로 반지름 r 만큼 떨어진 거리)
+      ctx.textAlign = "center";
+      ctx.fillText("1", cx + r, cy + 16);
+      ctx.fillText("-1", cx - r, cy + 16);
+      
+      // Y축 위의 1과 -1 (원점에서 위아래로 반지름 r 만큼 떨어진 거리)
+      ctx.textAlign = "right";
+      ctx.fillText("1", cx - 6, cy - r + 4);
+      ctx.fillText("-1", cx - 6, cy + r + 4);
 
-  // 점 P
-  ctx.fillStyle = "black";
-  ctx.beginPath();
-  ctx.arc(px, py, 6, 0, Math.PI*2);
-  ctx.fill();
+      // 4. 가이드 레이어: 회색 기본 단위원(Unit Circle) 그리기
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.stroke();
 
-  // 각도 표시 (Arc)
-  ctx.strokeStyle = "#3399FF";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  // 반시계 방향으로 그리기 위해 start/end angle 조정
-  ctx.arc(cx, cy, 40, 0, -angleRad, true); 
-  ctx.stroke();
-}
+      // 원주상 점 P 좌표 환산
+      const px = cx + r * cosVal;
+      const py = cy - r * sinVal;
 
-window.onload = draw;
-</script>
+      // 5. 가이드 레이어: 사잇각 부채꼴 호(Arc) 및 각도 수치 표기
+      ctx.strokeStyle = "var(--active)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 28, 0, -angleRad, true); 
+      ctx.stroke();
+
+      const textAngleRad = -angleRad / 2;
+      const offsetRadius = 45; 
+      const textX = cx + offsetRadius * Math.cos(textAngleRad);
+      const textY = cy + offsetRadius * Math.sin(textAngleRad) + 4; 
+      ctx.fillStyle = "var(--active)";
+      ctx.font = "bold 12px Pretendard, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(currentAngleDeg + "°", textX, textY);
+
+      // 6. 가이드선 레이어: 원점 통과 탄젠트 접점 연장 점선
+      if (Math.abs(tanVal) < 50) {
+        let tx = (cosVal >= 0) ? cx + r : cx - r;
+        let ty = (cosVal >= 0) ? cy - r * tanVal : cy + r * tanVal;
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        ctx.setLineDash([]); 
+      }
+
+      // 7. 수학 기본 도형 레이어: 검은색 동경선 (Dark Slate)
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(px, py);
+      ctx.stroke();
+
+      // 8. 밑변 선분 (Blue - Cosine) - 두께 5.5
+      ctx.strokeStyle = "#0022ff";
+      ctx.lineWidth = 5.5; 
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(px, cy);
+      ctx.stroke();
+
+      // 9. 탄젠트 접선 (Green) - 두께 5.5
+      if (Math.abs(tanVal) < 50) {
+        let tx = (cosVal >= 0) ? cx + r : cx - r;
+        let ty = (cosVal >= 0) ? cy - r * tanVal : cy + r * tanVal;
+        
+        ctx.strokeStyle = "green"; 
+        ctx.lineWidth = 5.5;        
+        ctx.beginPath();
+        ctx.moveTo(tx, cy);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+      }
+
+      // 10. 사인 수직선 (Red) - 두께 5.5
+      ctx.strokeStyle = "red";  
+      ctx.lineWidth = 5.5;      
+      ctx.beginPath();
+      ctx.moveTo(px, cy);       
+      ctx.lineTo(px, py);       
+      ctx.stroke();
+
+      // 11. 마감 레이어: 교점 P 검은색 점 인디케이터 (드래그 타겟)
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.arc(px, py, 7, 0, Math.PI*2); 
+      ctx.fill();
+    }
+
+    // [마우스 및 터치 드래그 상호작용 관련 이벤트 리스너 로직]
+    function getMouseAngle(e) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const mouseX = clientX - rect.left;
+      const mouseY = clientY - rect.top;
+      
+      const dx = mouseX - cx;
+      const dy = cy - mouseY;
+      
+      let angleRad = Math.atan2(dy, dx);
+      if (angleRad < 0) {
+        angleRad += Math.PI * 2; 
+      }
+      
+      return Math.round(angleRad * 180 / Math.PI);
+    }
+
+    function handleStart(e) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      const mouseX = clientX - rect.left;
+      const mouseY = clientY - rect.top;
+
+      const angleRad = currentAngleDeg * Math.PI / 180;
+      const px = cx + r * Math.cos(angleRad);
+      const py = cy - r * Math.sin(angleRad);
+
+      const dist = Math.sqrt((mouseX - px)**2 + (mouseY - py)**2);
+
+      if (dist < 20) {
+        isDragging = true;
+        e.preventDefault();
+      }
+    }
+
+    function handleMove(e) {
+      if (!isDragging) return;
+      
+      let targetAngle = getMouseAngle(e);
+      if (targetAngle === 360) targetAngle = 0;
+      
+      currentAngleDeg = targetAngle;
+      slider.value = currentAngleDeg; 
+      
+      draw();
+      e.preventDefault();
+    }
+
+    function handleEnd() {
+      isDragging = false;
+    }
+
+    // 데스크톱 이벤트
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+
+    // 모바일 터치 이벤트
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+
+    window.onload = () => {
+      draw();
+    };
+  </script>
 </body>
 </html>

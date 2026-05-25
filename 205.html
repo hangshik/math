@@ -1,155 +1,266 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>함수 상자 규칙 찾기</title>
+  
+  <link rel="stylesheet" href="style.css" />
+  
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <script>
     window.MathJax = {
       tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
   <style>
-    body { font-family: sans-serif; text-align: center; }
-    
-    /* 입력칸 스타일 */
-    .input-box {
-      width: 70px; height: 40px; font-size: 24px; text-align: center;
-      margin: 0 5px; border: 2px solid #333; border-radius: 5px;
-      cursor: pointer; background: #fff;
-    }
-    .selected { background-color: #3399FF; color: white; border-color: #0056b3; }
-
-    /* 키패드 버튼 스타일 */
-    .button {
-      width: 60px; height: 60px; font-size: 25px; margin: 2px;
-      border-radius: 10px; border: none; background-color: #DDDDDD; cursor: pointer;
-    }
-    .button:hover { background-color: #bbb; }
-    
-    /* 넓은 버튼 (2배 크기) */
-    .btn-wide {
-      width: 128px; /* 60*2 + margin(4)*2 */
-      background-color: #3399FF; color: white;
-    }
-    .btn-wide:hover { background-color: #2b80d6; }
-
-    /* 다음 문제 버튼 */
-    .btn-new { 
-      font-size: 20px; padding: 10px 20px; border: none; border-radius: 10px; 
-      cursor: pointer; margin-top: 15px; color: white; background-color: #FF9800; width: 320px; 
-    }
-    .btn-new:disabled { background-color: #ccc; cursor: not-allowed; }
-
-    /* 결과 메시지 영역 */
-    #result1 { min-height: 45px; margin-top: 20px; padding: 5px; border-radius: 5px;}
-    
-    /* 함수 상자 및 히스토리 테이블 영역 */
+    /* 함수 상자 어플리케이션 전용 고유 그래픽 컴포넌트 스타일 유지 */
     .machine-area {
-      display: flex; justify-content: center; align-items: flex-start; gap: 30px; margin: 20px 0;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 24px;
     }
     .machine-box {
-      width: 120px; height: 120px; background: #333; color: #0f0;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px; font-weight: bold; border-radius: 15px; border: 4px solid #555;
-      font-family: monospace;
-      flex-shrink: 0; 
+      width: 160px;
+      background: #1e293b;
+      color: #10b981;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 800;
+      border-radius: var(--radius-lg);
+      border: 4px solid #334155;
+      box-shadow: inset 0 4px 10px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.1);
+      transition: var(--transition-normal);
+      min-height: 160px;
+      flex-shrink: 0;
+    }
+    .machine-label {
+      font-size: 12px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+    .history-container {
+      flex-grow: 1;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .input-section {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background-color: #f8f9fa;
+      border: 1px solid var(--border-color);
+    }
+    .section-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-sub);
     }
     
-    /* 히스토리 테이블 (스크롤 제거) */
-    .history-container {
-      min-width: 200px;
+    /* 확인 버튼 크기 규격화 (숫자 버튼 2개 크기) */
+    .btn-confirm-twin {
+      grid-column: span 2 !important;
     }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 18px; }
-    th { background-color: #eee; }
 
-    .input-section { margin: 15px 0; }
+    /* [다음 문제] 레이아웃 베이스 고정 */
+    .btn-block-wide {
+      width: 100% !important;
+      height: 54px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none !important;
+      transition: var(--transition-normal);
+    }
+    
+    /* 💡 가중치 디펜스: 문제를 푸는 중이거나 오답 대기일 때 확실하게 묵음 회색 처리 */
+    #nextBtn,
+    #nextBtn:disabled,
+    .btn-block-wide.next-btn:disabled {
+      background-color: #f8f9fa !important;
+      color: #adb5bd !important;
+      border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      pointer-events: none;
+      transform: none !important;
+    }
+    
+    /* 💡 정답 선언으로 'is-active' 상태가 발동되었을 때 마스터 규격 파란색으로 활성화 */
+    #nextBtn.is-active,
+    .btn-block-wide.next-btn.is-active {
+      background-color: var(--active) !important;
+      color: #ffffff !important;
+      cursor: pointer !important;
+      pointer-events: auto !important;
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+    }
+    #nextBtn.is-active:hover,
+    .btn-block-wide.next-btn.is-active:hover {
+      background-color: var(--active-hover) !important;
+    }
+
+    /* 모바일 환경 함수 상자 레이아웃 보정 미디어 쿼리 */
+    @media (max-width: 576px) {
+      .machine-area { flex-direction: column; align-items: center; gap: 16px; }
+      .machine-box { width: 100%; min-height: 120px; }
+      .history-container { width: 100%; }
+      .input-section { flex-wrap: wrap; justify-content: center; }
+      .btn-block-wide { height: 46px; font-size: 15px; }
+    }
   </style>
 </head>
 <body>
-  <center>
-    <h1>함수 상자 규칙 찾기</h1>
-    <p>숫자를 넣고 <b>확인</b>을 눌러보세요.<br>규칙 $y = ax + b$ 를 찾으면 정답을 입력하세요.</p>
 
-    <!-- 기계 및 히스토리 영역 -->
-    <div class="machine-area">
-      <div class="machine-box" id="machineDisplay">f(x)</div>
+  <div class="main-container">
+    <h1 class="main-title">함수 상자 규칙 찾기</h1>
+
+    <div class="container-fixed">
       
-      <div class="history-container">
-        <table id="historyTable">
-          <thead><tr><th>입력($x$)</th><th>출력($y$)</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="machine-area">
+        <div class="machine-box">
+          <div class="machine-label">Machine Screen</div>
+          <div id="machineDisplay">f(x)</div>
+        </div>
+        
+        <div class="history-container">
+          <table id="historyTable" class="record-table">
+            <thead>
+              <tr>
+                <th>입력 ($x$)</th>
+                <th>출력 ($y$)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="input-section">
+        <span class="section-label">① 임시 변수 대입 :</span>
+        <span style="font-size: 20px; font-weight: 700;">$x =$</span>
+        <input type="text" id="inputTest" class="input-box selected" readonly onclick="selectInput('test')">
+      </div>
+
+      <div class="input-section" style="background-color: #fff;">
+        <span class="section-label">② 최종 관계식 추론 :</span>
+        <span style="font-size: 22px; font-weight: 700; color: var(--active);">$y =$</span>
+        <input type="text" id="inputA" class="input-box" readonly onclick="selectInput('a')">
+        <span style="font-size: 20px; font-weight: 700;">$x +$</span>
+        <input type="text" id="inputB" class="input-box" readonly onclick="selectInput('b')">
+      </div>
+
+      <div class="keypad-grid">
+        <button class="button" onclick="appendNumber(1)">1</button>
+        <button class="button" onclick="appendNumber(2)">2</button>
+        <button class="button" onclick="appendNumber(3)">3</button>
+        <button class="button" onclick="appendNumber(4)">4</button>
+        <button class="button" onclick="appendNumber(5)">5</button>
+        
+        <button class="button" onclick="appendNumber(6)">6</button>
+        <button class="button" onclick="appendNumber(7)">7</button>
+        <button class="button" onclick="appendNumber(8)">8</button>
+        <button class="button" onclick="appendNumber(9)">9</button>
+        <button class="button" onclick="appendNumber(0)">0</button>
+        
+        <button class="button" onclick="appendNumber('-')">-</button>
+        <button class="button" onclick="backspace()">←</button>
+        <button class="button" onclick="clearInput()">C</button>
+        
+        <button class="button btn-confirm-twin confirm-btn" id="confirmBtn" onclick="handleConfirm()">확인</button>
+      </div>
+      
+      <button id="nextBtn" class="btn-block-wide next-btn" onclick="initGame()" disabled>다음 문제 (Space)</button>
+      
+      <div id="result1" class="msg-default">결과 대기 중</div>
+    </div>
+
+    <div class="guide-box record">
+      <div class="guide-header">
+        <div class="guide-title">📊 누적 기록</div>
+        <button class="reset-btn" onclick="openModal()">누적기록 초기화</button>
+      </div>
+      <table class="record-table">
+        <tbody>
+          <tr>
+            <th>구분</th>
+            <th>정답 횟수</th>
+            <th>오답 횟수</th>
+          </tr>
+          <tr>
+            <td>횟수</td>
+            <td id="result2" class="count-highlight">0회</td>
+            <td id="result3" class="count-highlight">0회</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="guide-box rules">
+      <div class="guide-title">🎮 게임 방법</div>
+      <ul class="rules-list">
+        <li>임시 변수 대입칸을 선택하고 임의의 $x$값을 입력한 후 <b>확인</b>을 눌러 상자가 출력하는 $y$값을 파악하세요.</li>
+        <li>기록된 입출력 데이터를 바탕으로 일차함수 $y = ax + b$의 기울기($a$)와 $y$절편($b$) 규칙을 유추합니다.</li>
+        <li>추론이 완료되면 ②번 최종 관계식 공란들에 각각 정답 값을 배치한 뒤 <b>확인</b>을 누르세요.</li>
+        <li>정답을 맞히면 기록판에 반영되며, <b>다음 문제</b> 버튼을 누르거나 스페이스바를 탭하여 새 라운드로 진입합니다.</li>
+      </ul>
+    </div>
+
+    <div class="guide-box shortcuts">
+      <div class="guide-title">⌨️ 키보드 단축키</div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item"><kbd>Tab</kbd> <span>입력칸 전방 순환 이동</span></div>
+        <div class="shortcut-item"><kbd>Enter</kbd> <span>정답 제출 및 값 연산</span></div>
+        <div class="shortcut-item"><kbd>Space</kbd> <span>다음 퀴즈 스테이지 진행</span></div>
+        <div class="shortcut-item"><kbd>Backspace</kbd> <span>단일 문자 백스페이스 지우기</span></div>
+        <div class="shortcut-item"><kbd>ESC</kbd> <span>현재 포커싱 입력창 전체 초기화</span></div>
       </div>
     </div>
+  </div>
 
-    <!-- 1. 테스트 입력 영역 -->
-    <div class="input-section" style="background: #f0f0f0; padding: 10px; border-radius: 10px; width: 340px;">
-      <span style="font-size: 20px;">$x$ 값 입력 : </span>
-      <input type="text" id="inputTest" class="input-box selected" readonly onclick="selectInput('test')">
+  <div id="customModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal-content">
+      <div class="modal-title">누적 기록 초기화</div>
+      <div class="modal-text">누적 기록을 모두 삭제하시겠습니까?</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+        <button class="modal-btn confirm" onclick="resetScore()">초기화</button>
+      </div>
     </div>
-
-    <!-- 2. 정답 추론 영역 -->
-    <div class="input-section">
-      <span style="font-size: 24px;">$y =$</span>
-      <input type="text" id="inputA" class="input-box" readonly onclick="selectInput('a')">
-      <span style="font-size: 24px;">$x +$</span>
-      <input type="text" id="inputB" class="input-box" readonly onclick="selectInput('b')">
-    </div>
-
-    <!-- 키패드 -->
-    <div style="width: 340px;">
-      <button class="button" onclick="appendNumber(1)">1</button>
-      <button class="button" onclick="appendNumber(2)">2</button>
-      <button class="button" onclick="appendNumber(3)">3</button>
-      <button class="button" onclick="appendNumber(4)">4</button>
-      <button class="button" onclick="appendNumber(5)">5</button><br>
-      
-      <button class="button" onclick="appendNumber(6)">6</button>
-      <button class="button" onclick="appendNumber(7)">7</button>
-      <button class="button" onclick="appendNumber(8)">8</button>
-      <button class="button" onclick="appendNumber(9)">9</button>
-      <button class="button" onclick="appendNumber(0)">0</button><br>
-      
-      <!-- 기능키 줄 -->
-      <button class="button" onclick="appendNumber('-')">-</button>
-      <button class="button" onclick="clearInput()">C</button>
-      <button class="button" onclick="backspace()">←</button>
-      <button class="button btn-wide" onclick="handleConfirm()">확인</button>
-      
-      <br>
-      <button id="nextBtn" class="btn-new" onclick="initGame()" disabled>다음 문제 (Space)</button>
-    </div>
-
-    <hr/>
-    <div id="result1" style="font-size:30px;">정답여부</div>
-    <div id="result2" style="font-size:30px;">0번 정답입니다.</div>
-    <div id="result3" style="font-size:30px;">0번 틀렸습니다.</div>
-
-  </center>
+  </div>
 
   <script>
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // 상태 변수
     let targetA = 0;
     let targetB = 0;
     let selectedInputId = 'inputTest'; 
     
-    let winCount = 0;
-    let loseCount = 0;
+    let winCount = parseInt(localStorage.getItem('box_winCount')) || 0;
+    let loseCount = parseInt(localStorage.getItem('box_loseCount')) || 0;
 
-    // 게임 초기화
     function initGame() {
-      // a: -9 ~ 9 (0 제외)
       targetA = 0;
       while(targetA === 0) targetA = Math.floor(Math.random() * 19) - 9;
-      // b: -20 ~ 20
       targetB = Math.floor(Math.random() * 41) - 20;
 
-      // UI 초기화
       document.getElementById('inputTest').value = "";
       document.getElementById('inputA').value = "";
       document.getElementById('inputB').value = "";
@@ -157,63 +268,55 @@
       
       const machine = document.getElementById('machineDisplay');
       machine.innerText = "f(x)";
-      machine.style.color = "#0f0";
+      machine.style.color = "#10b981";
 
       resetResultMsg();
+      resetTextColors();
       
-      // 입력 포커스 초기화
       selectInput('test');
-      document.getElementById('nextBtn').disabled = true;
+      
+      // 💡 [새 게임 초기화] 다음 문제 버튼 클래스를 다시 제거하여 묵음(회색)으로 원상복구
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.disabled = true;
+      nextBtn.classList.remove('is-active');
     }
 
-    // 입력창 선택
     function selectInput(type) {
       document.getElementById('inputTest').classList.remove('selected');
       document.getElementById('inputA').classList.remove('selected');
       document.getElementById('inputB').classList.remove('selected');
 
-      if (type === 'test') {
-        selectedInputId = 'inputTest';
-      } else if (type === 'a') {
-        selectedInputId = 'inputA';
-      } else if (type === 'b') {
-        selectedInputId = 'inputB';
-      }
+      if (type === 'test') selectedInputId = 'inputTest';
+      else if (type === 'a') selectedInputId = 'inputA';
+      else if (type === 'b') selectedInputId = 'inputB';
       
-      const target = document.getElementById(selectedInputId);
-      target.classList.add('selected');
+      const currentInput = document.getElementById(selectedInputId);
+      currentInput.classList.add('selected');
+      currentInput.value = ""; 
       
       resetResultMsg();
     }
 
-    // 결과 메시지 초기화
     function resetResultMsg() {
       const res = document.getElementById('result1');
-      res.textContent = "";
-      res.style.backgroundColor = "white";
-      res.style.color = "black";
+      res.textContent = "결과 대기 중";
+      res.className = "msg-default"; 
     }
 
-    // 키패드 입력 로직 (범위 제한 추가됨)
+    function resetTextColors() {
+      document.getElementById('result2').className = 'count-highlight';
+      document.getElementById('result3').className = 'count-highlight';
+    }
+
     function appendNumber(num) {
       const input = document.getElementById(selectedInputId);
-      
-      // 마이너스 중복 방지
       if (num === '-' && input.value.includes('-')) return; 
       
-      // [범위 제한] x값 입력 시 -999 ~ 999 체크
       if (selectedInputId === 'inputTest') {
         let nextStr = input.value + num;
-        
-        // '-'만 있는 경우나 빈 문자열은 허용
         if (nextStr !== '-' && nextStr !== '') {
            let nextNum = parseInt(nextStr);
-           // 범위 체크
-           if (!isNaN(nextNum)) {
-             if (nextNum < -999 || nextNum > 999) {
-               return; // 입력 무시
-             }
-           }
+           if (!isNaN(nextNum) && (nextNum < -999 || nextNum > 999)) return;
         }
       }
 
@@ -228,12 +331,10 @@
     }
 
     function clearInput() {
-      const input = document.getElementById(selectedInputId);
-      input.value = "";
+      document.getElementById(selectedInputId).value = "";
       resetResultMsg();
     }
 
-    // --- 통합된 확인(Confirm) 로직 ---
     function handleConfirm() {
       if (selectedInputId === 'inputTest') {
         testMachine();
@@ -242,7 +343,6 @@
       }
     }
 
-    // 1. 값 넣기 (테스트)
     function testMachine() {
       const inputVal = document.getElementById('inputTest').value.trim();
       if (inputVal === "" || inputVal === "-") return;
@@ -254,60 +354,66 @@
       const row = tbody.insertRow(0);
       const cellX = row.insertCell(0);
       const cellY = row.insertCell(1);
+      
       cellX.textContent = x;
-      cellY.innerHTML = `<strong>${y}</strong>`;
+      cellY.innerHTML = `<span style="font-weight:800; color:var(--active);">${y}</span>`;
 
       const machine = document.getElementById('machineDisplay');
       machine.innerText = y;
-      machine.style.color = "#ffeb3b"; 
+      machine.style.color = "#f59e0b"; 
       
       setTimeout(() => {
         machine.innerText = "f(x)";
-        machine.style.color = "#0f0";
+        machine.style.color = "#10b981";
       }, 800);
 
       document.getElementById('inputTest').value = "";
       selectInput('test'); 
     }
 
-    // 2. 정답 확인
     function checkAnswer() {
       const valA = document.getElementById('inputA').value.trim();
       const valB = document.getElementById('inputB').value.trim();
 
-      if (valA === "" || valB === "") return;
+      if (valA === "" || valB === "" || valA === "-" || valB === "-") return;
 
       const userA = parseInt(valA);
       const userB = parseInt(valB);
+      const res = document.getElementById('result1');
+      const winEl = document.getElementById('result2');
+      const loseEl = document.getElementById('result3');
 
       if (userA === targetA && userB === targetB) {
-        const res = document.getElementById('result1');
-        res.textContent = "정답입니다!";
-        res.style.backgroundColor = "green";
-        res.style.color = "white";
+        res.textContent = "🎉 정확한 규칙을 찾았습니다! 정답입니다! 🎯";
+        res.className = "feedback-success";
         
         winCount++;
-        document.getElementById('result2').textContent = `${winCount}번 정답입니다.`;
-        document.getElementById('nextBtn').disabled = false;
+        localStorage.setItem('box_winCount', winCount);
+        winEl.textContent = `${winCount}회`;
+        winEl.classList.add('win-active');
+        loseEl.classList.remove('lose-active');
         
+        // 💡 [핵심 교정] 규칙 추론 정답 처리가 완료되었을 때 'is-active' 클래스를 붙여 파란색으로 전환!
+        const nextBtn = document.getElementById('nextBtn');
+        nextBtn.disabled = false;
+        nextBtn.classList.add('is-active');
       } else {
-        const res = document.getElementById('result1');
-        let msg = "틀렸습니다!";
-        if(userA !== targetA && userB === targetB) msg = "기울기(a)가 틀렸습니다.";
-        else if(userA === targetA && userB !== targetB) msg = "y절편(b)이 틀렸습니다.";
+        let msg = "❌ 규칙이 유효하지 않습니다. 다시 계산해 보세요!";
+        if(userA !== targetA && userB === targetB) msg = "⚠️ 기울기(a) 규칙이 다릅니다.";
+        else if(userA === targetA && userB !== targetB) msg = "⚠️ y절편(b) 상수가 다릅니다.";
         
         res.textContent = msg;
-        res.style.backgroundColor = "red";
-        res.style.color = "white";
+        res.className = "feedback-danger";
         
         loseCount++;
-        document.getElementById('result3').textContent = `${loseCount}번 틀렸습니다.`;
+        localStorage.setItem('box_loseCount', loseCount);
+        loseEl.textContent = `${loseCount}회`;
+        loseEl.classList.add('lose-active');
+        winEl.classList.remove('win-active');
       }
     }
 
-    // 키보드 이벤트
     document.addEventListener('keydown', e => {
-      // 숫자 키
       if ((e.key >= '0' && e.key <= '9') || e.key === '-') {
         appendNumber(e.key);
       }
@@ -331,8 +437,28 @@
       }
     });
 
-    // 초기 실행
-    window.onload = initGame;
+    function openModal() { document.getElementById('customModal').classList.add('show'); }
+    function closeModal() { document.getElementById('customModal').classList.remove('show'); }
+    function closeModalOnOverlay(e) { if(e.target.id === 'customModal') closeModal(); }
+
+    function resetScore() {
+      winCount = 0;
+      loseCount = 0;
+      localStorage.setItem('box_winCount', 0);
+      localStorage.setItem('box_loseCount', 0);
+      
+      document.getElementById('result2').textContent = "0회";
+      document.getElementById('result3').textContent = "0회";
+      resetTextColors();
+      closeModal();
+      initGame();
+    }
+
+    window.onload = () => {
+      document.getElementById('result2').textContent = `${winCount}회`;
+      document.getElementById('result3').textContent = `${loseCount}회`;
+      initGame();
+    };
   </script>
 </body>
 </html>

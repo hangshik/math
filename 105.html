@@ -1,324 +1,528 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>일차방정식</title>
-  <script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']]
-    }
-  };
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>일차방정식</title>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script>
+    window.MathJax = {
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+    };
 </script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-  <style>
-    body {
-      text-size-adjust: 50px;
-      font-family: sans-serif;
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="style.css">
+<style>
+    /* 일차방정식 고유 인터페이스 디자인 시스템 규격화 */
+    body { background: var(--bg); font-family: 'Pretendard', sans-serif; color: var(--text-main); margin: 0; padding: 15px; }
+    .wrapper { max-width: 800px; margin: 0 auto; }
+    
+    /* 유리수 버전처럼 콤팩트하게 패딩 및 하단 여백 축소 */
+    .container-fixed { background: var(--card-bg); padding: 18px 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 12px; }
+    
+    h1 { text-align: center; font-size: 32px; font-weight: 800; margin: 10px 0 15px 0; }
+    
+    /* 단계 선택 인터페이스 버튼 배치 (분리형 카드 레이아웃으로 변경) */
+    .stage-card {
+        background: var(--card-bg);
+        padding: 12px 15px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 12px;
+    }
+    #stageContainer {
+        display: flex; 
+        justify-content: space-between;
+        gap: 6px;
+        width: 100%;
+    }
+    .stage-button { font-size: 14px; padding: 10px 8px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; cursor: pointer; flex: 1; font-weight: 700; transition: all 0.2s; }
+    .stage-button.active { background: var(--active); color: white; border-color: var(--active); box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3); }
+
+    /* 문제 수식 표시 영역 하단 마진 축소 및 수식 내 x 위치 위로 약간 조정을 위한 내부 요소 제어 */
+    #problem { 
+        font-size: 40px; 
+        font-weight: 800; 
+        text-align: center; 
+        margin: 10px 0 5px 0; 
+        min-height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    /* MathJax 컨테이너 내부의 세로 정렬 보정 (x 글자 축 위로 끌어올림 효과) */
+    #problem mjx-container[display="true"] {
+        margin: 0 !important;
+        vertical-align: middle !important;
+        position: relative !important;
+        top: -2px !important; /* 수식을 약간 위로 업계 배치 */
     }
     
-    .container {
-      display: grid;
-      gap: 10px;
+    /* x = [입력창] 영역 세로 기준 정중앙 완벽 정렬 보정 */
+    .answer-row-container {
+        display: flex;
+        justify-content: center;
+        align-items: center; /* 세로축 정중앙 배치 */
+        gap: 12px;
+        margin-top: 5px;
+        margin-bottom: 15px;
+        width: 100%;
+        height: 64px; /* 명확한 높이 지정을 통해 등호 수직선 고정 */
+    }
+    
+    .formula-prefix {
+        font-size: 40px;
+        font-weight: 800;
+        color: var(--text-main);
+        display: inline-flex !important;
+        align-items: center !important; /* 세로 정중앙 */
+        justify-content: center !important;
+        user-select: none;
+        height: 100% !important;
+        line-height: 1 !important;
+    }
+    /* 등호(=) 및 x 수식 폰트 미세 쏠림 현상 방어선 구축 */
+    .formula-prefix mjx-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        vertical-align: middle !important;
     }
 
-    .button {
-      width: 60px;
-      height: 60px;
-      font-size: 25px;
-      line-height: 60px;
-      margin: 2px 0px;
-      border-radius: 10px;
-      border: none;
-      background-color: #DDDDDD;
-      cursor: pointer;
+    /* 상시 파란 테두리 및 액티브 그림자 */
+    #txt { 
+        width: 160px;
+        height: 58px;
+        font-size: 32px; 
+        font-weight: 700; 
+        text-align: center; 
+        border: 2px solid var(--active); 
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); 
+        border-radius: 12px; 
+        background-color: #ffffff;
+        outline: none;
+        cursor: pointer;
+        display: inline-block;
+        vertical-align: middle;
     }
 
-    .button:hover {
-      background-color: #bbb;
+    /* 가상 키패드 전체 폭 스케일 제어 */
+    .full-width-container {
+        width: 100%;
+    }
+    .key-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; }
+    .action-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; width: 100%; margin-top: 10px; }
+    
+    /* 확인 버튼을 파란색(var(--active)) 전역 테마로 완벽히 수정 */
+    .confirm-btn-style { 
+        grid-column: span 1 !important;
+        background-color: var(--active) !important; /* 파란색 기본 적용 */
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        transition: background-color 0.2s, transform 0.1s !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 54px !important;
+        box-shadow: 0 3px 6px rgba(0, 123, 255, 0.3) !important; /* 파란색 그림자 피드백 */
+    }
+    .confirm-btn-style:hover {
+        background-color: #0056b3 !important; /* 마우스 오버 시 안정적인 딥블루 테마 */
+    }
+    .confirm-btn-style:active {
+        transform: scale(0.97) !important;
     }
 
-    #txt {
-      font-size: 30px;
-      width: 80px;
-      height: 40px;
-      text-align: center;
-      margin-left: 10px;
+    /* 수식을 계산한 후 확인을 눌러주세요 회색 배경 스타일 수정 */
+    .calc-guide-text {
+        text-align: center;
+        font-size: 15px;
+        color: var(--text-sub);
+        margin-top: 15px;
+        font-weight: 600;
+        background-color: #f1f3f5; /* 부드러운 회색 배경 */
+        padding: 12px 20px;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
-    .stage-button {
-      font-size: 20px;
-      margin: 5px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+    /* 피드백 메시지창 안내 알림 레이아웃 */
+    #message-box { padding: 12px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 18px; margin-top: 15px; display: none; color: white; width: 100%; box-sizing: border-box; }
 
-    .active {
-      background-color: #3399FF;
-      color: white;
+    /* 모바일 해상도 반응형 구조 대응 */
+    @media (max-width: 480px) {
+        #stageContainer { grid-template-columns: repeat(3, 1fr); display: grid; gap: 6px; }
+        #problem { font-size: 28px; margin: 8px 0 4px 0; }
+        #problem mjx-container[display="true"] { top: -1px !important; }
+        .formula-prefix { font-size: 28px; }
+        #txt { height: 50px; font-size: 24px; width: 120px; }
+        .key-grid, .action-row { gap: 6px; }
+        .button { height: 46px; font-size: 15px; padding: 0; }
+        .confirm-btn-style { height: 46px !important; font-size: 15px !important; }
+        .calc-guide-text { font-size: 13px; margin-top: 12px; padding: 10px 15px; }
+        .answer-row-container { height: 52px; }
     }
-  </style>
+</style>
 </head>
 <body>
-  <center>
-    <h1>일차방정식</h1>
 
-    <div>
-      <button id="btn1" class="stage-button" onclick="setStage(1)">1단계</button>
-      <button id="btn2" class="stage-button" onclick="setStage(2)">2단계</button>
-      <button id="btn3" class="stage-button" onclick="setStage(3)">3단계</button><br>
-      <button id="btn4" class="stage-button" onclick="setStage(4)">4단계</button>
-      <button id="btn5" class="stage-button" onclick="setStage(5)">5단계</button>
-      <button id="btn6" class="stage-button" onclick="setStage(6)">6단계</button>
+<div id="overlay" class="modal-overlay">
+    <div class="modal-box" style="border-top: 6px solid var(--danger);">
+        <h2 class="modal-title">누적 기록 초기화</h2>
+        <p class="modal-text">누적 기록을 모두 삭제하시겠습니까?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeResetModal()">취소</button>
+            <button class="modal-btn confirm" onclick="confirmReset()">초기화</button>
+        </div>
     </div>
+</div>
 
-    <div id="problem" style="font-size: 30px; margin-top: 20px;">문제</div>
-    <!--<div id="test" style="font-size: 20px; color: gray;">디버그</div>-->
-
-    <div style="margin-top: 20px; text-align: center;display: flex; justify-content: center; align-items: center; ">
-      <font size="10px">$x$ =</font> <input type="text" id="txt" value="" readonly>
-    </div>
-
-    <br>
-    <!-- 숫자 및 기능 버튼 -->
-    <div>
-      <button class="button" onclick="appendNumber(1)">1</button>
-      <button class="button" onclick="appendNumber(2)">2</button>
-      <button class="button" onclick="appendNumber(3)">3</button>
-      <button class="button" onclick="appendNumber(4)">4</button>
-      <button class="button" onclick="appendNumber(5)">5</button><br>
-      <button class="button" onclick="appendNumber(6)">6</button>
-      <button class="button" onclick="appendNumber(7)">7</button>
-      <button class="button" onclick="appendNumber(8)">8</button>
-      <button class="button" onclick="appendNumber(9)">9</button>
-      <button class="button" onclick="appendNumber(0)">0</button><br>
-      <button class="button" onclick="appendNumber('-')">-</button>
-      <button class="button" onclick="appendNumber('/')">/</button>
-      <button class="button" onclick="clearInput()">C</button>
-      <button class="button" onclick="backspace()">←</button>
-      <button class="button" onclick="main()" style="background-color: #3399FF; color: white;">확인</button>
-    </div>
-
-    <hr/>
-    <div id="result1" style="font-size:30px">정답여부</div>
-    <div id="result2" style="font-size:30px">0번 정답입니다.</div>
-    <div id="result3" style="font-size:30px">0번 틀렸습니다.</div>
+<div class="wrapper">
+    <h1 class="main-title">일차방정식</h1>
     
-    <!--<br><font size="5">
-      1~3단계: ax+b=cx+d<br>
-      4~6단계: a(bx+c)=dx+e 또는 ax+b=c(dx+e)<br>
-      1,4단계: 정답이 정수임<br>
-        2,5단계: 정답이 정수가 아님<br>
-        3,6단계: 정답이 둘 다 가능
-    </font>-->
-    <br>
-    <table align="center" style="font-size:20px; border-collapse:collapse;height:120px;text-align:center;">
-      <tr>
-        <td width="220px"></td>
-        <td width="120px">해가 정수</td>
-        <td width="120px">해가 정수가 아님</td>
-        <td width="120px">해는 모든 수</td>
-      </tr>
-      <tr>
-        <td style=>${ax+b=cx+d}$</td>
-        <td style="border:1px solid #000000;">1단계</td>
-        <td style="border:1px solid #000000;">2단계</td>
-        <td style="border:1px solid #000000;">3단계</td>
-      </tr>
-      <tr>
-        <td style=>${a(bx+c)=dx+e}$</td>
-        <td style="border:1px solid #000000;">4단계</td>
-        <td style="border:1px solid #000000;">5단계</td>
-        <td style="border:1px solid #000000;">6단계</td>
-      </tr>
-    </table>
-  </center>
+    <div class="stage-card">
+        <div id="stageContainer">
+            <button id="btn1" class="stage-button" onclick="setStage(1)">1단계</button>
+            <button id="btn2" class="stage-button" onclick="setStage(2)">2단계</button>
+            <button id="btn3" class="stage-button" onclick="setStage(3)">3단계</button>
+            <button id="btn4" class="stage-button" onclick="setStage(4)">4단계</button>
+            <button id="btn5" class="stage-button" onclick="setStage(5)">5단계</button>
+            <button id="btn6" class="stage-button" onclick="setStage(6)">6단계</button>
+        </div>
+    </div>
 
-  <script>
-    // 오른쪽 마우스 금지
-    document.addEventListener('contextmenu', e => e.preventDefault());
+    <div class="container-fixed" style="display: flex; flex-direction: column; align-items: center;">
+        <div id="problem">로딩 중...</div>
 
-    let currentStage = 1;
-    let wincount = 0;
-    let losecount = 0;
+        <div class="answer-row-container">
+            <div class="formula-prefix">\(x\)</div>
+            <div class="formula-prefix">\(=\)</div>
+            <input type="text" id="txt" readonly placeholder="?" onclick="handleInputClick()">
+        </div>
+
+        <div class="key-grid full-width-container">
+            <button class="button" onclick="appendNumber(1)">1</button>
+            <button class="button" onclick="appendNumber(2)">2</button>
+            <button class="button" onclick="appendNumber(3)">3</button>
+            <button class="button" onclick="appendNumber(4)">4</button>
+            <button class="button" onclick="appendNumber(5)">5</button>
+            <button class="button" onclick="appendNumber(6)">6</button>
+            <button class="button" onclick="appendNumber(7)">7</button>
+            <button class="button" onclick="appendNumber(8)">8</button>
+            <button class="button" onclick="appendNumber(9)">9</button>
+            <button class="button" onclick="appendNumber(0)">0</button>
+        </div>
+        
+        <div class="action-row full-width-container">
+            <button class="button" style="font-weight: 800;" onclick="appendNumber('-')">-</button>
+            <button class="button" style="font-weight: 800;" onclick="appendNumber('/')">/</button>
+            <button class="button" onclick="backspace()">←</button>
+            <button class="button" onclick="clearInput()">C</button>
+            <button class="confirm-btn-style" onclick="main()">확인</button>
+        </div>
+        
+        <div id="guide-text-area" class="calc-guide-text">수식을 계산한 후 확인을 눌러주세요.</div>
+        
+        <div id="message-box"></div>
+    </div>
+
+    <div class="guide-box record">
+        <div class="guide-header">
+            <h2 class="guide-title">📊 누적 기록</h2>
+            <button class="reset-btn" onclick="openResetModal()">누적기록 초기화</button>
+        </div>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>구분</th>
+                    <th>성공 횟수</th>
+                    <th>실패 횟수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>기록</td>
+                    <td id="winCell" class="count-highlight">0</td>
+                    <td id="loseCell" class="count-highlight">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="guide-box rules" style="margin-top: 15px;">
+        <div class="guide-header">
+            <h2 class="guide-title">◈ 게임 설명</h2>
+        </div>
+       <ul style="margin: 0; padding-left: 20px; font-size: 15px; color: var(--text-sub);">
+            <li style="padding-left: 8px; margin-bottom: 8px;">주어진 일차방정식을 풀어 \(x\)의 값을 입력하세요.</li>
+            <li style="padding-left: 8px;">정답은 정수 또는 기약분수 형태(\(a/b\))로 입력 가능합니다.</li>
+        </ul>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>수식 구조</th>
+                    <th>해: 정수</th>
+                    <th>해: 분수</th>
+                    <th>해: 모든 수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: 700;">\(ax+b=cx+d\)</td>
+                    <td>1단계</td>
+                    <td>2단계</td>
+                    <td>3단계</td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 700;">\(a(bx+c)=dx+e\)</td>
+                    <td>4단계</td>
+                    <td>5단계</td>
+                    <td>6단계</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="guide-box shortcuts" style="margin-top: 15px;">
+        <div class="guide-header">
+            <h2 class="guide-title">⌨ 키보드 단축키</h2>
+        </div>
+        <div class="shortcut-grid">
+            <div class="shortcut-item"><kbd>0</kbd> ~ <kbd>9</kbd> <span>숫자 입력</span></div>
+            <div class="shortcut-item"><kbd>-</kbd> / <kbd>/</kbd> <span>마이너스 부호 및 분수선 입력</span></div>
+            <div class="shortcut-item"><kbd>Backspace</kbd> <span>한 글자 지우기</span></div>
+            <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 삭제 / 모달 취소</span></div>
+            <div class="shortcut-item"><kbd>Enter</kbd> / <kbd>Space</kbd> <span>정답 확인 / 모달 확인</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 영속성 유지를 위한 일차방정식 통합 로컬 스토리지 설계
+    let gameState = JSON.parse(localStorage.getItem('linearEquationGame')) || {
+        win: 0,
+        lose: 0,
+        currentStage: 1,
+        savedProblems: {} 
+    };
+
     let rr = 0;
+    let isWrongState = false;
+    let lastResultStatus = null; 
 
-    function gcd(a, b) {
-      while (b !== 0) {
-        [a, b] = [b, a % b];
-      }
-      return Math.abs(a);
+    function saveState() {
+        localStorage.setItem('linearEquationGame', JSON.stringify(gameState));
+    }
+
+    function openResetModal() { 
+        document.getElementById('overlay').classList.add('overlay-visible'); 
+    }
+    
+    function closeResetModal() { 
+        document.getElementById('overlay').classList.remove('overlay-visible'); 
+    }
+    
+    function confirmReset() { 
+        gameState.win = 0; 
+        gameState.lose = 0; 
+        gameState.savedProblems = {};
+        saveState();
+        lastResultStatus = null;
+        updateStatsUI(null); 
+        closeResetModal(); 
+        clearInput();
+        start(gameState.currentStage);
+    }
+
+    function gcd(a, b) { while (b !== 0) [a, b] = [b, a % b]; return Math.abs(a); }
+
+    function showMessage(text, isWin) {
+        const msg = document.getElementById("message-box");
+        const guide = document.getElementById("guide-text-area");
+        
+        guide.style.display = "none"; 
+        msg.style.display = "block";
+        msg.innerText = text;
+        msg.style.backgroundColor = isWin ? "var(--success)" : "var(--danger)";
+        
+        setTimeout(() => { 
+            msg.style.display = "none"; 
+            guide.style.display = "block"; 
+        }, 1500);
+    }
+
+    function updateStatsUI(lastChanged) {
+        if (lastChanged !== undefined) {
+            lastResultStatus = lastChanged;
+        }
+        
+        const winCell = document.getElementById("winCell");
+        const loseCell = document.getElementById("loseCell");
+        winCell.innerText = gameState.win;
+        loseCell.innerText = gameState.lose;
+        
+        winCell.className = lastResultStatus === true ? 'count-highlight win-active' : 'count-highlight';
+        loseCell.className = lastResultStatus === false ? 'count-highlight lose-active' : 'count-highlight';
     }
 
     function setStage(stage) {
-      currentStage = stage;
-      updateButtonStyles();
-      start(stage);
-    }
-
-    function updateButtonStyles() {
-      for (let i = 1; i <= 6; i++) {
-        const btn = document.getElementById("btn" + i);
-        if (i === currentStage) {
-          btn.classList.add("active");
-        } else {
-          btn.classList.remove("active");
-        }
-      }
-    }
-
-    function start(mode = currentStage) {
-      let x1, x2, x3, x4;
-
-      while (true) {
-        x1 = Math.floor(Math.random() * 18 - 8);
-        x2 = Math.floor(Math.random() * 18 - 8);
-        x3 = Math.floor(Math.random() * 18 - 8);
-        x4 = Math.floor(Math.random() * 18 - 8);
-        sign1 = Math.random();
-        sign2 = Math.random();
-
-        if (x1 < 1) x1 -= 1;
-        if (x2 < 1) x2 -= 1;
-        if (x3 < 1) x3 -= 1;
-        if (x4 < 1) x4 -= 1;
-
-        if (x1 === x3) x3 += (x1 === -1 ? -1 : 1);
-        if (x2 === x4) x4 += (x2 === -1 ? -1 : 1);
-
-        let numerator = x4 - x2;
-        let denominator = x1 - x3;
-        if (denominator === 0) continue;
-
+        gameState.currentStage = stage;
+        saveState();
         
-        x5 = sign1 < 0.5 ? gcd(x1, x2) : gcd(x1, x2)*-1;
-
-        rr = numerator / denominator;
-
-        if (mode === 1 && Number.isInteger(rr)) break;
-        if (mode === 2 && !Number.isInteger(rr)) break;
-        if (mode === 3) break;
-        if (mode === 4 && Number.isInteger(rr) && x5!=1) break;
-        if (mode === 5 && !Number.isInteger(rr) && x5!=1) break;
-        if (mode === 6 && x5!=1) break;
-      }
-
-      const r1 = gcd(x4 - x2, x1 - x3);
-      const r2 = (x4 - x2) / r1;
-      const r3 = (x1 - x3) / r1;
-      rr = r2 / r3;
-
-      if ( mode>3){
-        x1 = x1 / x5;
-        x2 = x2 / x5;
-      }
-
-      const showX1 = x1 === 1 ? "" : x1 === -1 ? "-" : x1;
-      const showX3 = x3 === 1 ? "" : x3 === -1 ? "-" : x3;
-      const showX2 = x2 > 0 ? "+" + x2 : x2;
-      const showX4 = x4 > 0 ? "+" + x4 : x4;
-      const showX5 = x5 === -1 ? "-" : x5;
-      // x 이미지를 수식 x로 대체 (MathJax 사용)
-      if(mode<4){
-        document.getElementById("problem").innerHTML =
-          showX1 + '\\(x\\)' + showX2 +
-          " = " + showX3 + '\\(x\\)' + showX4;
-      } else {
-        if(sign2 < 0.5){
-          document.getElementById("problem").innerHTML =
-            showX5 + "(" + showX1 + '\\(x\\)' + showX2 +
-            ") = " + showX3 + '\\(x\\)' + showX4;
-        } else {
-          document.getElementById("problem").innerHTML =
-            showX3 + '\\(x\\)' + showX4 + "=" + showX5 + "(" + showX1 + '\\(x\\)' + showX2 +
-            ")";
+        document.querySelectorAll('.stage-button').forEach((b, i) => b.className = (i+1 === stage ? 'stage-button active' : 'stage-button'));
+        
+        if (!gameState.savedProblems[stage]) { 
+            start(stage); 
+        } else { 
+            document.getElementById("problem").innerHTML = gameState.savedProblems[stage].probText; 
+            rr = gameState.savedProblems[stage].answerValue;
+            MathJax.typesetPromise(); 
         }
-      }
-      MathJax.typesetPromise(); // 수식 렌더링
-      // document.getElementById("test").textContent = `${x1}, ${x3}, ${x2}, ${x4}, 정답: ${rr}`;
     }
 
-    function appendNumber(num) {
-      document.getElementById("txt").value += num;
+    function start(mode = gameState.currentStage) {
+        let x1, x2, x3, x4, x5, sign1, sign2;
+        while (true) {
+            x1 = Math.floor(Math.random() * 18 - 8); x2 = Math.floor(Math.random() * 18 - 8);
+            x3 = Math.floor(Math.random() * 18 - 8); x4 = Math.floor(Math.random() * 18 - 8);
+            sign1 = Math.random(); sign2 = Math.random();
+            if (x1 < 1) x1 -= 1; if (x2 < 1) x2 -= 1; if (x3 < 1) x3 -= 1; if (x4 < 1) x4 -= 1;
+            if (x1 === x3) x3 += (x1 === -1 ? -1 : 1);
+            if (x2 === x4) x4 += (x2 === -1 ? -1 : 1);
+            let numerator = x4 - x2, denominator = x1 - x3;
+            if (denominator === 0) continue;
+            x5 = sign1 < 0.5 ? gcd(x1, x2) : gcd(x1, x2)*-1;
+            rr = numerator / denominator;
+            if (mode === 1 && Number.isInteger(rr)) break;
+            if (mode === 2 && !Number.isInteger(rr)) break;
+            if (mode === 3) break;
+            if (mode === 4 && Number.isInteger(rr) && x5!=1) break;
+            if (mode === 5 && !Number.isInteger(rr) && x5!=1) break;
+            if (mode === 6 && x5!=1) break;
+        }
+        rr = (x4 - x2) / (x1 - x3);
+        if (mode > 3) { x1 /= x5; x2 /= x5; }
+        
+        const showX1 = x1 === 1 ? "" : x1 === -1 ? "-" : x1;
+        const showX3 = x3 === 1 ? "" : x3 === -1 ? "-" : x3;
+        const showX2 = x2 > 0 ? "+" + x2 : x2;
+        const showX4 = x4 > 0 ? "+" + x4 : x4;
+        const showX5 = x5 === -1 ? "-" : x5;
+        
+        let prob = "";
+        if (mode < 4) {
+            prob = `${showX1}x ${showX2} = ${showX3}x ${showX4}`;
+        } else {
+            if (sign2 < 0.5) {
+                prob = `${showX5}(${showX1}x ${showX2}) = ${showX3}x ${showX4}`;
+            } else {
+                prob = `${showX3}x ${showX4} = ${showX5}(${showX1}x ${showX2})`;
+            }
+        }
+        
+        let finalLatex = `\\[ ${prob} \\]`;
+        
+        gameState.savedProblems[mode] = {
+            probText: finalLatex,
+            answerValue: rr
+        };
+        saveState();
+
+        document.getElementById("problem").innerHTML = finalLatex;
+        MathJax.typesetPromise();
     }
 
-    function backspace() {
-      const input = document.getElementById("txt");
-      input.value = input.value.slice(0, -1);
+    function appendNumber(num) { 
+        if (isWrongState) {
+            document.getElementById("txt").value = "";
+        }
+        updateStatsUI(null); 
+        document.getElementById("txt").value += num; 
+        isWrongState = false;
+    }
+    
+    function backspace() { 
+        if (isWrongState) { clearInput(); return; }
+        document.getElementById("txt").value = document.getElementById("txt").value.slice(0, -1); 
+    }
+    
+    function clearInput() { 
+        document.getElementById("txt").value = ""; 
+        isWrongState = false;
     }
 
-    function clearInput() {
-      document.getElementById("txt").value = "";
-    }
-
-    function resultreset() {
-      document.getElementById("result1").textContent = "정답여부";
-      document.getElementById("result1").style.backgroundColor = "white";
+    function handleInputClick() {
+        if (isWrongState) { clearInput(); }
     }
 
     function main() {
-      const input = document.getElementById("txt");
-      let a1 = input.value;
-
-      if (a1.includes("/")) {
-        const parts = a1.split("/");
-        if (parts.length === 2) {
-          const numerator = parseFloat(parts[0]);
-          const denominator = parseFloat(parts[1]);
-          if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
-            a1 = numerator / denominator;
-          } else {
-            a1 = NaN;
-          }
-        } else {
-          a1 = NaN;
+        const inputVal = document.getElementById("txt").value;
+        if (!inputVal || inputVal === "-") return;
+        let isFraction = inputVal.includes("/");
+        let a1, n = 0, d = 1;
+        if (isFraction) { 
+            const parts = inputVal.split("/"); 
+            n = parseFloat(parts[0]); 
+            d = parseFloat(parts[1] || 1); 
+            a1 = n / d; 
+        } else { 
+            a1 = parseFloat(inputVal); 
         }
-      } else {
-        a1 = parseFloat(a1);
-      }
 
-      if (!isNaN(a1)) {
-        if (Math.abs(rr - a1) < 1e-10) {
-          wincount++;
-          document.getElementById("result1").textContent = "정답입니다.";
-          document.getElementById("result1").style.backgroundColor = "green";
-          document.getElementById("result1").style.color = "white";
-          document.getElementById("result2").textContent = `${wincount}번 정답입니다.`;
-          setTimeout(resultreset, 1000);
-          start(currentStage);
-        } else {
-          losecount++;
-          document.getElementById("result1").textContent = "틀렸습니다.";
-          document.getElementById("result1").style.backgroundColor = "red";
-          document.getElementById("result1").style.color = "white";
-          document.getElementById("result3").textContent = `${losecount}번 틀렸습니다.`;
-          setTimeout(resultreset, 1000);
+        if (!isNaN(a1)) {
+            if (Math.abs(rr - a1) < 1e-10) {
+                if (isFraction && gcd(Math.abs(n), Math.abs(d)) !== 1) { 
+                    showMessage("틀렸습니다! 기약분수로 입력하세요.", false); 
+                    gameState.lose++; 
+                    isWrongState = true;
+                    updateStatsUI(false); 
+                    saveState();
+                } else { 
+                    gameState.win++; 
+                    showMessage("🎉 정답입니다!", true); 
+                    updateStatsUI(true); 
+                    document.getElementById("txt").value = ""; 
+                    isWrongState = false;
+                    delete gameState.savedProblems[gameState.currentStage]; 
+                    saveState();
+                    start(gameState.currentStage); 
+                }
+            } else { 
+                gameState.lose++; 
+                showMessage("❌ 틀렸습니다! (입력칸을 누르면 지워집니다)", false); 
+                isWrongState = true;
+                updateStatsUI(false); 
+                saveState();
+            }
         }
-      }
-
-      input.value = "";
     }
 
-    // 키보드 입력 처리
-    document.addEventListener('keydown', function (event) {
-      const key = event.key;
-      if (key >= '0' && key <= '9') appendNumber(key);
-      else if (key === '-') appendNumber('-');
-      else if (key === '/') appendNumber('/');
-      else if (key === '.') appendNumber('.');
-      else if (key === 'Backspace') backspace();
-      else if (key === 'Escape') clearInput();
-      else if (key === 'Enter') main();
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('overlay');
+        if(modal && modal.classList.contains('overlay-visible')) {
+            if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); confirmReset(); }
+            if(e.key === 'Escape') { e.preventDefault(); closeResetModal(); }
+        } else {
+            if (e.key >= '0' && e.key <= '9') appendNumber(e.key);
+            else if (e.key === '-' || e.key === '/') appendNumber(e.key);
+            else if (e.key === 'Backspace') backspace();
+            else if (e.key === 'Escape') { clearInput(); updateStatsUI(null); }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); main(); }
+        }
     });
 
-    // 초기화
-    window.onload = () => {
-      updateButtonStyles();
-      start(currentStage);
+    window.onload = () => { 
+        updateStatsUI(null);
+        setStage(gameState.currentStage); 
+        // 초기화 완료 시점 페이지 전체 정적 수식들까지 전역 컴파일 연동 보장
+        MathJax.typesetPromise();
     };
-  </script>
+</script>
 </body>
 </html>

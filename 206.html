@@ -1,421 +1,444 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>피타고라스 퀴즈</title>
-<script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-<style>
-  body { 
-    font-family: sans-serif; 
-    text-align: center; 
-    margin: 0;
-    padding: 10px;
-    background-color: #f9f9f9;
-  }
-  .container {
-    max-width: 500px;
-    margin: 0 auto;
-    background: white;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>피타고라스 퀴즈</title>
   
-  /* 그래프 가운데 정렬 수정 */
-  canvas { 
-    background: #fff; 
-    display: block;       /* 블록 요소로 변경 */
-    margin: 0 auto 5px auto; /* 상 우 하 좌 : 좌우 auto로 중앙 정렬 */
-    max-width: 100%;
-    height: auto;
-  }
-
-  /* 입력창 스타일 */
-  .input-display {
-    font-size: 32px;
-    font-weight: bold;
-    padding: 10px;
-    border: 2px solid #333;
-    border-radius: 8px;
-    width: 200px;
-    margin: 10px auto 20px auto; 
-    background-color: #fff;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #333;
-  }
-
-  /* 키패드 스타일 (5열 레이아웃) */
-  .keypad-table {
-    margin: 10px auto;
-    width: 100%;
-    max-width: 450px;
-    border-collapse: separate;
-    border-spacing: 6px; 
-  }
+  <link rel="stylesheet" href="style.css" />
   
-  .keypad-table td {
-    width: 20%; 
-  }
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <script>
+    window.MathJax = { tex: { inlineMath: [['$', '$']] } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 
-  .key-btn {
-    width: 100%;
-    height: 55px;
-    font-size: 22px;
-    font-weight: bold;
-    cursor: pointer;
-    background-color: #eee;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    touch-action: manipulation;
-    transition: background 0.2s;
-    padding: 0;
-  }
-  .key-btn:hover { background-color: #ddd; }
-  .key-btn:active { background-color: #ccc; }
-  
-  /* 기능 버튼 색상 */
-  .btn-check { 
-    background-color: #3399FF; color: white; border-color: #2b80d6; 
-  }
-  .btn-check:hover { background-color: #2b80d6; }
-  
-  .btn-clear { background-color: #ff9800; color: white; border-color: #f57c00; }
-  .btn-clear:hover { background-color: #f57c00; }
+  <style>
+    /* 피타고라스 어플리케이션 전용 고유 그래픽 및 정렬 컴포넌트 스타일 보정 */
+    canvas { 
+      background: #ffffff; 
+      display: block;      
+      margin: 0 auto var(--margin-md) auto;
+      max-width: 100%;
+      height: auto;
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+    }
 
-  .btn-back { background-color: #9e9e9e; color: white; border-color: #757575; }
-  .btn-back:hover { background-color: #757575; }
+    /* 입력창 스타일 시스템 규격으로 래핑 */
+    .input-display {
+      font-size: 32px;
+      font-weight: 800;
+      padding: 12px;
+      border: 2px solid var(--text-main);
+      border-radius: var(--radius-sm);
+      width: 200px;
+      margin: 0 auto var(--margin-md) auto; 
+      background-color: #ffffff;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
 
-  /* 점수판 스타일 */
-  #result1, #result2, #result3 {
-    font-size: 20px;
-    margin: 5px 0;
-    padding: 8px;
-    border-radius: 5px;
-    font-weight: bold;
-  }
-  #result1 { min-height: 30px; background-color: white; color: black; border: 1px solid #eee; }
-  
-  /* 키보드 안내 */
-  .keyboard-guide {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #f0f0f0;
-    border-radius: 8px;
-    font-size: 14px;
-    color: #666;
-    line-height: 1.6;
-  }
-  .key-badge {
-    background: white; border: 1px solid #bbb; border-radius: 4px;
-    padding: 2px 6px; font-family: monospace; font-weight: bold;
-    color: #333; box-shadow: 0 2px 0 #ddd;
-  }
-</style>
+    /* 3칸을 차지하는 확장형 확인 버튼 규격 바인딩 */
+    .btn-check-triple {
+      grid-column: span 3 !important;
+    }
+
+    /* 🌟 [다음 문제] 공통 마스터 스타일 동기화 */
+    .btn-block-wide {
+      width: 100% !important;
+      height: 54px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none !important;
+      transition: var(--transition-normal);
+      margin-bottom: var(--margin-md);
+    }
+    
+    /* [상태 1]: 기본 상태 및 오답 대기 (비활성화 회색조) */
+    #nextBtn,
+    #nextBtn:disabled,
+    .btn-block-wide.next-btn:disabled {
+      background-color: #f8f9fa !important;
+      color: #adb5bd !important;
+      border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      pointer-events: none;
+      transform: none !important;
+    }
+    
+    /* [상태 2]: 정답 시 마스터 시스템 블루 활성화 */
+    #nextBtn.is-active,
+    .btn-block-wide.next-btn.is-active {
+      background-color: var(--active) !important;
+      color: #ffffff !important;
+      cursor: pointer !important;
+      pointer-events: auto !important;
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+    }
+    #nextBtn.is-active:hover,
+    .btn-block-wide.next-btn.is-active:hover {
+      background-color: var(--active-hover) !important;
+    }
+
+    /* 모바일 환경 대응 미디어 쿼리 */
+    @media (max-width: 576px) {
+      .input-display { font-size: 26px; width: 160px; min-height: 48px; }
+      .btn-block-wide { height: 46px; font-size: 15px; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>피타고라스 퀴즈</h1>
-  <p>직각삼각형에서 $x$의 값을 구하세요.</p>
+  <div class="main-container">
+    <h1 class="main-title">피타고라스 퀴즈</h1>
 
-  <canvas id="triCanvas" width="300" height="200"></canvas>
-  
-  <!-- 입력값 표시 영역 -->
-  <div class="input-display" id="displayBox">?</div>
+    <div class="container-fixed">
+      <p style="font-size: 16px; color: var(--text-sub); margin-bottom: 16px;">
+        직각삼각형에서 $x$의 값을 계산하여 입력하세요.
+      </p>
 
-  <!-- 키패드 (5열 배치) -->
-  <table class="keypad-table">
-    <!-- 첫째 줄: 1 ~ 5 -->
-    <tr>
-      <td><button class="key-btn" onclick="addNumber(1)">1</button></td>
-      <td><button class="key-btn" onclick="addNumber(2)">2</button></td>
-      <td><button class="key-btn" onclick="addNumber(3)">3</button></td>
-      <td><button class="key-btn" onclick="addNumber(4)">4</button></td>
-      <td><button class="key-btn" onclick="addNumber(5)">5</button></td>
-    </tr>
-    <!-- 둘째 줄: 6 ~ 0 -->
-    <tr>
-      <td><button class="key-btn" onclick="addNumber(6)">6</button></td>
-      <td><button class="key-btn" onclick="addNumber(7)">7</button></td>
-      <td><button class="key-btn" onclick="addNumber(8)">8</button></td>
-      <td><button class="key-btn" onclick="addNumber(9)">9</button></td>
-      <td><button class="key-btn" onclick="addNumber(0)">0</button></td>
-    </tr>
-    <!-- 셋째 줄: C, <-, 확인(3칸) -->
-    <tr>
-      <td><button class="key-btn btn-clear" onclick="clearAll()">C</button></td>
-      <td><button class="key-btn btn-back" onclick="delNumber()">←</button></td>
-      <!-- colspan=3 으로 3칸 차지하게 설정 -->
-      <td colspan="3"><button class="key-btn btn-check" onclick="checkAnswer()">확인</button></td>
-    </tr>
-  </table>
+      <canvas id="triCanvas" width="300" height="200"></canvas>
+      
+      <div class="input-display" id="displayBox">?</div>
 
-  <!-- 점수판 -->
-  <div id="result1">정답여부</div>
-  <div id="result2">0번 정답입니다.</div>
-  <div id="result3">0번 틀렸습니다.</div>
+      <div class="keypad-grid" style="margin-bottom: 16px;">
+        <button class="button" onclick="addNumber(1)">1</button>
+        <button class="button" onclick="addNumber(2)">2</button>
+        <button class="button" onclick="addNumber(3)">3</button>
+        <button class="button" onclick="addNumber(4)">4</button>
+        <button class="button" onclick="addNumber(5)">5</button>
+        
+        <button class="button" onclick="addNumber(6)">6</button>
+        <button class="button" onclick="addNumber(7)">7</button>
+        <button class="button" onclick="addNumber(8)">8</button>
+        <button class="button" onclick="addNumber(9)">9</button>
+        <button class="button" onclick="addNumber(0)">0</button>
+        
+        <button class="button" onclick="delNumber()">←</button>
+        <button class="button delete-btn" onclick="clearInput()">C</button>
+        <button class="button btn-check-triple confirm-btn" onclick="checkAnswer()">확인</button>
+      </div>
 
-  <!-- 키보드 안내 -->
-  <div class="keyboard-guide">
-    ⌨️ <b>키보드 사용법</b><br>
-    <span class="key-badge">0-9</span> 숫자입력 &nbsp; 
-    <span class="key-badge">Enter</span> 확인<br>
-    <span class="key-badge">Backspace</span> 지우기 &nbsp; 
-    <span class="key-badge">Esc</span> 전체삭제(C)
+      <button id="nextBtn" class="btn-block-wide next-btn" onclick="nextProblem()" disabled>다음 문제 (Space)</button>
+
+      <div id="result1" class="msg-default">결과 대기 중</div>
+    </div>
+
+    <div class="guide-box record">
+      <div class="guide-header">
+        <div class="guide-title">📊 누적 기록</div>
+        <button class="reset-btn" onclick="openModal()">누적기록 초기화</button>
+      </div>
+      <table class="record-table">
+        <tbody>
+          <tr>
+            <th>구분</th>
+            <th>정답 횟수</th>
+            <th>오답 횟수</th>
+          </tr>
+          <tr>
+            <th>횟수</th>
+            <td id="result2" class="count-highlight">0회</td>
+            <td id="result3" class="count-highlight">0회</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="guide-box shortcuts">
+      <div class="guide-title">⌨️ 키보드 단축키</div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item"><kbd>0-9</kbd> <span>정수 문자 실시간 대입</span></div>
+        <div class="shortcut-item"><kbd>Backspace</kbd> <span>우측 단일 문자 제거</span></div>
+        <div class="shortcut-item"><kbd>Esc</kbd> <span>입력 패널 내용 전체 삭제</span></div>
+        <div class="shortcut-item"><kbd>Enter</kbd> <span>정답 매칭 유효성 검사 연산</span></div>
+        <div class="shortcut-item"><kbd>Space</kbd> <span>정답 후 다음 퀴즈 라운드 진행</span></div>
+      </div>
+    </div>
   </div>
-</div>
 
-<script>
-// 전역 변수
-let sideA, sideB, sideC; // 실제 값 (a, b, c)
-let targetType = 'c';    // 현재 구해야 하는 변수 ('a', 'b', 'c')
-let correctValue = 0;    // 정답 값
+  <div id="customModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal-content">
+      <div class="modal-title">누적 기록 초기화</div>
+      <div class="modal-text">누적 기록을 모두 삭제하시겠습니까?</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+        <button class="modal-btn confirm" onclick="resetScore()">초기화</button>
+      </div>
+    </div>
+  </div>
 
-let wincount = 0;
-let losecount = 0;
-let problemSequence = 0; // 문제 푼 횟수 (누적)
-let recentHistory = [];  // 최근 출제된 문제 인덱스 저장 (중복 방지용)
+  <script>
+    // 전역 변수 구조화 및 상태 보존 (로컬 스토리지 데이터 동기화)
+    let sideA, sideB, sideC; 
+    let targetType = 'c';    
+    let correctValue = 0;    
 
-let currentInput = "";
-let isProcessing = false;
+    let wincount = parseInt(localStorage.getItem('pythagoras_winCount')) || 0;
+    let losecount = parseInt(localStorage.getItem('pythagoras_loseCount')) || 0;
+    let problemSequence = 0; 
+    let recentHistory = [];  
 
-// 화면 초기화 및 문제 생성
-function nextProblem() {
-  isProcessing = false;
-  currentInput = "";
-  problemSequence++;
-  updateDisplay();
-  resultReset();
-  
-  // 피타고라스 수 (a, b, c)
-  const triples = [
-    [3,4,5], [5,12,13], [6,8,10], [8,15,17], [9,12,15], [7,24,25], [10,24,26], [12,16,20]
-  ];
-  
-  // 중복 방지 로직: 최근 2회 이내에 나온 문제는 제외
-  let selectedIndex;
-  do {
-    selectedIndex = Math.floor(Math.random() * triples.length);
-  } while (recentHistory.includes(selectedIndex));
+    let currentInput = "";
+    let isProcessing = false;
 
-  // 히스토리 업데이트
-  recentHistory.push(selectedIndex);
-  if (recentHistory.length > 2) {
-    recentHistory.shift(); // 가장 오래된 기록 삭제 (최대 2개 유지)
-  }
+    // 문제 생성 스테이지 전환
+    function nextProblem() {
+      isProcessing = false;
+      currentInput = "";
+      problemSequence++;
+      updateDisplay();
+      resultReset();
+      resetTextColors();
+      
+      // 🌟 다음 문제 버튼 다시 묵음 처리
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.disabled = true;
+      nextBtn.classList.remove('is-active');
+      
+      const triples = [
+        [3,4,5], [5,12,13], [6,8,10], [8,15,17], [9,12,15], [7,24,25], [10,24,26], [12,16,20]
+      ];
+      
+      let selectedIndex;
+      do {
+        selectedIndex = Math.floor(Math.random() * triples.length);
+      } while (recentHistory.includes(selectedIndex));
 
-  const selected = triples[selectedIndex];
-  
-  // a, b 랜덤 배치 (가로, 세로)
-  if(Math.random() < 0.5) {
-    sideA = selected[0]; sideB = selected[1];
-  } else {
-    sideA = selected[1]; sideB = selected[0];
-  }
-  sideC = selected[2]; // 빗변
+      recentHistory.push(selectedIndex);
+      if (recentHistory.length > 2) {
+        recentHistory.shift(); 
+      }
 
-  // 문제 유형 결정 (처음 5문제는 빗변, 이후는 랜덤)
-  if (problemSequence <= 5) {
-    targetType = 'c';
-  } else {
-    const types = ['a', 'b', 'c'];
-    targetType = types[Math.floor(Math.random() * types.length)];
-  }
+      const selected = triples[selectedIndex];
+      
+      if(Math.random() < 0.5) {
+        sideA = selected[0]; sideB = selected[1];
+      } else {
+        sideA = selected[1]; sideB = selected[0];
+      }
+      sideC = selected[2]; 
 
-  // 정답 설정
-  if (targetType === 'c') {
-    correctValue = sideC;
-  } else if (targetType === 'a') {
-    correctValue = sideA;
-  } else { // 'b'
-    correctValue = sideB;
-  }
-  
-  drawTriangle();
-}
+      if (problemSequence <= 3) {
+        targetType = 'c'; // 처음 몇 문제는 빗변 구하기 위주 노출 후 다변화
+      } else {
+        const types = ['a', 'b', 'c'];
+        targetType = types[Math.floor(Math.random() * types.length)];
+      }
 
-// 삼각형 그리기
-function drawTriangle() {
-  const canvas = document.getElementById('triCanvas');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  const pad = 30;
-  const w = canvas.width - pad*2;
-  const h = canvas.height - pad*2;
-  
-  // 비율 유지하며 크기 조정
-  const scale = Math.min(w/sideA, h/sideB) * 0.85;
-  
-  const drawW = sideA * scale;
-  const drawH = sideB * scale;
-  
-  const startX = 40;
-  const startY = 170; // 캔버스 하단 기준
-  
-  ctx.beginPath();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "black";
-  
-  // 직각삼각형 그리기
-  ctx.moveTo(startX, startY); 
-  ctx.lineTo(startX + drawW, startY); 
-  ctx.lineTo(startX + drawW, startY - drawH); 
-  ctx.closePath();
-  ctx.stroke();
-  
-  // 직각 표시
-  ctx.beginPath();
-  ctx.moveTo(startX + drawW - 15, startY);
-  ctx.lineTo(startX + drawW - 15, startY - 15);
-  ctx.lineTo(startX + drawW, startY - 15);
-  ctx.stroke();
-  
-  // 텍스트 설정
-  
-  // 1. 밑변 (가로) 표시
-  let textA = (targetType === 'a') ? "x" : sideA;
-  let fontA = (targetType === 'a') ? "italic 28px Times New Roman" : "bold 20px Arial";
-  let colorA = (targetType === 'a') ? "red" : "blue";
-  
-  ctx.font = fontA;
-  ctx.fillStyle = colorA;
-  ctx.textAlign = "center";
-  ctx.fillText(textA, startX + drawW/2, startY + 25);
-  
-  // 2. 높이 (세로) 표시
-  let textB = (targetType === 'b') ? "x" : sideB;
-  let fontB = (targetType === 'b') ? "italic 28px Times New Roman" : "bold 20px Arial";
-  let colorB = (targetType === 'b') ? "red" : "blue";
+      if (targetType === 'c') {
+        correctValue = sideC;
+      } else if (targetType === 'a') {
+        correctValue = sideA;
+      } else { 
+        correctValue = sideB;
+      }
+      
+      drawTriangle();
+    }
 
-  ctx.font = fontB;
-  ctx.fillStyle = colorB;
-  ctx.textAlign = "left";
-  ctx.fillText(textB, startX + drawW + 10, startY - drawH/2);
-  
-  // 3. 빗변 표시
-  let textC = (targetType === 'c') ? "x" : sideC;
-  let fontC = (targetType === 'c') ? "italic 28px Times New Roman" : "bold 20px Arial";
-  let colorC = (targetType === 'c') ? "red" : "blue";
+    // 직각삼각형 렌더링 파이프라인
+    function drawTriangle() {
+      const canvas = document.getElementById('triCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const pad = 30;
+      const w = canvas.width - pad*2;
+      const h = canvas.height - pad*2;
+      
+      const scale = Math.min(w/sideA, h/sideB) * 0.85;
+      
+      const drawW = sideA * scale;
+      const drawH = sideB * scale;
+      
+      const startX = 40;
+      const startY = 170; 
+      
+      ctx.beginPath();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#1e293b"; 
+      
+      ctx.moveTo(startX, startY); 
+      ctx.lineTo(startX + drawW, startY); 
+      ctx.lineTo(startX + drawW, startY - drawH); 
+      ctx.closePath();
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.strokeStyle = "#475569";
+      ctx.moveTo(startX + drawW - 15, startY);
+      ctx.lineTo(startX + drawW - 15, startY - 15);
+      ctx.lineTo(startX + drawW, startY - 15);
+      ctx.stroke();
+      
+      // 1. 밑변 (가로축 변수)
+      let textA = (targetType === 'a') ? "x" : sideA;
+      ctx.font = (targetType === 'a') ? "italic bold 26px 'Times New Roman'" : "bold 18px Pretendard";
+      ctx.fillStyle = (targetType === 'a') ? "#dc3545" : "#007bff";
+      ctx.textAlign = "center";
+      ctx.fillText(textA, startX + drawW/2, startY + 25);
+      
+      // 2. 높이 (세로축 변수)
+      let textB = (targetType === 'b') ? "x" : sideB;
+      ctx.font = (targetType === 'b') ? "italic bold 26px 'Times New Roman'" : "bold 18px Pretendard";
+      ctx.fillStyle = (targetType === 'b') ? "#dc3545" : "#007bff";
+      ctx.textAlign = "left";
+      ctx.fillText(textB, startX + drawW + 12, startY - drawH/2 + 6);
+      
+      // 3. 빗변 (경사축 변수)
+      let textC = (targetType === 'c') ? "x" : sideC;
+      ctx.font = (targetType === 'c') ? "italic bold 26px 'Times New Roman'" : "bold 18px Pretendard";
+      ctx.fillStyle = (targetType === 'c') ? "#dc3545" : "#007bff";
+      ctx.textAlign = "right";
+      ctx.fillText(textC, startX + drawW/2 - 12, startY - drawH/2 - 8);
+    }
 
-  ctx.font = fontC;
-  ctx.fillStyle = colorC;
-  ctx.textAlign = "right";
-  ctx.fillText(textC, startX + drawW/2 - 10, startY - drawH/2 - 5);
-}
+    function addNumber(num) {
+      if(isProcessing) return;
+      if(currentInput.length < 5) { 
+        currentInput += num;
+        updateDisplay();
+      }
+    }
 
-// 키패드 입력 처리
-function addNumber(num) {
-  if(isProcessing) return;
-  if(currentInput.length < 5) { 
-    currentInput += num;
-    updateDisplay();
-  }
-}
+    function delNumber() {
+      if(isProcessing) return;
+      currentInput = currentInput.slice(0, -1);
+      updateDisplay();
+    }
 
-// <- 버튼 (하나 지우기)
-function delNumber() {
-  if(isProcessing) return;
-  currentInput = currentInput.slice(0, -1);
-  updateDisplay();
-}
+    function clearInput() {
+      if(isProcessing) return;
+      currentInput = "";
+      updateDisplay();
+    }
 
-// C 버튼 (전체 지우기)
-function clearAll() {
-  if(isProcessing) return;
-  currentInput = "";
-  updateDisplay();
-}
+    function updateDisplay() {
+      const box = document.getElementById('displayBox');
+      if(currentInput === "") {
+        box.textContent = "?";
+        box.style.color = "#cbd5e1";
+      } else {
+        box.textContent = currentInput;
+        box.style.color = "var(--text-main)";
+      }
+    }
 
-function updateDisplay() {
-  const box = document.getElementById('displayBox');
-  if(currentInput === "") {
-    box.textContent = "?";
-    box.style.color = "#ccc";
-  } else {
-    box.textContent = currentInput;
-    box.style.color = "#333";
-  }
-}
+    function resultReset() {
+      const r1 = document.getElementById("result1");
+      r1.textContent = "결과 대기 중";
+      r1.className = "msg-default";
+    }
 
-// 결과 표시 초기화
-function resultReset() {
-  const r1 = document.getElementById("result1");
-  r1.textContent = "정답여부";
-  r1.style.backgroundColor = "white";
-  r1.style.color = "black";
-  r1.style.border = "1px solid #eee";
-}
+    function resetTextColors() {
+      document.getElementById('result2').className = 'count-highlight';
+      document.getElementById('result3').className = 'count-highlight';
+    }
 
-// 정답 확인
-function checkAnswer() {
-  if(isProcessing) return;
-  if(currentInput === "") return; 
+    // 정답 체크 및 상태 기계 전이
+    function checkAnswer() {
+      if(isProcessing) return;
+      if(currentInput === "") return; 
 
-  const userAns = parseFloat(currentInput);
-  const r1 = document.getElementById("result1");
-  const r2 = document.getElementById("result2");
-  const r3 = document.getElementById("result3");
+      const userAns = parseFloat(currentInput);
+      const r1 = document.getElementById("result1");
+      const winEl = document.getElementById("result2");
+      const loseEl = document.getElementById("result3");
+      const nextBtn = document.getElementById('nextBtn');
 
-  if(userAns === correctValue) {
-    isProcessing = true;
-    wincount++;
-    
-    r1.textContent = "정답입니다!";
-    r1.style.backgroundColor = "green";
-    r1.style.color = "white";
-    r1.style.border = "none";
-    r2.textContent = wincount + "번 정답입니다.";
-    
-    setTimeout(nextProblem, 1000);
-  } else {
-    losecount++;
-    
-    r1.textContent = "틀렸습니다. 다시 시도해보세요.";
-    r1.style.backgroundColor = "red";
-    r1.style.color = "white";
-    r1.style.border = "none";
-    r3.textContent = losecount + "번 틀렸습니다.";
-    
-    setTimeout(() => {
-        resultReset();
-    }, 1500);
-  }
-}
+      if(userAns === correctValue) {
+        isProcessing = true; // 정답 상황일 때 임시 잠금 수행 (Space 타건 유도)
+        wincount++;
+        localStorage.setItem('pythagoras_winCount', wincount);
+        
+        r1.textContent = "🎉 정답입니다! 아주 훌륭해요!";
+        r1.className = "feedback-success";
+        winEl.textContent = wincount + "회";
+        winEl.classList.add('win-active');
+        loseEl.classList.remove('lose-active');
+        
+        // 🌟 정답 시 마스터 명세 규격 파란색 활성화
+        nextBtn.disabled = false;
+        nextBtn.classList.add('is-active');
+      } else {
+        losecount++;
+        localStorage.setItem('pythagoras_loseCount', losecount);
+        
+        r1.textContent = "❌ 틀렸습니다. 수식을 다시 생각해보세요.";
+        r1.className = "feedback-danger";
+        loseEl.textContent = losecount + "회";
+        loseEl.classList.add('lose-active');
+        winEl.classList.remove('win-active');
+        
+        setTimeout(() => {
+            resultReset();
+        }, 1500);
+      }
+    }
 
-// 키보드 이벤트 리스너
-document.addEventListener('keydown', (e) => {
-  if(isProcessing) return;
+    function openModal() { document.getElementById('customModal').classList.add('show'); }
+    function closeModal() { document.getElementById('customModal').classList.remove('show'); }
+    function closeModalOnOverlay(e) { if(e.target.id === 'customModal') closeModal(); }
 
-  // 숫자 키
-  if (e.key >= '0' && e.key <= '9') {
-    addNumber(e.key);
-  }
-  // 백스페이스 (하나 지우기)
-  else if (e.key === 'Backspace') {
-    delNumber();
-  }
-  // Esc (전체 지우기 - C)
-  else if (e.key === 'Escape') {
-    clearAll();
-  }
-  // 엔터 (확인)
-  else if (e.key === 'Enter') {
-    e.preventDefault(); 
-    checkAnswer();
-  }
-});
+    function resetScore() {
+      wincount = 0;
+      losecount = 0;
+      localStorage.setItem('pythagoras_winCount', 0);
+      localStorage.setItem('pythagoras_loseCount', 0);
+      
+      document.getElementById('result2').textContent = "0회";
+      document.getElementById('result3').textContent = "0회";
+      resetTextColors();
+      closeModal();
+      nextProblem();
+    }
 
-// 시작 시 첫 문제 로드
-window.onload = function() {
-  problemSequence = 0; 
-  nextProblem();
-};
-</script>
+    // 전역 키보드 인터랙션 가이드 맵
+    document.addEventListener('keydown', (e) => {
+      // 🌟 [교정 핵심]: 존재하지 않는 clearAll() 대신 실제 구현 함수인 clearInput()으로 정확히 매핑하여 ESC 에러 차단
+      if (e.key === 'Escape') {
+        clearInput();
+        return;
+      }
+
+      if(isProcessing) {
+        // 정답 상태일 때 Space 타건 시 부드럽게 다음 게임으로 전이
+        if (e.code === 'Space') {
+          e.preventDefault();
+          nextProblem();
+        }
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        addNumber(e.key);
+      }
+      else if (e.key === 'Backspace') {
+        delNumber();
+      }
+      else if (e.key === 'Enter') {
+        e.preventDefault(); 
+        checkAnswer();
+      }
+    });
+
+    window.onload = function() {
+      document.getElementById('result2').textContent = `${wincount}회`;
+      document.getElementById('result3').textContent = `${losecount}회`;
+      problemSequence = 0; 
+      nextProblem();
+    };
+  </script>
 </body>
 </html>

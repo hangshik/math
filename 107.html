@@ -2,262 +2,294 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>원주각과 중심각</title>
+<link rel="stylesheet" href="style.css">
 <script>window.MathJax = { tex: { inlineMath: [['$', '$']] } };</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 <style>
-  body { font-family: sans-serif; text-align: center; user-select: none; }
-  canvas { border: 1px solid #ccc; background: #fff; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-  
-  .info { 
-    font-size: 20px; 
-    margin: 10px; 
-    padding: 15px 25px; 
-    background: #f9f9f9; 
-    display: inline-block; 
-    border-radius: 10px; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    text-align: left; 
-    min-width: 250px;
-  }
+    /* 원주각과 중심각 고유 인터페이스 디자인 시스템 규격화 */
+    body { background: var(--bg); font-family: 'Pretendard', sans-serif; color: var(--text-main); margin: 0; padding: 15px; }
+    .wrapper { max-width: 800px; margin: 0 auto; }
+    
+    /* 콤팩트한 메인 상단 컨트롤러/안내 데스크 구조화 */
+    .container-fixed { background: var(--card-bg); padding: 18px 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 12px; text-align: center; }
+    
+    h1 { text-align: center; font-size: 32px; font-weight: 800; margin: 10px 0 15px 0; }
+    
+    /* 🌟 [요청 반영] 2번 항목: 사각형 모양의 모든 외부 테두리, 그림자, 배경 제거 */
+    .canvas-card-container {
+        width: 100%;
+        background: transparent; /* 배경 제거 */
+        border-radius: 0;
+        padding: 0;
+        box-shadow: none; /* 그림자 제거 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 15px;
+        border: none; /* 테두리 제거 */
+        box-sizing: border-box;
+    }
+    
+    .canvas-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 4px;
+        border: none;
+    }
+    
+    canvas { 
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        display: block;
+        background: #ffffff;
+        cursor: pointer;
+    }
+
+    /* 🌟 [요청 반영] 1번 항목: 중심각과 원주각 영역의 회색 배경 및 테두리 완전히 제거 */
+    .angle-info-box {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 30px;
+        padding: 12px 0; /* 좌우 패딩 제거하여 투명하게 정렬 */
+        background: transparent; /* 회색 배경 삭제 -> 투명화 */
+        border: none; /* 테두리 삭제 */
+        margin-top: 5px;
+    }
+
+    .angle-item {
+        font-size: 18px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+    }
+
+    /* 수치 가변 영역 고정폭 적용 */
+    .angle-number-container {
+        display: inline-block;
+        min-width: 55px;
+        text-align: right;
+        margin-right: 2px;
+    }
+
+    /* 도형 아래 배치되는 실시간 조작 안내 가이드 문구 */
+    .calc-guide-text {
+        text-align: center;
+        font-size: 14px;
+        color: var(--text-sub);
+        margin-top: 12px;
+        margin-bottom: 4px;
+        font-weight: 500;
+        word-break: keep-all; 
+        line-height: 1.5;
+    }
+
+    /* 테이블의 첫 번째 열(제목열) 너비를 지정하여 깔끔하게 정렬 */
+    .compact-th {
+        width: 140px; 
+        white-space: nowrap; 
+    }
+
+    /* 모바일 기기 해상도 대응을 위한 브레이크포인트 설정 */
+    @media (max-width: 576px) {
+        h1 { font-size: 26px; }
+        
+        /* 중심각과 원주각 영역 수직(2줄) 배치 및 배경 투명 유지 */
+        .angle-info-box { 
+            flex-direction: column !important; 
+            align-items: flex-start !important; 
+            gap: 10px !important; 
+            padding: 10px 0 !important; 
+        }
+        .angle-item { font-size: 16px; }
+        .angle-number-container { min-width: 45px; }
+        
+        /* 안내 문구 모바일 2줄 최적화 가독성 유지 */
+        .calc-guide-text { 
+            font-size: 13px !important; 
+            margin-top: 10px !important; 
+            padding: 0 10px !important;
+            max-width: 290px !important; 
+            line-height: 1.4 !important;
+        }
+        
+        .compact-th { width: 110px; font-size: 14px; }
+        .canvas-card-container { padding: 0; }
+    }
 </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-<h1>원주각과 중심각</h1>
-<p>점 <b>A, B, P</b>를 모두 드래그할 수 있습니다.</p>
+<div class="wrapper">
+    <h1 class="main-title">원주각과 중심각</h1>
+    
+    <div class="container-fixed">
+        <div class="angle-info-box">
+            <div class="angle-item">
+                <span style="color: var(--danger); margin-right: 5px;">중심각 ($\angle AOB$) :</span> 
+                <span class="angle-number-container">
+                    <span id="angleC" style="color: var(--danger); font-size: 22px; font-weight: 800;">0</span>
+                </span>$^\circ$
+            </div>
+            <div class="angle-item">
+                <span style="color: var(--active); margin-right: 5px;">원주각 ($\angle APB$) :</span> 
+                <span class="angle-number-container">
+                    <span id="angleP" style="color: var(--active); font-size: 22px; font-weight: 800;">0</span>
+                </span>$^\circ$
+            </div>
+        </div>
+    </div>
 
-<div class="info">
-  <div style="margin-bottom: 5px;">
-    <strong style="color:red">중심각 ($\angle AOB$)</strong> : <span id="angleC"></span>$^\circ$
-  </div>
-  <div>
-    <strong style="color:blue">원주각 ($\angle APB$)</strong> : <span id="angleP"></span>$^\circ$
-  </div>
+    <div class="canvas-card-container">
+        <div class="canvas-wrapper">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+        <div style="text-align: center; font-size: 16px; color: var(--text-sub); margin-top: -55px; margin-bottom: 15px; font-weight: 500; line-height: 1.5; padding: 0 10px;">원 위의 세 점 <b>A, B, P</b>를 드래그하여 자유롭게 움직여보세요.</div>
+    </div>
+
+    <div class="guide-box rules">
+        <div class="guide-header">
+            <h2 class="guide-title">◈ 원주각과 중심각의 크기</h2>
+        </div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 15px; color: var(--text-sub);">
+            <li style="padding-left: 8px; margin-bottom: 8px;">한 호에 대한 <span style="color: var(--active); font-weight: 700;">원주각의 크기</span>는 그 호에 대한 <span style="color: var(--danger); font-weight: 700;">중심각 크기</span>의 항상 정확히 $\dfrac{1}{2}$과 같다. 즉, $\angle APB = \dfrac{1}{2} \angle AOB $</li>
+            <li style="padding-left: 8px;">한 호에 대한 원주각의 크기는 모두 같다.</li>
+        </ul>
+
+    </div>
 </div>
-<br>
-<canvas id="canvas" width="400" height="400"></canvas>
 
 <script>
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+const cx = 400, cy = 300, r = 200; 
 
-const cx = 200, cy = 200, r = 150;
-
-// 초기 각도 (Radian, 0~2PI)
-let radA = Math.PI * 0.833; // 약 150도
-let radB = Math.PI * 0.167; // 약 30도
-let radP = Math.PI * 1.5;   // 270도 (-90도)
-
+let radA = Math.PI * 0.833;
+let radB = Math.PI * 0.167;
+let radP = Math.PI * 1.5;
 let draggingPoint = null; 
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const nA = normalize(radA), nB = normalize(radB), nP = normalize(radP);
+  const A = getXY(nA), B = getXY(nB), P = getXY(nP), O = { x: cx, y: cy };
 
-  // 1. 각도 정규화 (0 ~ 2PI)
-  const nA = normalize(radA);
-  const nB = normalize(radB);
-  const nP = normalize(radP);
-
-  // 좌표 계산
-  const A = getXY(nA);
-  const B = getXY(nB);
-  const P = getXY(nP);
-  const O = { x: cx, y: cy };
-
-  // --- 중심각 계산 로직 ---
-  // A에서 B까지 시계방향(CW) 호의 길이(각도) 계산
   let distAB_Clockwise = (nB - nA + 2 * Math.PI) % (2 * Math.PI);
   let distAP_Clockwise = (nP - nA + 2 * Math.PI) % (2 * Math.PI);
-
-  // P가 "A->B 시계방향 호" 내부에 있는지 확인
   let isP_In_ClockwiseArc = (distAP_Clockwise < distAB_Clockwise);
 
-  let centralDeg;
-  let arcStart, arcEnd, useCounterClockwise;
-
+  let centralDeg, arcStart = nA, arcEnd = nB, useCounterClockwise;
   if (isP_In_ClockwiseArc) {
-    // P가 시계방향 호 안에 있음 -> 중심각은 반대쪽(반시계 방향, 큰 각) 호
-    let rawDeg = (2 * Math.PI - distAB_Clockwise) * (180 / Math.PI);
-    centralDeg = Math.round(rawDeg); // 정수 반올림
-    
-    arcStart = nA; 
-    arcEnd = nB;
+    centralDeg = Math.round((2 * Math.PI - distAB_Clockwise) * (180 / Math.PI));
     useCounterClockwise = true; 
   } else {
-    // P가 바깥에 있음 -> 중심각은 시계방향 호(작은 각)
-    let rawDeg = distAB_Clockwise * (180 / Math.PI);
-    centralDeg = Math.round(rawDeg); // 정수 반올림
-    
-    arcStart = nA; 
-    arcEnd = nB;
+    centralDeg = Math.round(distAB_Clockwise * (180 / Math.PI));
     useCounterClockwise = false;
   }
   
-  // 예외 처리: 계산상 360도가 되면 0도로 처리하거나 360도로 유지
-  if (centralDeg === 0) centralDeg = 0;
-
-  // 원주각 계산 (중심각의 절반)
-  let inscribedDeg = centralDeg / 2;
-
-  // --- 그리기 ---
-
-  // 1. 원
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.strokeStyle = "#ddd";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#e5e7eb";
+  ctx.lineWidth = 4;
   ctx.stroke();
 
-  // 2. 선
-  drawLine(O, A, "red", 2);
-  drawLine(O, B, "red", 2);
-  drawLine(P, A, "blue", 3);
-  drawLine(P, B, "blue", 3);
+  drawLine(O, A, "#dc3545", 3);
+  drawLine(O, B, "#dc3545", 3);
+  drawLine(P, A, "#007bff", 4);
+  drawLine(P, B, "#007bff", 4);
 
-  // 3. 중심각 표시 (빨간 호)
   ctx.beginPath();
-  ctx.arc(cx, cy, 30, arcStart, arcEnd, useCounterClockwise);
-  ctx.strokeStyle = "red";
-  ctx.lineWidth = 3;
+  ctx.arc(cx, cy, 45, arcStart, arcEnd, useCounterClockwise);
+  ctx.strokeStyle = "#dc3545";
+  ctx.lineWidth = 5;
   ctx.stroke();
 
-  // 4. 원주각 표시 (파란 호)
   const angPA = Math.atan2(A.y - P.y, A.x - P.x);
   const angPB = Math.atan2(B.y - P.y, B.x - P.x);
-  
   let diff = angPB - angPA;
   while (diff <= -Math.PI) diff += 2*Math.PI;
   while (diff > Math.PI) diff -= 2*Math.PI;
-  
   ctx.beginPath();
-  if (diff > 0) {
-      ctx.arc(P.x, P.y, 40, angPA, angPB, false);
-  } else {
-      ctx.arc(P.x, P.y, 40, angPA, angPB, true);
-  }
-  
-  ctx.strokeStyle = "blue";
-  ctx.lineWidth = 2;
+  ctx.arc(P.x, P.y, 50, angPA, angPB, diff > 0 ? false : true);
+  ctx.strokeStyle = "#007bff";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  // 5. 점 그리기
-  drawPoint(cx, cy, "black", "O");
-  drawPoint(A.x, A.y, draggingPoint === 'A' ? "#ff0000" : "black", "A");
-  drawPoint(B.x, B.y, draggingPoint === 'B' ? "#ff0000" : "black", "B");
-  drawPoint(P.x, P.y, draggingPoint === 'P' ? "#0000ff" : "blue", "P");
+  drawPoint(cx, cy, "#222222", "O");
+  drawPoint(A.x, A.y, draggingPoint === 'A' ? "#dc3545" : "#222222", "A");
+  drawPoint(B.x, B.y, draggingPoint === 'B' ? "#dc3545" : "#222222", "B");
+  drawPoint(P.x, P.y, draggingPoint === 'P' ? "#007bff" : "#007bff", "P");
 
-  // 6. 텍스트 업데이트
-  // 중심각: 정수
   document.getElementById('angleC').innerText = centralDeg;
-  // 원주각: 정수 또는 .5 (parseFloat로 불필요한 .0 제거)
-  document.getElementById('angleP').innerText = parseFloat(inscribedDeg.toFixed(1));
+  document.getElementById('angleP').innerText = parseFloat((centralDeg / 2).toFixed(1));
 }
 
-function normalize(angle) {
-    let res = angle % (2 * Math.PI);
-    if (res < 0) res += 2 * Math.PI;
-    return res;
-}
-
-function getXY(radian) {
-  return {
-    x: cx + r * Math.cos(radian),
-    y: cy + r * Math.sin(radian)
-  };
-}
-
-function drawLine(p1, p2, color, width) {
-  ctx.beginPath();
-  ctx.moveTo(p1.x, p1.y);
-  ctx.lineTo(p2.x, p2.y);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.stroke();
-}
-
+function normalize(angle) { let res = angle % (2 * Math.PI); return res < 0 ? res + 2 * Math.PI : res; }
+function getXY(rad) { return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }; }
+function drawLine(p1, p2, color, width) { ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(); }
 function drawPoint(x, y, color, label) {
-  ctx.beginPath();
-  ctx.arc(x, y, draggingPoint && label === draggingPoint ? 8 : 6, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-  
-  ctx.font = "bold 18px Arial";
-  ctx.fillStyle = "black";
-  
-  let tx, ty;
-  if (label === "O") {
-    tx = x - 25; ty = y + 10;
-  } else {
-    const dx = (x - cx) * 0.15;
-    const dy = (y - cy) * 0.15;
-    tx = x + dx - 5; ty = y + dy + 5;
-  }
-  ctx.fillText(label, tx, ty);
+  ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+  ctx.font = "bold 20px 'Pretendard', sans-serif"; ctx.fillStyle = "#222222";
+  ctx.fillText(label, x + 12, y - 12);
 }
 
-// --- 이벤트 핸들링 ---
 function getMousePos(e) {
   const rect = canvas.getBoundingClientRect();
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-  return {
-    x: clientX - rect.left,
-    y: clientY - rect.top
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return { 
+    x: (e.clientX - rect.left) * scaleX, 
+    y: (e.clientY - rect.top) * scaleY 
   };
 }
 
-function handleStart(e) {
+canvas.addEventListener('mousedown', (e) => {
   const pos = getMousePos(e);
-  
-  const pA = getXY(radA);
-  const pB = getXY(radB);
-  const pP = getXY(radP);
-  
-  const distA = Math.hypot(pos.x - pA.x, pos.y - pA.y);
-  const distB = Math.hypot(pos.x - pB.x, pos.y - pB.y);
-  const distP = Math.hypot(pos.x - pP.x, pos.y - pP.y);
-  
-  const threshold = 30;
+  const pA = getXY(radA), pB = getXY(radB), pP = getXY(radP);
+  if (Math.hypot(pos.x - pP.x, pos.y - pP.y) < 40) draggingPoint = 'P';
+  else if (Math.hypot(pos.x - pA.x, pos.y - pA.y) < 40) draggingPoint = 'A';
+  else if (Math.hypot(pos.x - pB.x, pos.y - pB.y) < 40) draggingPoint = 'B';
+  if(draggingPoint) canvas.style.cursor = 'grabbing';
+});
 
-  if (distP < threshold) draggingPoint = 'P';
-  else if (distA < threshold) draggingPoint = 'A';
-  else if (distB < threshold) draggingPoint = 'B';
-}
-
-function handleMove(e) {
+window.addEventListener('mousemove', (e) => {
   if (!draggingPoint) return;
-  e.preventDefault();
-  
   const pos = getMousePos(e);
-  let rawAngle = Math.atan2(pos.y - cy, pos.x - cx);
-  
-  // A, B는 1도 단위 스냅 적용
-  let deg = rawAngle * (180 / Math.PI);
-  let snappedDeg = Math.round(deg);
-  let snappedRad = snappedDeg * (Math.PI / 180);
-
-  if (draggingPoint === 'P') radP = rawAngle; 
-  else if (draggingPoint === 'A') radA = snappedRad; 
-  else if (draggingPoint === 'B') radB = snappedRad;
-
+  let angle = Math.atan2(pos.y - cy, pos.x - cx);
+  if (draggingPoint === 'P') radP = angle; 
+  else if (draggingPoint === 'A') radA = Math.round(angle * (180 / Math.PI)) * (Math.PI / 180);
+  else if (draggingPoint === 'B') radB = Math.round(angle * (180 / Math.PI)) * (Math.PI / 180);
   draw();
-}
+});
 
-function handleEnd() {
-  draggingPoint = null;
-  draw();
-}
+window.addEventListener('mouseup', () => { 
+  draggingPoint = null; 
+  canvas.style.cursor = 'pointer';
+});
 
-canvas.addEventListener('mousedown', handleStart);
-canvas.addEventListener('mousemove', handleMove);
-canvas.addEventListener('mouseup', handleEnd);
-canvas.addEventListener('mouseleave', handleEnd);
+canvas.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 0) return;
+  const touch = e.touches[0];
+  const mouseEvent = new MouseEvent("mousedown", { clientX: touch.clientX, clientY: touch.clientY });
+  canvas.dispatchEvent(mouseEvent);
+}, { passive: true });
 
-canvas.addEventListener('touchstart', handleStart, {passive: false});
-canvas.addEventListener('touchmove', handleMove, {passive: false});
-canvas.addEventListener('touchend', handleEnd);
+window.addEventListener('touchmove', (e) => {
+  if (!draggingPoint || e.touches.length === 0) return;
+  const touch = e.touches[0];
+  const mouseEvent = new MouseEvent("mousemove", { clientX: touch.clientX, clientY: touch.clientY });
+  window.dispatchEvent(mouseEvent);
+}, { passive: true });
+
+window.addEventListener('touchend', () => {
+  const mouseEvent = new MouseEvent("mouseup", {});
+  window.dispatchEvent(mouseEvent);
+});
 
 window.onload = draw;
 </script>

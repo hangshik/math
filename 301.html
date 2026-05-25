@@ -1,603 +1,898 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>이차방정식</title>
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']]
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이차방정식</title>
+  
+  <link rel="stylesheet" href="style.css" />
+  
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+  
+  <style>
+    /* style.css 명세와 완벽하게 조화되도록 설계한 이차방정식 전용 레이아웃 */
+    
+    .stage-container-box {
+      background: var(--card-bg, #ffffff);
+      border: 1.5px solid var(--border-color, #e1e4e8);
+      border-radius: var(--radius-md, 12px);
+      padding: 12px 16px;
+      margin-bottom: 12px;
     }
-  };
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
-<style>
-  body {
-    font-family: sans-serif;
-    text-align: center;
-    padding: 40px;
-  }
-  .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-  .question {
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-    .choices {
-    display: flex;
-    flex-direction: row;    /* 가로 정렬 */
-    flex-wrap: wrap;        /* 넘치면 다음 줄로 */
-    justify-content: center; /* 가로 가운데 정렬 */
-    gap: 15px;              /* 버튼 사이 간격 */
-    padding: 20px 0;
+    .stage-group {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      justify-content: space-between;
+      width: 100%;
     }
-  .choices button {
-    width: 200px;
-    height: 80px;
-    margin: 0px 0;
-    padding-left: 10px;
-    padding-right: 10px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    background: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center; /* 세로 가운데 정렬 */
-    justify-content: center; /* 가로 가운데 정렬(필요시) */
-  }
-  .correct { background-color: #4CAF50 !important; color: white !important; }
-  .wrong { background-color: #f44336 !important; color: white !important; }
-  .stage-btn {
-    font-size: 18px;
-    padding: 10px 15px;
-    margin: 5px;
-    border-radius: 10px;
-    border: none;
-    background-color: lightgray;
-    cursor: pointer;
-  }
-  .stage-btn.active {
-    background-color: #3399FF;
-    color: white;
-  }
-  #scoreBoard {
-    font-size: 18px;
-    margin-top: 15px;
-  }
-</style>
+    .stage-btn {
+      flex: 1 1 0%;
+      font-size: 16px; /* 15px -> 16px 상향 */
+      font-weight: 600;
+      padding: 12px 0; /* 패딩 소폭 상향 */
+      text-align: center;
+      border-radius: var(--radius-sm, 8px);
+      border: 1.5px solid var(--border-color, #e1e4e8);
+      background-color: var(--card-bg, #ffffff);
+      color: var(--text-main, #222222);
+      cursor: pointer;
+      transition: var(--transition-fast, all 0.1s ease);
+      white-space: nowrap;
+    }
+    .stage-btn:hover {
+      background-color: var(--btn-gray-hover, #d8dadf);
+    }
+    .stage-btn.active {
+      background-color: var(--active, #007bff) !important;
+      color: #ffffff !important;
+      border-color: var(--active-hover, #0056b3) !important;
+    }
+
+    .quiz-card {
+      background: var(--card-bg, #ffffff);
+      border: 1.5px solid var(--border-color, #e1e4e8);
+      border-radius: var(--radius-md, 12px);
+      padding: 24px; /* 20px -> 24px 상향 */
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .question-display {
+      font-size: 30px; /* 28px -> 30px 상향 */
+      font-weight: 700;
+      color: var(--text-main, #222222);
+      margin-bottom: 20px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 인라인 메시지 영역 공통 레이아웃 */
+    #inlineFeedback {
+      margin-top: 24px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      border-radius: var(--radius-sm, 8px);
+      overflow: hidden;
+    }
+
+    /* 메시지 규격 완벽 동기화 및 배경 채우기 + 흰색 글씨 수정 */
+    .msg-default, .feedback-success, .feedback-danger {
+      font-size: 17px !important; /* 16px -> 17px 상향 */
+      font-weight: 600 !important;
+      min-height: 52px !important; /* 48px -> 52px 상향 */
+      height: 52px !important;
+      line-height: 52px !important;
+      padding: 0 16px !important;
+      text-align: center;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: var(--radius-sm, 8px);
+    }
+
+    /* 기본 대기 상태 */
+    .msg-default {
+      color: var(--text-sub, #555555);
+      background-color: transparent;
+      border: 1.5px dashed var(--border-color, #e1e4e8);
+    }
+
+    /* 성공 시: 녹색 바탕 + 흰색 글자 */
+    .feedback-success {
+      color: #ffffff !important;
+      background-color: var(--success, #28a745) !important;
+      border: 1.5px solid var(--success, #28a745) !important;
+    }
+
+    /* 실패 시: 빨간색 바탕 + 흰색 글자 */
+    .feedback-danger {
+      color: #ffffff !important;
+      background-color: var(--danger, #dc3545) !important;
+      border: 1.5px solid var(--danger, #dc3545) !important;
+    }
+
+    .choices-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .choices-grid button {
+      min-height: 90px; /* 80px -> 90px 상향 */
+      padding: 14px 10px;
+      border-radius: var(--radius-sm, 8px);
+      border: 1.5px solid var(--border-color, #e1e4e8);
+      background: var(--card-bg, #ffffff);
+      color: var(--text-main, #222222);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      transition: var(--transition-fast, all 0.1s ease);
+    }
+    .choices-grid button:not(:disabled):hover {
+      border-color: var(--active, #007bff);
+      background-color: #f8fafc;
+    }
+    .choices-grid button.correct {
+      border: 3px solid var(--success, #28a745) !important;
+      color: var(--success, #28a745) !important;
+      font-weight: 700;
+    }
+    .choices-grid button.correct::after {
+      content: " ✓";
+      font-weight: bold;
+      margin-left: 4px;
+    }
+    .choices-grid button.wrong {
+      border: 3px solid var(--danger, #dc3545) !important;
+      color: var(--danger, #dc3545) !important;
+      font-weight: 700;
+      animation: shake 0.4s ease-in-out;
+    }
+    .choices-grid button.wrong::after {
+      content: " ✗";
+      font-weight: bold;
+      margin-left: 4px;
+    }
+
+    .key-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      background: var(--btn-gray, #e4e6eb);
+      color: var(--text-sub, #555555);
+      font-size: 12px; /* 11px -> 12px 상향 */
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color, #e1e4e8);
+    }
+    
+    .math-wrapper {
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      width: 100% !important;
+    }
+    .math-wrapper mjx-container[jax="SVG"] {
+      font-size: 20px !important; /* 18px -> 20px 상향 */
+      margin: 0 auto !important;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    .custom-guide-card {
+      background: var(--card-bg, #ffffff);
+      border: 1.5px solid var(--border-color, #e1e4e8);
+      border-radius: var(--radius-md, 12px);
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      position: relative;
+    }
+    .custom-guide-card.border-red { border-left: 6px solid #dc3545 !important; }
+    .custom-guide-card.border-blue { border-left: 6px solid #007bff !important; }
+    .custom-guide-card.border-green { border-left: 6px solid #28a745 !important; }
+
+    .guide-title { font-size: 18px !important; font-weight: 700 !important; } /* 타이틀 크기 전역 강화 */
+    .title-red { color: #dc3545 !important; }
+    .title-blue { color: #007bff !important; }
+    .title-green { color: #28a745 !important; }
+
+    .stats-report-table, .stage-matrix-table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 15px; /* 14px -> 15px 상향 */
+      text-align: center;
+    }
+    .stats-report-table th, .stats-report-table td,
+    .stage-matrix-table th, .stage-matrix-table td {
+      border: 1px solid var(--border-color, #e1e4e8);
+      padding: 12px 10px; /* 패딩 여유롭게 조정 */
+      box-sizing: border-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .stats-report-table th, .stage-matrix-table th {
+      background-color: #fafbfc;
+      color: var(--text-main, #222222);
+      font-weight: 600;
+    }
+    .stats-report-table td {
+      background-color: var(--card-bg, #ffffff);
+      font-weight: 700;
+    }
+    .stage-matrix-table td.current-stage-highlight {
+      background-color: #e6f4ff;
+      font-weight: 700;
+      color: var(--active, #007bff);
+    }
+
+    .custom-reset-btn {
+      background-color: #ffffff !important;
+      color: #dc3545 !important;
+      border: 1px solid #dc3545 !important;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px; /* 13px -> 14px 상향 */
+      transition: all 0.2s ease;
+    }
+    .custom-reset-btn:hover {
+      background-color: #f8d7da !important;
+    }
+
+    .count-highlight { font-weight: bold; }
+    .skip-active {
+      animation: skipScale 0.4s ease-in-out;
+      color: #007bff !important;
+    }
+    .win-active {
+      animation: scaleUp 0.4s ease-in-out;
+      color: var(--success) !important;
+    }
+    .lose-active {
+      animation: scaleUp 0.4s ease-in-out;
+      color: var(--danger) !important;
+    }
+    
+    @keyframes skipScale {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); color: #0056b3; }
+    }
+    @keyframes scaleUp {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    /* 다음 문제 활성화 시 마스터 규격 연동 */
+    .keypad-btn.next-btn.is-active {
+      background-color: var(--active) !important;
+      color: #ffffff !important;
+      border: none !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3) !important;
+    }
+
+    /* 모달 내부 폰트 확대 보정 */
+    .modal-box { padding: 28px !important; }
+    .modal-title { font-size: 20px !important; font-weight: 700 !important; margin-bottom: 12px !important; }
+    .modal-text { font-size: 16px !important; line-height: 1.5 !important; margin-bottom: 24px !important; }
+    .modal-btn { font-size: 15px !important; padding: 10px 20px !important; }
+
+    @media (max-width: 768px) {
+      .stage-group { flex-wrap: wrap; }
+      .stage-btn { flex: 1 1 30%; font-size: 15px; }
+      .choices-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      .stage-btn { flex: 1 1 45%; }
+      .choices-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h1>이차방정식</h1>
-    <div>
-    <button class="stage-btn" onclick="setStage(1)">1단계</button>
-    <button class="stage-btn" onclick="setStage(2)">2단계</button>
-    <button class="stage-btn" onclick="setStage(3)">3단계</button>
-    <button class="stage-btn" onclick="setStage(4)">4단계</button>
-    <button class="stage-btn" onclick="setStage(5)">5단계</button>
-    <button class="stage-btn" onclick="setStage(6)">6단계</button>
+
+  <div class="main-container">
+    <h1 class="main-title">이차방정식</h1>
+
+    <div class="stage-container-box">
+      <div class="stage-group">
+        <button class="stage-btn" id="sbtn-1" onclick="handleStageClick(1)">1단계</button>
+        <button class="stage-btn" id="sbtn-2" onclick="handleStageClick(2)">2단계</button>
+        <button class="stage-btn" id="sbtn-3" onclick="handleStageClick(3)">3단계</button>
+        <button class="stage-btn" id="sbtn-4" onclick="handleStageClick(4)">4단계</button>
+        <button class="stage-btn" id="sbtn-5" onclick="handleStageClick(5)">5단계</button>
+        <button class="stage-btn" id="sbtn-6" onclick="handleStageClick(6)">6단계</button>
+      </div>
     </div>
-    <div class="question" id="questionBox"></div>
-    <div class="choices" id="choicesBox"></div>
-    <div id="scoreBoard" style="font-size:25px">정답: 0 | 오답: 0</div><br>
-    <button id="nextBtn" onclick="generateQuiz()" disabled style="width:200px; height:50px; font-size:24px; border-radius:20px; border:1px solid #ffffff; background:gray; color:white; cursor:default;">
-    다음 문제
-    </button>
-    <br><br>
 
-    <table align="center" style="font-size:20px; border-collapse:collapse;height:120px;text-align:center;">
-    <tr>
-        <td width="120px"></td>
-        <td width="120px">유리수 근</td>
-        <td width="120px">무리수 근</td>
-        <td width="120px">혼합 근</td>
-    </tr>
-    <tr>
-        <td style=>${a=1}$</td>
-        <td style="border:1px solid #000000;">1단계</td>
-        <td style="border:1px solid #000000;">2단계</td>
-        <td style="border:1px solid #000000;">3단계</td>
-    </tr>
-    <tr>
-        <td style=>${a}$는 모든 수</td>
-        <td style="border:1px solid #000000;">4단계</td>
-        <td style="border:1px solid #000000;">5단계</td>
-        <td style="border:1px solid #000000;">6단계</td>
-    </tr>
-    </table>
-</div>
+    <div class="quiz-card">
+      <div class="question-display" id="questionBox">결과 대기 중</div>
+      
+      <div id="inlineFeedback" class="msg-default">문제를 보고 정답을 선택해보세요!</div>
+      
+      <div class="choices-grid" id="choicesBox"></div>
+      
+      <div class="button-container" style="display: flex; gap: 10px; margin-top: 10px; width: 100%;">
+        <button id="skipBtn" class="button" style="flex: 1;" onclick="skipToNewQuizAction()">새로운 문제 (N)</button>
+        <button id="nextBtn" class="keypad-btn next-btn" style="flex: 1; font-size: 16px;" onclick="generateNewQuizAction()" disabled>다음 문제 (Enter / Space)</button>
+      </div>
+    </div>
 
-<script>
-  let currentStage = 1;
-  let correctTotal = 0;
-  let wrongTotal = 0;
-  let answered = false;
+    <div class="custom-guide-card border-red">
+      <div class="guide-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="guide-title title-red">📊 누적 기록</div>
+        <button class="custom-reset-btn" onclick="openModal()">누적기록 초기화</button>
+      </div>
+      
+      <table class="stats-report-table">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>성공 횟수</th>
+            <th>실패 횟수</th>
+            <th>새로운 문제</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>횟수</td>
+            <td class="count-highlight"><span id="statCorrect">0</span>회</td>
+            <td class="count-highlight"><span id="statWrong">0</span>회</td>
+            <td class="count-highlight"><span id="statSkip">0</span>회</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  function updateScore() {
-    document.getElementById("scoreBoard").textContent = `정답: ${correctTotal} | 오답: ${wrongTotal}`;
-  }
+    <div class="custom-guide-card border-blue">
+      <div class="guide-title title-blue">💡 내용 설명</div>
+      <ul class="desc-list" style="font-size: 15px; color: var(--text-sub); margin-bottom: 8px; padding-left: 20px; margin-top: 8px; line-height: 1.6;">
+        <li>이차방정식 $ax^2 + bx + c = 0$의 해를 구하세요.</li>
+      </ul>
 
-  function setStage(stage) {
-    currentStage = stage;
-    answered = false;
-    document.querySelectorAll('.stage-btn').forEach((btn, idx) => {
-      btn.classList.toggle('active', idx + 1 === stage);
-    });
-    generateQuiz();
-  }
+      <table class="stage-matrix-table" id="stageMatrix">
+        <thead>
+          <tr>
+            <th>구분</th>
+            <th>유리수 근</th>
+            <th>무리수 근</th>
+            <th>혼합형 근</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>$a = 1$ 고정형</strong></td>
+            <td id="td-stage-1">1단계</td>
+            <td id="td-stage-2">2단계</td>
+            <td id="td-stage-3">3단계</td>
+          </tr>
+          <tr>
+            <td><strong>$a$ 전체 정수형</strong></td>
+            <td id="td-stage-4">4단계</td>
+            <td id="td-stage-5">5단계</td>
+            <td id="td-stage-6">6단계</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-  function getRandomNonZeroInt(min, max) {
-    let n;
-    do n = Math.floor(Math.random() * (max - min + 1)) + min;
-    while (n === 0);
-    return n;
-  }
+    <div class="custom-guide-card border-green">
+      <div class="guide-title title-green">⌨️ 키보드 단축키</div>
+      <div class="shortcut-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; font-size: 15px;">
+        <div class="shortcut-item" style="display: flex; align-items: center; gap: 6px;"><kbd>1</kbd> ~ <kbd>6</kbd><span>해당 보기 즉시 선택</span></div>
+        <div class="shortcut-item" style="display: flex; align-items: center; gap: 6px;"><kbd>N</kbd><span>새로운 문제</span></div>
+        <div class="shortcut-item" style="display: flex; align-items: center; gap: 6px; grid-column: span 2;"><kbd>Enter</kbd> 혹은 <kbd>Space</kbd><span>다음 문제</span></div>
+      </div>
+    </div>
+  </div>
 
-  function gcd(a, b) {
-    return b ? gcd(b, a % b) : Math.abs(a);
-  }
+  <div id="resetModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal-box">
+      <div class="modal-title">누적 기록 초기화</div>
+      <div class="modal-text">누적 기록을 모두 삭제하시겠습니까?</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+        <button class="modal-btn confirm" onclick="resetStats()" style="background-color: var(--danger, #dc3545); color: white;">초기화</button>
+      </div>
+    </div>
+  </div>
 
-  function simplifyFraction(num, denom) {
-    let g = gcd(num, denom);
-    num /= g;
-    denom /= g;
-    if (denom < 0) {
-      num = -num;
-      denom = -denom;
+  <script>
+    let currentStage = 1;
+    let correctTotal = 0;
+    let wrongTotal = 0;
+    let skipTotal = 0;
+    let answered = false;
+
+    const LOCAL_STATS_KEY = "quad_quiz_master_stats_v15";
+    const SESSION_STATE_PREFIX = "quad_quiz_stage_state_";
+
+    function loadScoreStats() {
+      const saved = localStorage.getItem(LOCAL_STATS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        correctTotal = parsed.correctTotal || 0;
+        wrongTotal = parsed.wrongTotal || 0;
+        skipTotal = parsed.skipTotal || 0;
+      }
+      updateScoreUI(null);
     }
-    return [num, denom];
-  }
 
-  // 분수 포맷: 분모에 -가 들어가지 않도록
-  function formatFraction(n, d) {
-    if (d < 0) {
-      n = -n;
-      d = -d;
+    function saveScoreStats() {
+      const data = { correctTotal, wrongTotal, skipTotal };
+      localStorage.setItem(LOCAL_STATS_KEY, JSON.stringify(data));
     }
-    if (d === 1) return `${n}`;
-    if (n < 0) return `-\\frac{${-n}}{${d}}`;
-    return `\\frac{${n}}{${d}}`;
-  }
 
-  // 완전 제곱근 판정
-  function isPerfectSquare(n) {
-    if (n < 0) return false;
-    let root = Math.round(Math.sqrt(n));
-    return root * root === n;
-  }
-
-  function isIrrational(n) {
-    return !isPerfectSquare(n);
-  }
-
-  // 루트 간단히 하기
-  function simplifySurd(n) {
-    n = Math.round(n);
-    if (n === 0) return { coef: 0, surd: null };
-    if (isPerfectSquare(n)) return { coef: Math.sqrt(n), surd: null };
-
-    let coef = 1, surd = n;
-    for (let i = 2; i * i <= surd; i++) {
-      while (surd % (i * i) === 0) {
-        coef *= i;
-        surd /= i * i;
+    function updateScoreUI(activeColorType) {
+      const correctTd = document.getElementById("statCorrect");
+      const wrongTd = document.getElementById("statWrong");
+      const skipTd = document.getElementById("statSkip");
+      
+      correctTd.textContent = correctTotal;
+      wrongTd.textContent = wrongTotal;
+      skipTd.textContent = skipTotal;
+      
+      correctTd.parentElement.className = "count-highlight";
+      wrongTd.parentElement.className = "count-highlight";
+      skipTd.parentElement.className = "count-highlight";
+      
+      if (activeColorType === "correct" && correctTotal > 0) {
+        correctTd.parentElement.classList.add("win-active");
+      } else if (activeColorType === "wrong" && wrongTotal > 0) {
+        wrongTd.parentElement.classList.add("lose-active");
+      } else if (activeColorType === "skip" && skipTotal > 0) {
+        skipTd.parentElement.classList.add("skip-active");
       }
     }
-    return { coef, surd };
-  }
 
-  function formatEquation(a, b, c) {
-    let str = '';
-    if (a === 1) str += 'x^2';
-    else if (a === -1) str += '-x^2';
-    else str += `${a}x^2`;
+    function clearStatsColorHighlight() { updateScoreUI(null); }
 
-    if (b === 1) str += ' + x';
-    else if (b === -1) str += ' - x';
-    else if (b > 0) str += ` + ${b}x`;
-    else if (b < 0) str += ` - ${Math.abs(b)}x`;
+    function handleStageClick(stage) {
+      clearStatsColorHighlight();
+      currentStage = stage;
+      
+      for (let i = 1; i <= 6; i++) {
+        const btn = document.getElementById(`sbtn-${i}`);
+        if (btn) btn.classList.toggle('active', i === stage);
+        const td = document.getElementById(`td-stage-${i}`);
+        if (td) td.classList.toggle('current-stage-highlight', i === stage);
+      }
 
-    if (c > 0) str += ` + ${c}`;
-    else if (c < 0) str += ` - ${Math.abs(c)}`;
-
-    str += ' = 0';
-    return str;
-  }
-
-  // 정답(roots) 정확히 구하기
-  function getRationalRoots(a, b, c, D) {
-    // D는 완전제곱수임이 보장됨
-    const sqrtD = Math.round(Math.sqrt(D));
-    const denom = 2 * a;
-    const root1 = simplifyFraction(-b + sqrtD, denom);
-    const root2 = simplifyFraction(-b - sqrtD, denom);
-    // 중근 여부
-    if (root1[0] === root2[0] && root1[1] === root2[1]) {
-      return [root1];
-    } else {
-      // 오름차순 정렬
-      const val1 = root1[0] / root1[1];
-      const val2 = root2[0] / root2[1];
-      if (val1 < val2) return [root1, root2];
-      else return [root2, root1];
+      const cachedState = sessionStorage.getItem(SESSION_STATE_PREFIX + currentStage);
+      if (cachedState) restoreQuizFromCache(JSON.parse(cachedState));
+      else generateQuiz(true);
     }
-  }
 
-  // 중근 여부
-  function isDoubleRoot(a, b, c, D) {
-    const sqrtD = Math.round(Math.sqrt(D));
-    const denom = 2 * a;
-    const root1 = simplifyFraction(-b + sqrtD, denom);
-    const root2 = simplifyFraction(-b - sqrtD, denom);
-    return (root1[0] === root2[0] && root1[1] === root2[1]);
-  }
+    function saveCurrentQuizStateToSession(choicesArray, correctValue, equationString) {
+      const choicesBox = document.getElementById('choicesBox');
+      const buttons = choicesBox.querySelectorAll('button');
+      const buttonStates = [];
+      
+      buttons.forEach((btn, idx) => {
+        buttonStates.push({ index: idx, disabled: btn.disabled, className: btn.className });
+      });
 
-  // 1,4단계: 정답 2가지 중 하나씩 부호를 수정하거나 둘 다 수정해서 오답을 만들어주는 함수
-  // (수정: 최대 2개만 반환)
-  function generateSignFlippedDistractorsLimited(roots, maxCount = 2) {
-    let distractors = [];
-    if (roots.length !== 2) return [];
-    // 1. 첫 번째 근만 부호 반전
-    let r1a = [-roots[0][0], roots[0][1]];
-    let r2a = [roots[1][0], roots[1][1]];
-    r1a = simplifyFraction(r1a[0], r1a[1]);
-    r2a = simplifyFraction(r2a[0], r2a[1]);
-    distractors.push(
-      (r1a[0]/r1a[1] < r2a[0]/r2a[1])
-        ? `${formatFraction(r1a[0], r1a[1])}, ${formatFraction(r2a[0], r2a[1])}`
-        : `${formatFraction(r2a[0], r2a[1])}, ${formatFraction(r1a[0], r1a[1])}`
-    );
-    if (distractors.length >= maxCount) return distractors;
-    // 2. 두 번째 근만 부호 반전
-    let r1b = [roots[0][0], roots[0][1]];
-    let r2b = [-roots[1][0], roots[1][1]];
-    r1b = simplifyFraction(r1b[0], r1b[1]);
-    r2b = simplifyFraction(r2b[0], r2b[1]);
-    distractors.push(
-      (r1b[0]/r1b[1] < r2b[0]/r2b[1])
-        ? `${formatFraction(r1b[0], r1b[1])}, ${formatFraction(r2b[0], r2b[1])}`
-        : `${formatFraction(r2b[0], r2b[1])}, ${formatFraction(r1b[0], r1b[1])}`
-    );
-    if (distractors.length >= maxCount) return distractors;
-    // 3. 둘 다 부호 반전
-    let r1c = [-roots[0][0], roots[0][1]];
-    let r2c = [-roots[1][0], roots[1][1]];
-    r1c = simplifyFraction(r1c[0], r1c[1]);
-    r2c = simplifyFraction(r2c[0], r2c[1]);
-    distractors.push(
-      (r1c[0]/r1c[1] < r2c[0]/r2c[1])
-        ? `${formatFraction(r1c[0], r1c[1])}, ${formatFraction(r2c[0], r2c[1])}`
-        : `${formatFraction(r2c[0], r2c[1])}, ${formatFraction(r1c[0], r1c[1])}`
-    );
-    return distractors.slice(0, maxCount);
-  }
-
-  // 유리수 근의 오답 생성: 각 근에 ±1~±3을 더하거나 빼서 오답 생성, 2근이면 2근 쌍으로
-  // (1,4단계에서 signFlipFirst=true면 부호 오답 1~2개만 추가)
-  function generateRationalDistractorsForRoots(roots, count, signFlipFirst = false) {
-    let distractors = new Set();
-    function formatRootPair(r1, r2) {
-      const v1 = r1[0]/r1[1], v2 = r2[0]/r2[1];
-      if (v1 < v2) return `${formatFraction(r1[0], r1[1])}, ${formatFraction(r2[0], r2[1])}`;
-      else return `${formatFraction(r2[0], r2[1])}, ${formatFraction(r1[0], r1[1])}`;
+      const feedbackBox = document.getElementById('inlineFeedback');
+      const stateData = {
+        choicesArray: choicesArray,
+        correctValue: correctValue,
+        equationString: equationString,
+        answered: answered,
+        nextBtnDisabled: document.getElementById('nextBtn').disabled,
+        feedbackText: feedbackBox.textContent,
+        feedbackClass: feedbackBox.className,
+        buttonStates: buttonStates
+      };
+      sessionStorage.setItem(SESSION_STATE_PREFIX + currentStage, JSON.stringify(stateData));
     }
-    if (roots.length === 2) {
-      if (signFlipFirst) {
-        // 부호 오답 1~2개만 추가
-        let signFlips = generateSignFlippedDistractorsLimited(roots, 2);
-        for (let s of signFlips) {
-          distractors.add(s);
-          if (distractors.size >= count) break;
+
+    function restoreQuizFromCache(state) {
+      answered = state.answered;
+      
+      const nextBtn = document.getElementById('nextBtn');
+      const inlineFeedback = document.getElementById('inlineFeedback');
+      const questionBox = document.getElementById('questionBox');
+      const choicesBox = document.getElementById('choicesBox');
+
+      nextBtn.disabled = state.nextBtnDisabled;
+      if (!nextBtn.disabled) nextBtn.classList.add('is-active');
+      else nextBtn.classList.remove('is-active');
+
+      questionBox.innerHTML = `$$${state.equationString}$$`;
+      
+      inlineFeedback.textContent = state.feedbackText || "문제를 보고 정답을 선택해보세요!";
+      inlineFeedback.className = state.feedbackClass || "msg-default";
+
+      choicesBox.innerHTML = '';
+
+      state.choicesArray.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        
+        const badge = document.createElement('span');
+        badge.className = 'key-badge';
+        badge.textContent = idx + 1;
+        btn.appendChild(badge);
+
+        const mathDiv = document.createElement('div');
+        mathDiv.className = 'math-wrapper';
+        mathDiv.innerHTML = `$$x = ${opt}$$`;
+        btn.appendChild(mathDiv);
+        
+        btn.dataset.correct = (opt === state.correctValue) ? "true" : "false";
+        
+        const btnSavedState = state.buttonStates.find(b => b.index === idx);
+        if (btnSavedState) {
+          if (btnSavedState.disabled) btn.disabled = true;
+          if (btnSavedState.className) btn.className = btnSavedState.className;
+        }
+
+        btn.addEventListener('click', () => handleChoiceSelection(btn, state.choicesArray, state.correctValue, state.equationString));
+        choicesBox.appendChild(btn);
+      });
+      MathJax.typesetPromise();
+    }
+
+    function handleChoiceSelection(buttonElement, choiceArr, correct, question) {
+      const choicesBox = document.getElementById('choicesBox');
+      const inlineFeedback = document.getElementById('inlineFeedback');
+      const nextBtn = document.getElementById('nextBtn');
+
+      clearStatsColorHighlight();
+      if (answered) return; 
+
+      if (buttonElement.dataset.correct === "true") {
+        answered = true;
+        buttonElement.classList.add('correct');
+        correctTotal++;
+        saveScoreStats();
+        updateScoreUI("correct");
+        
+        inlineFeedback.textContent = "🎉 정답입니다! 다음 문제 버튼을 누르세요.";
+        inlineFeedback.className = "feedback-success"; 
+        
+        nextBtn.disabled = false;
+        nextBtn.classList.add('is-active');
+        
+        Array.from(choicesBox.querySelectorAll('button')).forEach(b => {
+          if (b !== buttonElement) b.disabled = true;
+        });
+      } else {
+        if (!buttonElement.classList.contains('wrong')) {
+          buttonElement.classList.add('wrong');
+          wrongTotal++;
+          saveScoreStats();
+          updateScoreUI("wrong");
+          buttonElement.disabled = true; 
+          
+          inlineFeedback.textContent = "❌ 오답입니다. 다른 식을 계산하여 다시 풀어보세요!";
+          inlineFeedback.className = "feedback-danger"; 
         }
       }
-      // 나머지는 delta로 생성
-      for (let delta1 = -3; delta1 <= 3; delta1++) {
-        if (delta1 === 0) continue;
-        for (let delta2 = -3; delta2 <= 3; delta2++) {
-          if (delta2 === 0) continue;
-          if (delta1 === 0 && delta2 === 0) continue;
-          let r1 = [roots[0][0] + delta1 * roots[0][1], roots[0][1]];
-          let r2 = [roots[1][0] + delta2 * roots[1][1], roots[1][1]];
-          r1 = simplifyFraction(r1[0], r1[1]);
-          r2 = simplifyFraction(r2[0], r2[1]);
-          if (
-            (r1[0] === roots[0][0] && r1[1] === roots[0][1] && r2[0] === roots[1][0] && r2[1] === roots[1][1]) ||
-            (r1[0] === roots[1][0] && r1[1] === roots[1][1] && r2[0] === roots[0][0] && r2[1] === roots[0][1])
-          ) continue;
-          distractors.add(formatRootPair(r1, r2));
-          if (distractors.size >= count) break;
+      saveCurrentQuizStateToSession(choiceArr, correct, question);
+    }
+
+    function generateNewQuizAction() {
+      clearStatsColorHighlight();
+      generateQuiz(true);
+    }
+
+    function skipToNewQuizAction() {
+      skipTotal++;
+      saveScoreStats();
+      updateScoreUI("skip");
+      generateQuiz(true);
+    }
+
+    function getRandomNonZeroInt(min, max) {
+      let n;
+      do n = Math.floor(Math.random() * (max - min + 1)) + min;
+      while (n === 0);
+      return n;
+    }
+
+    function gcd(a, b) { return b ? gcd(b, a % b) : Math.abs(a); }
+
+    function simplifyFraction(num, denom) {
+      let g = gcd(num, denom);
+      num /= g; denom /= g;
+      if (denom < 0) { num = -num; denom = -denom; }
+      return [num, denom];
+    }
+
+    function formatFraction(n, d) {
+      if (d < 0) { n = -n; d = -d; }
+      if (d === 1) return `${n}`;
+      if (n < 0) return `-\\frac{${-n}}{${d}}`;
+      return `\\frac{${n}}{${d}}`;
+    }
+
+    function isPerfectSquare(n) {
+      if (n < 0) return false;
+      let root = Math.round(Math.sqrt(n));
+      return root * root === n;
+    }
+
+    function isIrrational(n) { return !isPerfectSquare(n); }
+
+    function simplifySurd(n) {
+      n = Math.round(n);
+      if (n === 0) return { coef: 0, surd: null };
+      if (isPerfectSquare(n)) return { coef: Math.sqrt(n), surd: null };
+      let coef = 1, surd = n;
+      for (let i = 2; i * i <= surd; i++) {
+        while (surd % (i * i) === 0) { coef *= i; surd /= i * i; }
+      }
+      return { coef, surd };
+    }
+
+    function formatEquation(a, b, c) {
+      let str = '';
+      if (a === 1) str += 'x^2';
+      else if (a === -1) str += '-x^2';
+      else str += `${a}x^2`;
+      if (b === 1) str += ' + x';
+      else if (b === -1) str += ' - x';
+      else if (b > 0) str += ` + ${b}x`;
+      else if (b < 0) str += ` - ${Math.abs(b)}x`;
+      if (c > 0) str += ` + ${c}`;
+      else if (c < 0) str += ` - ${Math.abs(c)}`;
+      return str + ' = 0';
+    }
+
+    function getRationalRoots(a, b, c, D) {
+      const sqrtD = Math.round(Math.sqrt(D));
+      const denom = 2 * a;
+      const root1 = simplifyFraction(-b + sqrtD, denom);
+      const root2 = simplifyFraction(-b - sqrtD, denom);
+      if (root1[0] === root2[0] && root1[1] === root2[1]) return [root1];
+      return (root1[0]/root1[1] < root2[0]/root2[1]) ? [root1, root2] : [root2, root1];
+    }
+
+    function generateSignFlippedDistractorsLimited(roots, maxCount = 3) {
+      let distractors = [];
+      if (roots.length !== 2) return [];
+      let flips = [
+        [[-roots[0][0], roots[0][1]], [roots[1][0], roots[1][1]]],
+        [[roots[0][0], roots[0][1]], [-roots[1][0], roots[1][1]]],
+        [[-roots[0][0], roots[0][1]], [-roots[1][0], roots[1][1]]]
+      ];
+      flips.forEach(f => {
+        let r1 = simplifyFraction(f[0][0], f[0][1]);
+        let r2 = simplifyFraction(f[1][0], f[1][1]);
+        distractors.push(
+          (r1[0]/r1[1] < r2[0]/r2[1])
+            ? `${formatFraction(r1[0], r1[1])}, ${formatFraction(r2[0], r2[1])}`
+            : `${formatFraction(r2[0], r2[1])}, ${formatFraction(r1[0], r1[1])}`
+        );
+      });
+      return distractors.slice(0, maxCount);
+    }
+
+    function generateRationalDistractorsForRoots(roots, count, signFlipFirst = false) {
+      let distractors = new Set();
+      function formatRootPair(r1, r2) {
+        return (r1[0]/r1[1] < r2[0]/r2[1]) 
+          ? `${formatFraction(r1[0], r1[1])}, ${formatFraction(r2[0], r2[1])}`
+          : `${formatFraction(r2[0], r2[1])}, ${formatFraction(r1[0], r1[1])}`;
+      }
+      if (roots.length === 2) {
+        if (signFlipFirst) generateSignFlippedDistractorsLimited(roots, 3).forEach(s => distractors.add(s));
+        for (let d1 = -4; d1 <= 4; d1++) {
+          if (d1 === 0) continue;
+          for (let d2 = -4; d2 <= 4; d2++) {
+            if (d2 === 0) continue;
+            let r1 = simplifyFraction(roots[0][0] + d1 * roots[0][1], roots[0][1]);
+            let r2 = simplifyFraction(roots[1][0] + d2 * roots[1][1], roots[1][1]);
+            if ((r1[0]===roots[0][0] && r1[1]===roots[0][1]) || (r1[0]===roots[1][0] && r1[1]===roots[1][1])) continue;
+            distractors.add(formatRootPair(r1, r2));
+            if (distractors.size >= count + 4) break;
+          }
+          if (distractors.size >= count + 4) break;
         }
-        if (distractors.size >= count) break;
-      }
-    } else {
-      for (let delta = -3; delta <= 3; delta++) {
-        if (delta === 0) continue;
-        let r = [roots[0][0] + delta * roots[0][1], roots[0][1]];
-        r = simplifyFraction(r[0], r[1]);
-        if (r[0] === roots[0][0] && r[1] === roots[0][1]) continue;
-        distractors.add(formatFraction(r[0], r[1]));
-        if (distractors.size >= count) break;
-      }
-    }
-    return Array.from(distractors);
-  }
-
-  // 무리수 근의 정답/오답 포맷
-  // 2,3,5,6단계에서 x = \frac{6 \pm 2\sqrt{14}}{2} 꼴이면 x = 3 \pm \sqrt{14}로 변환
-  // 그리고 항상 기약분수로 만들어줌
-  function formatIrrationalAnswer(a, b, D, showCombinedPM = false) {
-    if (a === 0) return null;
-    if (D < 0) return null;
-    if (isPerfectSquare(D)) return null; // 유리수 근은 제외
-
-    let denom = 2 * a;
-    if (denom < 0) {
-      b = -b;
-      denom = -denom;
-    }
-    let surd = simplifySurd(D);
-
-    let numeratorA = -b;
-    let numeratorB = surd.coef;
-    let numeratorSurd = surd.surd;
-
-    // 2,3,5,6단계: 항상 기약분수로 만들어줌
-    let gcdAll = Math.abs(gcd(gcd(numeratorA, numeratorB), denom));
-    if (gcdAll > 1 && (currentStage === 2 || currentStage === 3 || currentStage === 5 || currentStage === 6)) {
-      numeratorA /= gcdAll;
-      numeratorB /= gcdAll;
-      denom /= gcdAll;
-    }
-
-    // ±를 한꺼번에 표시
-    let result = '';
-    if (denom === 1) {
-      if (numeratorA === 0) {
-        if (numeratorB === 1) result = `\\pm \\sqrt{${numeratorSurd}}`;
-        else if (numeratorB === -1) result = `\\pm -\\sqrt{${numeratorSurd}}`;
-        else result = `\\pm ${numeratorB}\\sqrt{${numeratorSurd}}`;
       } else {
-        if (numeratorB === 1) result = `${numeratorA} \\pm \\sqrt{${numeratorSurd}}`;
-        else if (numeratorB === -1) result = `${numeratorA} \\pm -\\sqrt{${numeratorSurd}}`;
-        else result = `${numeratorA} \\pm ${numeratorB}\\sqrt{${numeratorSurd}}`;
+        for (let delta = -5; delta <= 5; delta++) {
+          if (delta === 0) continue;
+          let r = simplifyFraction(roots[0][0] + delta * roots[0][1], roots[0][1]);
+          if (r[0] === roots[0][0] && r[1] === roots[0][1]) continue;
+          distractors.add(formatFraction(r[0], r[1]));
+        }
       }
-    } else {
-      let numerator = '';
-      if (numeratorA === 0) {
-        if (numeratorB === 1) numerator = `\\pm \\sqrt{${numeratorSurd}}`;
-        else if (numeratorB === -1) numerator = `\\pm -\\sqrt{${numeratorSurd}}`;
-        else numerator = `\\pm ${numeratorB}\\sqrt{${numeratorSurd}}`;
-      } else {
-        if (numeratorB === 1) numerator = `${numeratorA} \\pm \\sqrt{${numeratorSurd}}`;
-        else if (numeratorB === -1) numerator = `${numeratorA} \\pm -\\sqrt{${numeratorSurd}}`;
-        else numerator = `${numeratorA} \\pm ${numeratorB}\\sqrt{${numeratorSurd}}`;
-      }
-      result = `\\frac{${numerator}}{${denom}}`;
+      return Array.from(distractors);
     }
-    return result;
-  }
 
-  // 무리수 근의 오답 생성
-  // 2,3,5,6단계에서 -b와 b를 최소 2개 이상씩으로 만들어줌
-  function generateIrrationalDistractorsV2(a, b, D, correct) {
-    // D를 ±2, ±4, ±6, ±8만큼 바꿔서 오답 생성
-    const deltas = [2, 4, 6, 8, -2, -4, -6, -8];
-    let distractors = new Set();
+    function formatIrrationalAnswer(a, b, D) {
+      if (a === 0 || D < 0 || isPerfectSquare(D)) return null;
+      let denom = 2 * a;
+      if (denom < 0) { b = -b; denom = -denom; }
+      let surd = simplifySurd(D);
+      let numA = -b, numB = surd.coef, numSurd = surd.surd;
+      let gcdAll = Math.abs(gcd(gcd(numA, numB), denom));
+      if (gcdAll > 1) { numA /= gcdAll; numB /= gcdAll; denom /= gcdAll; }
 
-    // b, -b를 최소 2개 이상씩
-    let bVariants = [b, -b];
-    let bCount = { [b]: 0, [-b]: 0 };
+      let inner = '';
+      if (numA === 0) inner = numB === 1 ? `\\pm \\sqrt{${numSurd}}` : `\\pm ${numB}\\sqrt{${numSurd}}`;
+      else inner = numB === 1 ? `${numA} \\pm \\sqrt{${numSurd}}` : `${numA} \\pm ${numB}\\sqrt{${numSurd}}`;
+      
+      return denom === 1 ? inner : `\\frac{${inner}}{${denom}}`;
+    }
 
-    for (let dDelta of deltas) {
-      for (let bVar of bVariants) {
-        let newD = D + dDelta;
-        if (newD <= 0 || newD >= 1000) continue;
-        if (isPerfectSquare(newD)) continue;
-        let wrong = formatIrrationalAnswer(a, bVar, newD, true);
-        if (wrong && wrong !== correct && !distractors.has(wrong)) {
-          distractors.add(wrong);
-          bCount[bVar] = (bCount[bVar] || 0) + 1;
+    function generateIrrationalDistractorsV2(a, b, D, correct) {
+      const deltas = [2, 4, 6, -2, -4, -6, 8, -8];
+      let distractors = new Set();
+      let bVariants = [b, -b, b + 2, b - 2];
+      for (let dDelta of deltas) {
+        for (let bVar of bVariants) {
+          let newD = D + dDelta;
+          if (newD <= 0 || newD >= 1000 || isPerfectSquare(newD)) continue;
+          let wrong = formatIrrationalAnswer(a, bVar, newD);
+          if (wrong && wrong !== correct) distractors.add(wrong);
+          if (distractors.size >= 8) break;
         }
         if (distractors.size >= 8) break;
       }
-      if (distractors.size >= 8) break;
+      return Array.from(distractors);
     }
 
-    // b, -b가 각각 2개 이상 안되면 추가로 생성
-    for (let bVar of bVariants) {
-      let tries = 0;
-      let delta = 2;
-      while (bCount[bVar] < 2 && tries < 20) {
-        let newD = D + delta * (tries + 1);
-        if (newD > 0 && newD < 1000 && !isPerfectSquare(newD)) {
-          let wrong = formatIrrationalAnswer(a, bVar, newD, true);
-          if (wrong && wrong !== correct && !distractors.has(wrong)) {
-            distractors.add(wrong);
-            bCount[bVar] = (bCount[bVar] || 0) + 1;
-          }
+    function generateValidProblem() {
+      while (true) {
+        let a, b, c;
+        if (currentStage >= 1 && currentStage <= 3) {
+          a = 1; b = getRandomNonZeroInt(-8, 8); c = getRandomNonZeroInt(-10, 10);
+        } else {
+          a = getRandomNonZeroInt(-5, 5); b = getRandomNonZeroInt(-8, 8); c = getRandomNonZeroInt(-8, 8);
+          if (a === 0) continue;
         }
-        tries++;
+        const D = b * b - 4 * a * c;
+        if (!Number.isInteger(D) || D < 1 || D >= 100) continue;
+        if ((currentStage === 1 || currentStage === 4) && isIrrational(D)) continue;
+        if ((currentStage === 2 || currentStage === 5) && !isIrrational(D)) continue;
+        return { a, b, c, D };
       }
     }
 
-    return Array.from(distractors);
-  }
+    function generateQuiz(shouldResetSession = true) {
+      answered = false;
+      
+      const nextBtn = document.getElementById('nextBtn');
+      const inlineFeedback = document.getElementById('inlineFeedback');
+      
+      nextBtn.disabled = true;
+      nextBtn.classList.remove('is-active');
+      
+      inlineFeedback.textContent = "문제를 보고 정답을 선택해보세요!";
+      inlineFeedback.className = "msg-default";
 
-  // 혼합 근의 정답/오답 포맷 (유리수/무리수 모두)
-  function formatAnswerUniversal(a, b, D, showCombinedPM = false) {
-    if (a === 0) return null;
-    if (D < 0) return null;
-    if (isPerfectSquare(D)) {
-      // 유리수 근
-      const roots = getRationalRoots(a, b, 0, D);
-      if (!roots) return null;
-      if (roots.length === 1) {
-        return formatFraction(roots[0][0], roots[0][1]) + " \\quad (중근)";
+      const { a, b, c, D } = generateValidProblem();
+      const questionBox = document.getElementById('questionBox');
+      const choicesBox = document.getElementById('choicesBox');
+      choicesBox.innerHTML = '';
+
+      const question = formatEquation(a, b, c);
+      questionBox.innerHTML = `$$${question}$$`;
+
+      let correct, correctRoots = null, isDouble = false;
+      if (isPerfectSquare(D)) { 
+        correctRoots = getRationalRoots(a, b, c, D);
+        isDouble = (correctRoots.length === 1);
+        correct = isDouble 
+          ? formatFraction(correctRoots[0][0], correctRoots[0][1]) + " \\quad (중근)"
+          : `${formatFraction(correctRoots[0][0], correctRoots[0][1])}, ${formatFraction(correctRoots[1][0], correctRoots[1][1])}`;
       } else {
-        return `${formatFraction(roots[0][0], roots[0][1])}, ${formatFraction(roots[1][0], roots[1][1])}`;
-      }
-    } else {
-      // 무리수 근
-      return formatIrrationalAnswer(a, b, D, true);
-    }
-  }
-
-  function generateValidProblem() {
-    while (true) {
-      let a, b, c;
-      // 1,2,3단계는 a=1로 고정
-      if (currentStage >= 1 && currentStage <= 3) {
-        a = 1;
-        b = getRandomNonZeroInt(-9, 9);
-        c = getRandomNonZeroInt(-9, 9);
-      } else {
-        a = getRandomNonZeroInt(-9, 9);
-        b = getRandomNonZeroInt(-9, 9);
-        c = getRandomNonZeroInt(-9, 9);
-        if (a === 0) continue;
+        correct = formatIrrationalAnswer(a, b, D);
       }
 
-      const D = b * b - 4 * a * c;
+      if (!correct) { generateQuiz(shouldResetSession); return; }
 
-      if (!Number.isInteger(D) || D < 1 || D >= 64) continue;
+      let choicesSet = new Set();
+      choicesSet.add(correct);
 
-      // 1단계: a=1, √D 유리수
-      // 2단계: a=1, √D 무리수
-      // 3단계: a=1, 모두
-      // 4단계: √D 유리수
-      // 5단계: √D 무리수
-      // 6단계: 모두
-      if (currentStage === 1 && isIrrational(D)) continue;
-      if (currentStage === 2 && !isIrrational(D)) continue;
-      if (currentStage === 4 && isIrrational(D)) continue;
-      if (currentStage === 5 && !isIrrational(D)) continue;
-      // 3,6단계는 모두 허용
+      let distractors = isPerfectSquare(D)
+        ? (isDouble ? generateRationalDistractorsForRoots(correctRoots, 6).map(x => x + " \\quad (중근)") : generateRationalDistractorsForRoots(correctRoots, 6, true))
+        : generateIrrationalDistractorsV2(a, b, D, correct);
 
-      return { a, b, c, D };
-    }
-  }
-
-  function generateQuiz() {
-  answered = false;
-  
-  // 다음 문제 버튼 초기화
-  const nextBtn = document.getElementById('nextBtn');
-  nextBtn.disabled = true;
-  nextBtn.style.background = "gray";
-  nextBtn.style.cursor = "default";
-
-  const { a, b, c, D } = generateValidProblem();
-
-  const questionBox = document.getElementById('questionBox');
-  const choicesBox = document.getElementById('choicesBox');
-  
-  // 이전 문제 보기 삭제
-  choicesBox.innerHTML = '';
-
-  const question = formatEquation(a, b, c);
-  questionBox.innerHTML = `$$${question}$$`;
-
-  let correct, correctRoots = null, isDouble = false;
-
-  if (isPerfectSquare(D)) { 
-    correctRoots = getRationalRoots(a, b, c, D);
-    isDouble = (correctRoots.length === 1);
-    if (isDouble) {
-      correct = formatFraction(correctRoots[0][0], correctRoots[0][1]) + " \\quad (중근)";
-    } else {
-      correct = `${formatFraction(correctRoots[0][0], correctRoots[0][1])}, ${formatFraction(correctRoots[1][0], correctRoots[1][1])}`;
-    }
-  } else {
-    correct = formatIrrationalAnswer(a, b, D, true);
-  }
-
-  if (!correct) {
-    generateQuiz();
-    return;
-  }
-
-  let choicesSet = new Set();
-  choicesSet.add(correct);
-
-  let distractors = [];
-  if (isPerfectSquare(D)) {
-    if (isDouble) {
-      distractors = generateRationalDistractorsForRoots(correctRoots, 4).map(x => x + " \\quad (중근)");
-    } else {
-      distractors = generateRationalDistractorsForRoots(correctRoots, 4, true);
-    }
-  } else {
-    distractors = generateIrrationalDistractorsV2(a, b, D, correct);
-  }
-
-  distractors = distractors.filter(x => !choicesSet.has(x));
-  while (choicesSet.size < 5 && distractors.length > 0) {
-    const idx = Math.floor(Math.random() * distractors.length);
-    choicesSet.add(distractors.splice(idx, 1)[0]);
-  }
-
-  const choiceArr = Array.from(choicesSet).sort(() => Math.random() - 0.5);
-
-  // 버튼 생성 (CSS .choices가 가로 배치를 제어함)
-  choiceArr.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.innerHTML = `$$x = ${opt}$$`;
-    btn.dataset.correct = (opt === correct) ? "true" : "false";
-    
-    // 버튼 스타일 유지
-    btn.style.width = "190px"; // 필요시 조절
-    btn.style.height = "60px";
-    btn.style.fontSize = "18px";
-    btn.style.borderRadius = "10px";
-    btn.style.border = "1px solid #ccc";
-    btn.style.background = "white";
-    btn.style.cursor = "pointer";
-
-    btn.addEventListener('click', () => {
-      if (answered) return;
-      answered = true;
-
-      // 다음 문제 버튼 활성화
-      nextBtn.disabled = false;
-      nextBtn.style.background = "#3399FF";
-      nextBtn.style.cursor = "pointer";
-
-      if (btn.dataset.correct === "true") {
-        btn.classList.add('correct');
-        correctTotal++;
-      } else {
-        btn.classList.add('wrong');
-        wrongTotal++;
-        Array.from(choicesBox.querySelectorAll('button')).forEach(b => {
-          if (b.dataset.correct === "true") b.classList.add('correct');
-        });
+      distractors = distractors.filter(x => !choicesSet.has(x));
+      while (choicesSet.size < 6 && distractors.length > 0) {
+        choicesSet.add(distractors.splice(Math.floor(Math.random() * distractors.length), 1)[0]);
       }
-      updateScore();
-      Array.from(choicesBox.querySelectorAll('button')).forEach(b => b.disabled = true);
+
+      const choiceArr = Array.from(choicesSet).sort(() => Math.random() - 0.5);
+
+      choiceArr.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        
+        const badge = document.createElement('span');
+        badge.className = 'key-badge';
+        badge.textContent = idx + 1;
+        btn.appendChild(badge);
+
+        const mathDiv = document.createElement('div');
+        mathDiv.className = 'math-wrapper';
+        mathDiv.innerHTML = `$$x = ${opt}$$`;
+        btn.appendChild(mathDiv);
+        
+        btn.dataset.correct = (opt === correct) ? "true" : "false";
+
+        btn.addEventListener('click', () => handleChoiceSelection(btn, choiceArr, correct, question));
+        choicesBox.appendChild(btn);
+      });
+
+      MathJax.typesetPromise();
+      if (shouldResetSession) saveCurrentQuizStateToSession(choiceArr, correct, question);
+    }
+
+    function openModal() { document.getElementById('resetModal').classList.add('show'); }
+    function closeModal() { document.getElementById('resetModal').classList.remove('show'); }
+    function closeModalOnOverlay(e) { if(e.target.id === 'resetModal') closeModal(); }
+
+    function resetStats() {
+      closeModal();
+      correctTotal = 0; wrongTotal = 0; skipTotal = 0;
+      for(let i=1; i<=6; i++) sessionStorage.removeItem(SESSION_STATE_PREFIX + i);
+      saveScoreStats();
+      updateScoreUI(null);
+      generateQuiz(true);
+    }
+
+    window.addEventListener('keydown', (event) => {
+      if (document.getElementById('resetModal').classList.contains('show')) return;
+
+      const nextBtn = document.getElementById('nextBtn');
+      const key = event.key;
+
+      if (key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        if (!nextBtn.disabled) {
+          generateNewQuizAction();
+        }
+        return;
+      }
+
+      if (key.toLowerCase() === 'n') {
+        event.preventDefault();
+        skipToNewQuizAction();
+        return;
+      }
+
+      if (['1', '2', '3', '4', '5', '6'].includes(key)) {
+        const targetIndex = parseInt(key) - 1;
+        const buttons = document.getElementById('choicesBox').querySelectorAll('button');
+        if (buttons && buttons[targetIndex] && !buttons[targetIndex].disabled && !answered) {
+          event.preventDefault();
+          buttons[targetIndex].click();
+        }
+        return;
+      }
     });
 
-    choicesBox.appendChild(btn);
-  });
-
-  MathJax.typesetPromise();
-}
-
-
-// 스페이스바 입력 감지 이벤트 리스너 추가
-window.addEventListener('keydown', (event) => {
-  const nextBtn = document.getElementById('nextBtn');
-  
-  // 눌린 키가 스페이스바(Space)이고, 다음 문제 버튼이 활성화된 상태일 때만 실행
-  if (event.code === 'Space' && !nextBtn.disabled) {
-    // 기본 스크롤 동작 방지 (스페이스바 누를 때 화면이 아래로 내려가는 현상 방지)
-    event.preventDefault(); 
-    generateQuiz();
-  }
-});
-
-  window.onload = () => setStage(1);
-</script>
-
+    window.onload = () => {
+      loadScoreStats();
+      handleStageClick(1);
+    };
+  </script>
 </body>
 </html>

@@ -1,292 +1,449 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>유리수의 덧셈과 뺄셈</title>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>유리수의 덧셈과 뺄셈</title>
+<script>
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<link rel="stylesheet" href="style.css">
+<style>
+    /* 유리수의 덧셈과 뺄셈 - 정수 버전 UI 일체화 및 센터링 가이드 */
     
-    <!-- MathJax 스크립트 -->
-    <script>
-      window.MathJax = {
-        tex: {
-          inlineMath: [['$', '$'], ['\\(', '\\)']]
-        }
-      };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    /* [요청] 문제와 =과 입력창을 완벽히 한 줄 및 화면 정중앙 배치 */
+    .formula-row-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        width: 100%;
+        margin: 10px 0;
+    }
 
-    <style>
-      body {
-          text-size-adjust: 50px;
-          font-family: sans-serif;
-      }
-
-      div {
-          display: flex;
-          justify-content: center;
-          align-items: center;    
-      }
-
-      .container {
-          display: grid;
-          gap: 10px;
-      }
-
-      .button {
-          width: 60px;
-          height: 60px;
-          font-size: 25px;
-          line-height: 60px;
-          margin: 2px 0px;
-          border-radius: 10px;
-          border: none;
-          background-color: #DDDDDD;
-          cursor: pointer;
-      }
-
-      .button:hover {
-          background-color: #bbb;
-      }
-
-      #txt {
-          font-size: 26px;
-          width: 80px;
-          height: 40px;
-          text-align: center;
-          margin-left: 10px;
-      }
-
-      .problem-container {
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
+    #problem { 
+        font-size: 44px; 
+        font-weight: 800; 
         text-align: center;
-        margin-bottom: 10px;
-        min-height: 100px; /* 수식 높이 확보 */
-      }
-      
-      #problem {
-        font-size: 24px; /* 수식 크기 */
-        margin-right: 15px;
-      }
-    </style>
-  </head>
-  <body>
-    <center>
-      <h1>유리수의 덧셈과 뺄셈</h1>
-
-      <div class="problem-container">
-        <div id="problem">문제 로딩중...</div>
-        <font size="5">=</font>
-        <input type="text" id="txt" value="" readonly>
-      </div>
-      
-      <button class="button" onclick="appendNumber(1)">1</button>
-      <button class="button" onclick="appendNumber(2)">2</button>
-      <button class="button" onclick="appendNumber(3)">3</button>
-      <button class="button" onclick="appendNumber(4)">4</button>
-      <button class="button" onclick="appendNumber(5)">5</button><br>
-      <button class="button" onclick="appendNumber(6)">6</button>
-      <button class="button" onclick="appendNumber(7)">7</button>
-      <button class="button" onclick="appendNumber(8)">8</button>
-      <button class="button" onclick="appendNumber(9)">9</button>
-      <button class="button" onclick="appendNumber(0)">0</button><br>
-      
-      <button class="button" onclick="appendNumber('-')">-</button>
-      <button class="button" onclick="appendNumber('/')">/</button>
-      <button class="button" onclick="clearInput()">C</button>
-      <button class="button" onclick="backspace()">←</button>
-      <button class="button" onclick="main()" style="background-color: #3399FF; color: white;">확인</button>
+        margin: 0;
+        min-height: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 0;
+        word-break: break-all;
+    }
     
-    <hr/>
-    <div id="result1" style="font-size:30px">정답여부</div>
-    <div id="result2" style="font-size:30px">0번 정답입니다.</div>
-    <div id="result3" style="font-size:30px">0번 틀렸습니다.</div>
-    <br>
-    <font size="4px" color="red"><b>[주의: 반드시 기약분수로 입력하세요]</b></font><br>
-    <font size="3px">(예: -2/4는 오답, -1/2이 정답)</font>
-    </center>
+    /* MathJax 고유 상하 여백 강제 상쇄로 한 줄 정렬 매칭 */
+    #problem .mjx-chtml, #problem mjx-container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
-    <script>
-    document.addEventListener('contextmenu', function(e) {
-        e.preventDefault();
+    /* [요청 반영] 중간 등호(=) 스타일 정수 버전과 일치 및 세로 위치 완벽 정렬 */
+    .formula-equal {
+        font-size: 44px;
+        font-weight: 800;
+        color: var(--text-main);
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 64px; /* 입력창의 고정 높이와 매칭하여 세로축 중앙 기준선 고정 */
+        line-height: 1;
+        padding-bottom: 4px; /* 폰트 특성상 미세하게 아래로 처지는 현상 방지 보정 */
+    }
+
+    /* 입력창 영역 배치 및 크기 정수 버전과 동기화 */
+    .input-wrapper-inline {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* 상시 파란 테두리 및 그림자 효과 정수 버전 적용 */
+    #txt { 
+        width: 100%;
+        max-width: 220px;
+        height: 64px;
+        font-size: 36px; 
+        font-weight: 700; 
+        text-align: center; 
+        border: 2px solid var(--active); 
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); 
+        border-radius: 12px; 
+        background-color: #ffffff;
+        outline: none;
+        cursor: pointer;
+    }
+    
+    /* 가상 키패드 전체폭 확장 및 정수 버전 버튼 그리드 구조 반영 */
+    .full-width-container {
+        width: 100%;
+    }
+
+    .key-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        width: 100%;
+    }
+
+    .action-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    /* [디자인 수정] 확인 버튼 인터페이스 정수 버전 파란색 테마와 완벽 동기화 */
+    .confirm-btn-style {
+        grid-column: span 1; /* 유리수 버전 레이아웃 맞춤 확장 */
+        background-color: var(--active) !important; /* 메인 파란색 테마 적용 */
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 3px 6px rgba(0, 123, 255, 0.2) !important; /* 부드러운 푸른 그림자 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .confirm-btn-style:hover {
+        filter: brightness(0.9); /* 마우스 호버 시 자연스럽게 깊어지는 효과 */
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3) !important;
+    }
+
+    .confirm-btn-style:active {
+        transform: scale(0.98); /* 클릭할 때 살짝 눌리는 생동감 부여 */
+    }
+
+    /* [요청 반영] 수식을 계산한 후 확인을 눌러주세요 피드백 안내 영역 기본 회색 배경 빌드 */
+    .msg-default {
+        background-color: #f1f3f5 !important; /* 부드러운 회색 배경 */
+        color: var(--text-sub) !important;
+        padding: 12px 20px !important;
+        border-radius: 10px !important;
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+        font-weight: 600;
+    }
+
+    /* 반응형 대응: 모바일 환경 레이아웃 최적화 */
+    @media (max-width: 480px) {
+        #problem {
+            font-size: 28px;
+        }
+        .formula-equal {
+            font-size: 28px;
+            height: 54px;
+            padding-bottom: 2px;
+        }
+        #txt {
+            height: 54px;
+            font-size: 26px;
+        }
+        .key-grid, .action-row {
+            gap: 8px;
+        }
+        .button {
+            height: 50px;
+            font-size: 16px;
+        }
+        .confirm-btn-style {
+            height: 50px !important;
+            font-size: 16px !important;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div id="overlay" class="modal-overlay">
+    <div class="modal-box" style="border-top: 6px solid var(--danger);">
+        <h2 class="modal-title">누적 기록 초기화</h2>
+        <p class="modal-text">누적 기록을 모두 삭제하시겠습니까?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeResetModal()">취소</button>
+            <button class="modal-btn confirm" onclick="confirmReset()">초기화</button>
+        </div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <h1 class="main-title">유리수의 덧셈과 뺄셈</h1>
+    
+    <div class="container-fixed" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        
+        <div class="formula-row-container">
+            <div id="problem">로딩 중...</div>
+            <div class="formula-equal">=</div>
+            <div class="input-wrapper-inline">
+                <input type="text" id="txt" readonly placeholder="?" onclick="handleInputClick()">
+            </div>
+        </div>
+        
+        <div class="key-grid full-width-container">
+            <button class="button" onclick="appendNumber(1)">1</button>
+            <button class="button" onclick="appendNumber(2)">2</button>
+            <button class="button" onclick="appendNumber(3)">3</button>
+            <button class="button" onclick="appendNumber(4)">4</button>
+            <button class="button" onclick="appendNumber(5)">5</button>
+            <button class="button" onclick="appendNumber(6)">6</button>
+            <button class="button" onclick="appendNumber(7)">7</button>
+            <button class="button" onclick="appendNumber(8)">8</button>
+            <button class="button" onclick="appendNumber(9)">9</button>
+            <button class="button" onclick="appendNumber(0)">0</button>
+        </div>
+        
+        <div class="action-row full-width-container">
+            <button class="button" style="font-weight: 800;" onclick="appendNumber('-')">-</button>
+            <button class="button" style="font-weight: 800;" onclick="appendNumber('/')">/</button>
+            <button class="button" onclick="backspace()">←</button>
+            <button class="button" onclick="clearInput()">C</button>
+            <button class="confirm-btn-style" onclick="main()">확인</button>
+        </div>
+        
+        <div id="result1" class="msg-default">수식을 계산한 후 확인을 눌러주세요.</div>
+    </div>
+
+    <div class="guide-box record">
+        <div class="guide-header">
+            <h2 class="guide-title">📊 누적 기록</h2>
+            <button class="reset-btn" onclick="openResetModal()">누적기록 초기화</button>
+        </div>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>구분</th>
+                    <th>성공 횟수</th>
+                    <th>실패 횟수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>기록</td>
+                    <td id="winCount" class="count-highlight">0</td>
+                    <td id="loseCount" class="count-highlight">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="guide-box rules">
+        <div class="guide-header">
+            <h2 class="guide-title">⚠️ 주의사항</h2>
+        </div>
+        <ul class="rules-list" style="list-style: none; padding-left: 5px; margin: 0;">
+            <li style="margin-bottom: 6px; font-size: 15px;">• <b>반드시 기약분수 형태로 정리하여 입력하세요.</b></li>
+            <li style="color: var(--text-sub); font-size: 14px; padding-left: 10px;"> 예시: <span style="color:var(--danger); font-weight:700;">-2/4</span>로 입력 시 오답 처리되며, 약분한 <span style="color:var(--success); font-weight:700;">-1/2</span>만 정답으로 인정됩니다.</li>
+        </ul>
+    </div>
+
+    <div class="guide-box shortcuts">
+        <div class="guide-header">
+            <h2 class="guide-title">⌨ 키보드 단축키</h2>
+        </div>
+        <div class="shortcut-grid">
+            <div class="shortcut-item"><kbd>0</kbd> ~ <kbd>9</kbd> <span>숫자 입력</span></div>
+            <div class="shortcut-item"><kbd>-</kbd> / <kbd>/</kbd> <span>마이너스 부호 및 분수선 입력</span></div>
+            <div class="shortcut-item"><kbd>Backspace</kbd> <span>한 글자 지우기</span></div>
+            <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 삭제 / 모달 취소</span></div>
+            <div class="shortcut-item"><kbd>Enter</kbd> / <kbd>Space</kbd> <span>정답 확인 / 모달 확인</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let gameState = JSON.parse(localStorage.getItem('rationalMathGame')) || {
+        win: 0,
+        lose: 0,
+        currentProblemLatex: "",
+        ansNum: 0,
+        ansDen: 1
+    };
+
+    let isWrongState = false; 
+
+    function saveState() {
+        localStorage.setItem('rationalMathGame', JSON.stringify(gameState));
+    }
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+    function generateFraction() {
+        while(true) {
+            let den = Math.floor(Math.random() * 5) + 2;
+            let num = Math.floor(Math.random() * 18 - 9);
+            if (num === 0) continue;
+            let common = gcd(Math.abs(num), den);
+            num /= common; den /= common;
+            if (den === 1) continue;
+            return { n: num, d: den };
+        }
+    }
+
+    function initGame() {
+        updateRecordUI();
+        
+        if (gameState.currentProblemLatex && gameState.ansDen !== 1) {
+            const pDiv = document.getElementById("problem");
+            pDiv.innerHTML = gameState.currentProblemLatex;
+            MathJax.typesetPromise([pDiv]).catch(err => console.log(err));
+        } else {
+            startNewProblem();
+        }
+    }
+
+    function updateRecordUI() {
+        document.getElementById("winCount").textContent = gameState.win;
+        document.getElementById("loseCount").textContent = gameState.lose;
+    }
+
+    function startNewProblem() {
+        let f1 = generateFraction(), f2 = generateFraction();
+        let op = Math.floor(Math.random() * 2);
+        let resNum = (op == 0) ? (f1.n * f2.d + f2.n * f1.d) : (f1.n * f2.d - f2.n * f1.d);
+        let resDen = f1.d * f2.d;
+        let common = gcd(Math.abs(resNum), resDen);
+        
+        gameState.ansNum = resNum / common; 
+        gameState.ansDen = resDen / common;
+
+        let t1 = (f1.n > 0) ? `\\frac{${f1.n}}{${f1.d}}` : `-\\frac{${Math.abs(f1.n)}}{${f1.d}}`;
+        let t2 = (f2.n > 0) ? `\\frac{${f2.n}}{${f2.d}}` : `\\left(-\\frac{${Math.abs(f2.n)}}{${f2.d}}\\right)`;
+        
+        gameState.currentProblemLatex = `$ ${t1} ${op == 0 ? "+" : "-"} ${t2} $`;
+        saveState();
+
+        const pDiv = document.getElementById("problem");
+        pDiv.innerHTML = gameState.currentProblemLatex;
+        MathJax.typesetPromise([pDiv]).catch(err => console.log(err));
+    }
+
+    function appendNumber(num) { 
+        if (isWrongState) {
+            document.getElementById("txt").value = "";
+        }
+        resetFeedback();
+        document.getElementById("txt").value += num; 
+    }
+    
+    function resetFeedback() { 
+        document.querySelectorAll('td').forEach(el => el.className = 'count-highlight');
+        let res = document.getElementById("result1");
+        if (res) {
+            res.textContent = "수식을 계산한 후 확인을 눌러주세요.";
+            res.className = "msg-default";
+        }
+        isWrongState = false;
+    }
+    
+    function backspace() { 
+        if (isWrongState) {
+            clearInput();
+            return;
+        }
+        document.getElementById("txt").value = document.getElementById("txt").value.slice(0, -1); 
+    }
+    
+    function clearInput() { 
+        resetFeedback();
+        document.getElementById("txt").value = ""; 
+    }
+
+    function handleInputClick() {
+        if (isWrongState) {
+            clearInput();
+        }
+    }
+
+    function main() {
+        const input = document.getElementById("txt"), res = document.getElementById("result1");
+        if(input.value === "" || input.value === "-") return;
+        
+        let parts = input.value.split("/");
+        let userNum = parseInt(parts[0]), userDen = parseInt(parts[1] || 1);
+        if (userDen < 0) { userNum = -userNum; userDen = -userDen; }
+
+        document.querySelectorAll('td').forEach(el => el.className = 'count-highlight');
+
+        if(userNum === gameState.ansNum && userDen === gameState.ansDen) {
+            gameState.win++;
+            document.getElementById("winCount").textContent = gameState.win;
+            document.getElementById("winCount").className = 'count-highlight win-active';
+            
+            res.textContent = "🎉 정답입니다!"; 
+            res.className = "feedback-success"; 
+            isWrongState = false;
+            
+            gameState.currentProblemLatex = ""; 
+            saveState();
+            
+            input.value = ""; 
+            setTimeout(() => { resetFeedback(); startNewProblem(); }, 1200);
+        } else {
+            gameState.lose++;
+            document.getElementById("loseCount").textContent = gameState.lose;
+            document.getElementById("loseCount").className = 'count-highlight lose-active';
+            
+            res.textContent = "❌ 틀렸습니다!"; 
+            res.className = "feedback-danger"; 
+            isWrongState = true;
+            saveState();
+        }
+    }
+
+    function openResetModal() {
+        document.getElementById('overlay').classList.add('overlay-visible');
+    }
+
+    function closeResetModal() {
+        document.getElementById('overlay').classList.remove('overlay-visible');
+    }
+
+    function confirmReset() {
+        gameState = {
+            win: 0,
+            lose: 0,
+            currentProblemLatex: "",
+            ansNum: 0,
+            ansDen: 1
+        };
+        saveState();
+        updateRecordUI();
+        closeResetModal();
+        clearInput();
+        startNewProblem();
+    }
+
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('overlay');
+        if(modal && modal.classList.contains('overlay-visible')) {
+            if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); confirmReset(); }
+            if(e.key === 'Escape') { e.preventDefault(); closeResetModal(); }
+        } else {
+            if(e.key >= '0' && e.key <= '9') appendNumber(e.key);
+            else if(e.key === '-' || e.key === '/') appendNumber(e.key);
+            else if(e.key === 'Backspace') backspace();
+            else if(e.key === 'Escape') clearInput();
+            else if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); main(); }
+        }
     });
 
-      let wincount = 0;
-      let losecount = 0;
-      let ansNum = 0; 
-      let ansDen = 1; 
-      var timeout;
-
-      function gcd(a, b) {
-          return b === 0 ? a : gcd(b, a % b);
-      }
-
-      function generateFraction() {
-          let den, num;
-          while(true) {
-              den = Math.floor(Math.random() * 5) + 2; 
-              num = Math.floor(Math.random() * 18 - 9); 
-              if (num === 0) continue;
-
-              let common = gcd(Math.abs(num), den);
-              num = num / common;
-              den = den / common;
-
-              if (den === 1) continue; 
-              return { n: num, d: den };
-          }
-      }
-
-      function start() {
-          let f1 = generateFraction();
-          let f2 = generateFraction();
-          
-          let op = Math.floor(Math.random() * 2); // 0: +, 1: -
-
-          // 정답 계산
-          let resNum, resDen;
-          if(op == 0) {
-              resNum = (f1.n * f2.d) + (f2.n * f1.d);
-              resDen = f1.d * f2.d;
-          } else {
-              resNum = (f1.n * f2.d) - (f2.n * f1.d);
-              resDen = f1.d * f2.d;
-          }
-
-          // start() 함수에서 정답(ansNum, ansDen)을 미리 '기약분수' 형태로 저장해 둡니다.
-          let common = gcd(Math.abs(resNum), resDen);
-          ansNum = resNum / common;
-          ansDen = resDen / common;
-
-          // --- MathJax 표현 로직 ---
-          function getFracLatex(n, d) {
-            return `\\frac{${Math.abs(n)}}{${d}}`;
-          }
-
-          let term1 = "";
-          if (f1.n > 0) {
-            term1 = getFracLatex(f1.n, f1.d);
-          } else {
-            term1 = "-" + getFracLatex(f1.n, f1.d);
-          }
-
-          let opStr = (op == 0) ? "+" : "-";
-
-          let term2 = "";
-          if (f2.n > 0) {
-            term2 = getFracLatex(f2.n, f2.d);
-          } else {
-            term2 = `\\left( -${getFracLatex(f2.n, f2.d)} \\right)`;
-          }
-
-          let latexExpression = `$$ ${term1} ${opStr} ${term2} $$`;
-
-          const problemDiv = document.getElementById("problem");
-          problemDiv.innerHTML = latexExpression;
-          
-          if (window.MathJax) {
-            MathJax.typesetPromise([problemDiv]).catch((err) => console.log(err));
-          }
-      }
-
-      function resultreset() {
-          document.getElementById("result1").textContent = "정답여부";
-          document.getElementById("result1").style.backgroundColor = "white";
-          document.getElementById("result1").style.color = "black";
-      }
-
-      function appendNumber(num) {
-          const input = document.getElementById("txt");
-          input.value += num;
-      }
-
-      function backspace() {
-          const input = document.getElementById("txt");
-          input.value = input.value.slice(0, -1); 
-      }
-
-      function clearInput() {
-          const input = document.getElementById("txt");
-          input.value = ""; 
-      }
-
-      function main() {
-          const input = document.getElementById("txt");
-          let val = input.value;
-          
-          if(val != "") {
-              let parts = val.split("/");
-              let userNum = 0;
-              let userDen = 1;
-
-              if (parts.length === 2) {
-                  userNum = parseInt(parts[0]);
-                  userDen = parseInt(parts[1]);
-              } else if (parts.length === 1) {
-                  userNum = parseInt(parts[0]);
-                  userDen = 1;
-              } else {
-                  userNum = NaN;
-              }
-
-              let isCorrect = false;
-              if (!isNaN(userNum) && !isNaN(userDen) && userDen !== 0) {
-                  // 부호 표준화: 분모가 음수면 분자로 부호 이동 (예: 1/-2 -> -1/2)
-                  if (userDen < 0) {
-                      userNum = -userNum;
-                      userDen = -userDen;
-                  }
-
-                  // [수정된 로직] 기약분수 검사
-                  // ansNum, ansDen은 이미 기약분수 상태이므로,
-                  // 사용자가 입력한 분자/분모와 '정확히' 일치해야만 정답으로 처리합니다.
-                  if (userNum === ansNum && userDen === ansDen) {
-                      isCorrect = true;
-                  }
-              }
-
-              if(isCorrect) {
-                  wincount++;
-                  document.getElementById("result1").textContent = "정답입니다.";
-                  document.getElementById("result1").style.backgroundColor = "green";
-                  document.getElementById("result1").style.color = "white";
-                  timeout = setTimeout("resultreset()", 1000);
-                  document.getElementById("result2").textContent = wincount + "번 정답입니다.";
-                  start();
-              } else {
-                  losecount++;
-                  document.getElementById("result1").textContent = "틀렸습니다.";
-                  document.getElementById("result1").style.backgroundColor = "red";
-                  document.getElementById("result1").style.color = "white";
-                  timeout = setTimeout("resultreset()", 1000);
-                  document.getElementById("result3").textContent = losecount + "번 틀렸습니다.";
-              }
-          }
-          input.value = "";
-      }
-
-      onload = () => {
-          start();
-      }
-
-      document.addEventListener('keydown', function(event) {
-          const key = event.key;
-          if (key >= '0' && key <= '9') {
-              appendNumber(key);
-          } else if (key === '-') {
-              appendNumber('-');
-          } else if (key === '/') { 
-              appendNumber('/');
-          } else if (key === 'Backspace') {
-              backspace(); 
-          } else if (key === 'Escape') {
-              clearInput(); 
-          } else if (key === 'Enter') {
-              main(); 
-          }
-      });
-    </script>
-  </body>
+    window.onload = initGame;
+</script>
+</body>
 </html>

@@ -1,0 +1,595 @@
+/* ==========================================================================
+   [통합 마스터 디자인 시스템] 수학교육 퍼즐/게임 웹 앱 공통 스타일시트
+   ========================================================================== */
+
+/* 1. 디자인 토큰 및 전역 변수정의 */
+:root {
+  /* 기본 레이아웃 배경 및 카드 색상 */
+  --bg: #f0f2f5;
+  --card-bg: #ffffff;
+  --text-main: #222222;
+  --text-sub: #555555;
+  --border-color: #e1e4e8;
+
+  /* 시스템 인터랙션 및 상태 피드백 */
+  --active: #007bff;
+  --active-hover: #0056b3;
+  --success: #28a745;       /* 성공 알림 기본 배경색 (녹색) */
+  --danger: #dc3545;        /* 실패 알림 및 C버튼 테두리 기본색 (빨간색) */
+  --danger-hover: #bd2130;
+  
+  /* 다목적 버튼 회색조 */
+  --btn-gray: #e4e6eb;
+  --btn-gray-hover: #d8dadf;
+
+  /* 규격 라운딩 정의 */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  
+  /* 애니메이션 트랜지션 */
+  --transition-fast: all 0.1s ease;
+  --transition-normal: all 0.2s ease;
+}
+
+/* 2. 전역 초기화 및 폰트 렌더링 최적화 */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  touch-action: manipulation; /* 모바일 더블탭 줌 지연 방지 */
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-main);
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 3. 구조적 레이아웃 메인 컨테이너 */
+.main-wrapper,
+.wrapper,
+.main-container {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 퍼즐 대제목 선언 */
+h1, .main-title {
+  font-size: 32px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 5px;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
+}
+
+/* 공통 고정 카드 레이아웃 베이스 */
+.container-fixed,
+.problem-card,
+.game-card {
+  width: 100%;
+  background-color: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* 4. 단계(Stage) / 난이도 선택 그리드 인터페이스 */
+.stage-grid,
+.stage-grid-3,
+#stageContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+/* 4단계 혹은 6단계 분기 대응 구조 스케일 확장 */
+.stage-grid { grid-template-columns: repeat(4, 1fr); }
+#stageContainer:has(#btn4) { grid-template-columns: repeat(6, 1fr); }
+
+.stage-button,
+.stage-btn {
+  font-size: 15px;
+  padding: 12px 8px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--text-sub);
+  cursor: pointer;
+  font-weight: 700;
+  transition: var(--transition-normal);
+  text-align: center;
+  outline: none;
+}
+
+.stage-button:hover, .stage-btn:hover { background-color: #f8f9fa; border-color: var(--text-main); }
+.stage-button.active, .stage-btn.active {
+  background-color: var(--active) !important;
+  color: #ffffff !important;
+  border-color: var(--active) !important;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+}
+
+/* 5. 문제 출제용 스크린 및 수식(MathJax) 수평 정렬 컨테이너 */
+.problem-box,
+.formula-row-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  width: 100%;
+  margin: 10px 0;
+}
+
+.problem-box { flex-direction: column; gap: 8px; }
+
+#problem,
+#equationDisplay {
+  font-size: 40px;
+  font-weight: 800;
+  text-align: center;
+  margin: 0;
+  min-height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  word-break: break-all;
+  color: var(--text-main);
+}
+
+/* MathJax 컴포넌트 상하단 튀는 마진/패딩 강제 상쇄 제어 */
+#problem .mjx-chtml, 
+#problem mjx-container,
+#equationDisplay mjx-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* 수식 중간 정렬 수평 구조 등호(=) */
+.formula-equal {
+  font-size: 44px;
+  font-weight: 800;
+  color: var(--text-main);
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-wrapper-inline {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 일차함수 그래프 전용 목표/유저 컬러 가이드 패널 */
+.eq-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+.eq-display { font-size: 20px; font-weight: 700; display: flex; justify-content: center; align-items: center; min-height: 32px; }
+.target-color { color: #2196F3; }
+.user-color { color: #dc3545; }
+
+/* 6. 디스플레이 입력창 컴포넌트 규격화 (상시 활성 하이라이트 효과 적용) */
+#txt,
+#inputDisplay {
+  width: 100%;
+  max-width: 240px;
+  height: 64px;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid var(--active);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+  outline: none;
+  cursor: pointer;
+}
+
+/* 좌표형(x, y 분할 구조) 입력 상자 스타일 */
+.input-container { display: flex; justify-content: center; align-items: center; gap: 20px; width: 100%; }
+.input-wrapper { display: flex; align-items: center; gap: 10px; }
+.input-label { font-size: 26px; font-weight: 700; }
+.coordinate-bracket { font-size: 32px; font-weight: 500; color: var(--text-sub); }
+
+.input-box {
+  width: 120px;
+  height: 54px;
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition-normal);
+}
+.input-box.selected {
+  border-color: var(--active);
+  background-color: #e6f2ff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* 7. 공통 가상 키패드 및 조작 버튼 컨트롤러 */
+.full-width-container,
+.key-grid,
+.keypad-grid {
+  display: grid !important;
+  width: 100%;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+.action-row { display: grid; width: 100%; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 10px; }
+.control-area { display: grid; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+/* 키패드 및 일시 제어 버튼 */
+.button,
+.keypad-btn,
+.numberButton,
+.action-btn {
+  height: 54px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: #ffffff;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+.button:hover, .keypad-btn:hover, .numberButton:hover { background-color: #f8f9fa; border-color: #cbd0d6; }
+.button:active, .keypad-btn:active, .numberButton:active { transform: translateY(1.5px); background-color: #e1e4e8; }
+
+/* 🌟 [요구 반영] C 버튼(초기화/지우기) 함수 상자 규칙 찾기 기반의 강렬한 외곽선 스타일 연동 */
+button[onclick="clearInput()"],
+.button[onclick="clearInput()"],
+.keypad-btn[onclick="clearInput()"],
+#clearBtn {
+  border: 2px solid var(--danger) !important;
+  color: var(--danger) !important;
+  background-color: #ffffff !important;
+  font-weight: 800 !important;
+}
+button[onclick="clearInput()"]:hover, .keypad-btn[onclick="clearInput()"]:hover, #clearBtn:hover {
+  background-color: #fff5f5 !important;
+}
+button[onclick="clearInput()"]:active, .keypad-btn[onclick="clearInput()"]:active, #clearBtn:active {
+  background-color: #ffe3e3 !important;
+}
+
+
+/* 다음 문제 버튼을 빼고 확인(Confirm) 버튼만 파란색으로 남겨둡니다. */
+.confirm-btn, #confirmBtn {
+  background-color: var(--active) !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+.confirm-btn:hover, .next-btn:hover { background-color: var(--active-hover) !important; }
+
+/* 비활성화 상태 일괄 제어 정의 */
+button:disabled, .button:disabled, .keypad-btn:disabled {
+  background-color: #e1e4e8 !important;
+  color: #999999 !important;
+  border: 1px solid var(--border-color) !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* 8. 🌟 [요구 반영] 인라인 성공/실패 피드백 안내 메시지 박스 스타일 */
+#result-message,
+#message-box,
+#result1,
+.calc-guide-text,
+.msg-default {
+  text-align: center;
+  font-size: 16px;
+  color: var(--text-sub);
+  margin-top: 12px;
+  font-weight: 700;
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
+  transition: var(--transition-normal);
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 기본/대기 안내 박스 배경식 스타일 */
+.msg-default { background-color: #f8f9fa; color: var(--text-sub); border: 1px solid var(--border-color); }
+
+/* 인라인 피드백 알림 - 성공 시: 녹색 바탕 + 흰색 글씨 고정 */
+.feedback-success,
+.msg-success,
+#result-message.msg-success,
+#message-box[style*="background-color: var(--success)"],
+[id^="result"].success-state {
+  color: #ffffff !important;
+  background-color: var(--success) !important;
+  border: none !important;
+  font-weight: 800 !important;
+  font-size: 17px;
+  box-shadow: 0 4px 10px rgba(40, 167, 69, 0.25);
+}
+
+/* 인라인 피드백 알림 - 실패 시: 빨간색 바탕 + 흰색 글씨 고정 */
+.feedback-danger,
+.msg-danger,
+#result-message.msg-danger,
+#message-box[style*="background-color: var(--danger)"],
+[id^="result"].danger-state {
+  color: #ffffff !important;
+  background-color: var(--danger) !important;
+  border: none !important;
+  font-weight: 800 !important;
+  font-size: 17px;
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.25);
+}
+
+/* 9. 그래픽 드로잉 컴포넌트 (부등호 수직선 격자 및 기하 캔버스) */
+.canvas-wrapper {
+  width: 100%;
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+canvas {
+  background: #ffffff;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  max-width: 100%;
+  height: auto;
+}
+
+/* 수직선 객관식용 그리드 구조 */
+.canvas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; margin-top: 15px; }
+.canvas-item {
+  cursor: pointer; border: 2px solid var(--border-color); border-radius: var(--radius-sm);
+  transition: var(--transition-normal); background-color: #ffffff; width: 100%; aspect-ratio: 300 / 130;
+}
+.canvas-item:hover { transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+
+/* 대푯값 계산기용 넘버 카드 서클 */
+.card-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 12px; width: 100%; }
+.num-card {
+  width: 46px; height: 46px; background: var(--bg); border: 1px solid var(--border-color); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: var(--text-main);
+}
+
+/* 10. 통계 기록 대시보드 박스 및 규칙 세션 안내 패널 */
+.guide-box {
+  width: 100%; background-color: var(--card-bg); border-radius: var(--radius-md); padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03); display: flex; flex-direction: column; gap: 14px;
+}
+.guide-header { display: flex; justify-content: space-between; align-items: center; }
+.guide-title { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+
+.guide-box.record { border-left: 6px solid var(--danger); }
+.guide-box.record .guide-title { color: var(--danger); }
+.guide-box.rules, .guide-box.rules-box { border-left: 6px solid var(--active); }
+.guide-box.rules .guide-title, .guide-box.rules-box .guide-title { color: var(--active); }
+.guide-box.shortcuts { border-left: 6px solid var(--success); }
+.guide-box.shortcuts .guide-title { color: var(--success); }
+
+.rules-list { padding-left: 20px; color: var(--text-sub); font-size: 15px; line-height: 1.6; }
+.rules-list li { margin-bottom: 6px; }
+
+/* 누적 기록 테이블 스타일 고정 */
+/* record-table 스타일 보완 */
+.record-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  table-layout: fixed; /* 표 너비를 고정값으로 강제 */
+  box-sizing: border-box;
+}
+
+.record-table th, 
+.record-table td { 
+  border: 1px solid var(--border-color) ; /* 테두리 확실히 지정 */
+  padding: 10px 5px;                     /* 여백 조절 */
+  text-align: center; 
+  vertical-align: middle; 
+  word-wrap: break-word;                 /* 긴 글자 자동 줄바꿈 */
+  word-break: keep-all;                  /* 한글 단어 단위 줄바꿈 */
+  box-sizing: border-box;                /* 테두리가 크기에 포함되도록 설정 */
+}
+
+/* 첫 번째 행(헤더) 스타일 */
+
+.record-table th {
+  background-color: #f8f9fa; 
+  font-weight: 700; 
+  color: #555555;
+}
+
+.control-panel { 
+  width: 100%; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 20px; 
+  background: #f8f9fa; 
+  padding: 20px; 
+  border-radius: var(--radius-md); 
+  border: 1px solid var(--border-color); 
+}
+.slider-row { display: flex; align-items: center; gap: 20px; width: 100%; }
+.slider-row label { font-size: 16px; font-weight: 700; width: 100px; flex-shrink: 0; }
+input[type=range] { flex-grow: 1; cursor: pointer; height: 8px; }
+
+.check-btn, .confirm-btn { 
+  width: 100%; height: 60px; font-size: 20px; font-weight: 800; 
+  background-color: var(--active) !important; color: white !important; 
+  border: none !important; border-radius: var(--radius-sm); cursor: pointer; 
+  transition: var(--transition-normal); 
+}
+
+.count-highlight { 
+  font-weight: 700; 
+  color: var(--text-main); 
+  transition: color 0.3s ease, transform 0.2s ease, border 0.3s ease; 
+  padding: 10px 5px; /* 셀 내부 여백 유지 */
+  
+}
+
+/* 성공/실패 시 테두리 색상과 스타일을 명확히 지정 */
+.win-active { 
+  color: var(--success) !important; 
+  font-weight: 800; 
+}
+
+.lose-active { 
+  color: var(--danger) !important; 
+  font-weight: 800;   
+}
+.reset-btn {
+  background-color: #ffffff; border: 1px solid var(--danger); color: var(--danger);
+  padding: 6px 14px; font-size: 13px; font-weight: 700; border-radius: 6px;
+  cursor: pointer; transition: var(--transition-normal); outline: none;
+}
+.reset-btn:hover { background-color: var(--danger); color: #ffffff; }
+
+/* 11. 키보드 인터랙션용 물리 단축키 가이드 모듈 */
+.shortcut-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 20px; font-size: 15px; color: var(--text-sub); }
+.shortcut-item { display: flex; align-items: center; gap: 10px; line-height: 1.5; }
+kbd {
+  background-color: #f8f9fa; border: 1px solid #ced4da; border-bottom: 3px solid #adb5bd; border-radius: 6px;
+  color: #495057; display: inline-block; font-size: 12px; font-weight: 700; padding: 5px 9px; white-space: nowrap;
+}
+
+/* 12. 기록 초기화용 확인 경고 시스템 모달 레이어 */
+.modal-overlay,
+#customModal,
+#overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex; justify-content: center; align-items: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease; z-index: 1000;
+}
+.modal-overlay.show,
+.modal-overlay.overlay-visible,
+#customModal.show,
+#overlay.overlay-visible { opacity: 1; pointer-events: auto; }
+
+.modal-content, .modal-box {
+  background-color: var(--card-bg); padding: 24px; border-radius: var(--radius-lg);
+  width: 90%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  transform: scale(0.9); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center;
+}
+.modal-overlay.show .modal-content,
+.modal-overlay.overlay-visible .modal-box,
+#customModal.show .modal-box { transform: scale(1); }
+
+.modal-title { font-size: 19px; font-weight: 700; margin-bottom: 12px; color: var(--text-main); }
+.modal-text { font-size: 15px; color: var(--text-sub); margin-bottom: 20px; line-height: 1.4; }
+.modal-buttons { display: flex; gap: 10px; }
+.modal-btn {
+  flex: 1; padding: 12px 0; font-size: 15px; font-weight: 700;
+  border-radius: var(--radius-sm); border: none; cursor: pointer; transition: var(--transition-normal);
+}
+.modal-btn.confirm { background-color: var(--danger); color: #ffffff; }
+.modal-btn.confirm:hover { background-color: var(--danger-hover); }
+.modal-btn.cancel { background-color: #e1e4e8; color: var(--text-main); }
+.modal-btn.cancel:hover { background-color: #cbd0d6; }
+
+/* 13. 모바일 디바이스 소형 스크린 최적화 반응형 미디어 쿼리 */
+@media (max-width: 768px) {
+  .canvas-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 576px) {
+  body { padding: 15px 10px; }
+  .container-fixed, .problem-card, .game-card { padding: 18px 15px; gap: 16px; }
+  
+  #stageContainer:has(#btn4) { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .stage-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  
+  .formula-row-container { gap: 8px; }
+  #problem, #equationDisplay { font-size: 30px; }
+  .formula-equal { font-size: 28px; }
+  
+  #txt, #inputDisplay { max-width: 100%; height: 54px; font-size: 24px; }
+  .input-box { width: 90px; height: 46px; font-size: 20px; }
+  .input-container { gap: 10px; }
+  
+  .button, .keypad-btn, .numberButton, .action-btn { height: 46px; font-size: 15px; }
+  .canvas-grid { grid-template-columns: 1fr; }
+  .shortcut-grid { grid-template-columns: 1fr; gap: 10px; }
+}
+
+/* ==========================================================================
+   다음 문제 버튼 상태 제어 (연립방정식 및 마스터 공통 적용)
+   ========================================================================== */
+
+/* [상태 1] 기본 및 비활성화 상태: 문제를 아직 안 풀었거나 틀렸을 때 (묵음 회색조) */
+#nextBtn,
+.next-btn,
+#nextBtn:disabled,
+.next-btn:disabled {
+    background-color: #f8f9fa !important; /* 연한 회색 배경 */
+    color: #adb5bd !important;           /* 흐린 회색 글자 */
+    border: 1.5px solid rgba(0, 0, 0, 0.15) !important; /* 연한 테두리 */
+    cursor: not-allowed !important;       /* 클릭 금지 포인터 */
+    box-shadow: none !important;          /* 그림자 제거 */
+    transform: none !important;           /* 누르는 효과 제거 */
+}
+
+/* [상태 2] 활성화 상태: 사용자가 정답을 맞혀 JavaScript가 '.is-active' 클래스를 부여했을 때 (파란색 전환) */
+#nextBtn.is-active,
+.next-btn.is-active {
+    background-color: var(--active) !important; /* 마스터 파란색 활성화 */
+    color: #ffffff !important;
+    border: none !important;
+    cursor: pointer !important;                /* 손가락 포인터 모양 */
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3) !important; /* 은은한 파란 그림자 */
+}
+
+/* [상태 3] 활성화된 버튼에 마우스를 올렸을 때 (Hover) */
+#nextBtn.is-active:hover,
+.next-btn.is-active:hover {
+    background-color: var(--active-hover) !important; /* 조금 더 짙은 파란색 */
+}
