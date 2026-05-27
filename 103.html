@@ -18,21 +18,22 @@
         margin: 10px 0;
     }
 
-    #problem { 
-        font-size: 48px; 
-        font-weight: 800; 
-        text-align: center;
-        margin: 0;
-        min-height: auto;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: auto;
-        flex: 1;
-        background: transparent;
-        border: none;
-        padding: 0;
-        word-break: break-all;
+/* 2. 문제 영역이 너무 커지지 않도록 조절 */
+#problem {
+    font-size: 48px;
+    font-weight: 800;
+    text-align: center;
+    flex: 1 1 auto;      /* 줄어들 수 있도록 설정 */
+    min-width: 0;        /* flex 자식 요소가 넘치지 않게 함 */
+    overflow: hidden;
+    white-space: nowrap; /* 한 줄 유지 */
+    text-overflow: ellipsis;
+}
+
+        /* MathJax 고유 상하 여백 강제 상쇄로 한 줄 정렬 매칭 */
+    #problem .mjx-chtml, #problem mjx-container {
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     /* 중간 등호(=) 스타일 */
@@ -41,9 +42,12 @@
         font-weight: 800;
         color: var(--text-main);
         flex: 0 0 auto;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
+        height: 64px; /* 입력창의 고정 높이와 매칭하여 세로축 중앙 기준선 고정 */
+        line-height: 1;
+        padding-bottom: 4px; /* 폰트 특성상 미세하게 아래로 처지는 현상 방지 보정 */
     }
 
     /* 입력창 영역의 중앙 정렬 배치 설정 */
@@ -58,6 +62,7 @@
     #txt { 
         width: 100%;
         max-width: 220px;
+        min-width: 60px;     /* 너무 작아지지 않게 최소 폭 설정 */
         height: 64px;
         font-size: 36px; 
         font-weight: 700; 
@@ -119,7 +124,7 @@
     /* 반응형 대응: 모바일 환경 레이아웃 */
     @media (max-width: 480px) {
         #problem {
-            font-size: 32px;
+            font-size: 28px;
         }
         .formula-equal {
             font-size: 28px;

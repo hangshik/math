@@ -54,17 +54,18 @@
       border-radius: var(--radius-md);
       overflow: hidden;
     }
-    .input-section {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      padding: 16px;
-      border-radius: var(--radius-md);
-      background-color: #f8f9fa;
-      border: 1px solid var(--border-color);
-    }
+.input-section {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap; /* 추가 */
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background-color: #f8f9fa;
+  border: 1px solid var(--border-color);
+}
     .section-label {
       font-size: 16px;
       font-weight: 700;
@@ -122,8 +123,21 @@
       .machine-area { flex-direction: column; align-items: center; gap: 16px; }
       .machine-box { width: 100%; min-height: 120px; }
       .history-container { width: 100%; }
-      .input-section { flex-wrap: wrap; justify-content: center; }
-      .btn-block-wide { height: 46px; font-size: 15px; }
+      
+/* [수정 부분] */
+  .input-section { 
+    flex-wrap: wrap; 
+    justify-content: center; 
+    text-align: center;
+  }
+  
+  /* 라벨을 100% 너비로 만들어 강제 줄바꿈 발생 */
+  .section-label { 
+    flex-basis: 100%; 
+    margin-bottom: 5px; 
+  }
+  
+  .btn-block-wide { height: 46px; font-size: 15px; } 
     }
   </style>
 </head>

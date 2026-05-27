@@ -31,7 +31,37 @@
 <style>
     /* 마스터 명세와 구조가 겹치지 않는 레이아웃 속성 지정 */
     .problem-card { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+
+/* 입력 컨테이너 기본값 (가로 배치) */
+  .input-container { 
+    display: flex; 
+    flex-direction: row; 
+    gap: 20px; 
+    justify-content: center;
+    width: 100%; 
+  }
+
+  .input-wrapper { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px;
+  }
+
+  /* 💡 화면이 작아질 때(480px 이하) 적용할 설정 */
+  @media (max-width: 480px) {
+    .input-container { 
+      flex-direction: column; /* 세로로 변경 */
+      align-items: center;
+      gap: 10px;
+    }
     
+    .input-wrapper {
+      width: 100%;
+      max-width: 200px; /* 입력칸이 너무 길어지는 것 방지 */
+      justify-content: space-between;
+    }
+  }
+
     #problem { 
       font-size: 30px; 
       min-height: 110px; 

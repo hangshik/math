@@ -456,8 +456,40 @@ canvas {
   border-radius: var(--radius-md); 
   border: 1px solid var(--border-color); 
 }
-.slider-row { display: flex; align-items: center; gap: 20px; width: 100%; }
-.slider-row label { font-size: 16px; font-weight: 700; width: 100px; flex-shrink: 0; }
+/* .slider-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+.slider-row label { font-size: 16px; font-weight: 700; width: 100px; flex-shrink: 0; } */
+
+/* slider-row 내부의 간격 및 배치 조정 */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* 라벨과 슬라이더 사이의 간격을 조금 좁힘 */
+  width: 100%;
+}
+
+/* 라벨의 너비를 고정하여 레이아웃 흔들림 방지 */
+.slider-row label {
+  font-size: 36px;
+  font-weight: 700; 
+  flex-shrink: 0;
+  width: 70px; 
+  font-size: 0.9rem;
+}
+
+/* 슬라이더가 남은 공간을 차지하도록 설정 */
+.slider-row input[type="range"] {
+  flex-grow: 1;
+}
+
+/* 숫자 표시 영역(valA, valB) 스타일 수정 */
+.value-display {
+  flex-shrink: 0;
+  width: 35px; /* 너비를 고정하여 화면 이탈 방지 */
+  text-align: right;
+  font-family: monospace;
+  font-weight: bold;
+}
+
 input[type=range] { flex-grow: 1; cursor: pointer; height: 8px; }
 
 .check-btn, .confirm-btn { 

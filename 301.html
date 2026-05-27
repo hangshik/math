@@ -338,8 +338,8 @@
       <div class="choices-grid" id="choicesBox"></div>
       
       <div class="button-container" style="display: flex; gap: 10px; margin-top: 10px; width: 100%;">
-        <button id="skipBtn" class="button" style="flex: 1;" onclick="skipToNewQuizAction()">새로운 문제 (N)</button>
-        <button id="nextBtn" class="keypad-btn next-btn" style="flex: 1; font-size: 16px;" onclick="generateNewQuizAction()" disabled>다음 문제 (Enter / Space)</button>
+        <button id="skipBtn" class="button" style="flex: 1;" onclick="skipToNewQuizAction()">새로운 문제</button>
+        <button id="nextBtn" class="keypad-btn next-btn" style="flex: 1; font-size: 16px;" onclick="generateNewQuizAction()" disabled>다음 문제</button>
       </div>
     </div>
 
@@ -572,7 +572,7 @@
         saveScoreStats();
         updateScoreUI("correct");
         
-        inlineFeedback.textContent = "🎉 정답입니다! 다음 문제 버튼을 누르세요.";
+        inlineFeedback.textContent = "🎉 정답입니다!";
         inlineFeedback.className = "feedback-success"; 
         
         nextBtn.disabled = false;
@@ -589,7 +589,7 @@
           updateScoreUI("wrong");
           buttonElement.disabled = true; 
           
-          inlineFeedback.textContent = "❌ 오답입니다. 다른 식을 계산하여 다시 풀어보세요!";
+          inlineFeedback.textContent = "❌ 오답입니다.";
           inlineFeedback.className = "feedback-danger"; 
         }
       }
