@@ -118,6 +118,12 @@
       background-color: var(--active-hover) !important;
     }
 
+      .input-box {
+    max-width: 100%;
+        width: 100px;
+    
+  }
+
     /* 모바일 환경 함수 상자 레이아웃 보정 미디어 쿼리 */
     @media (max-width: 576px) {
       .machine-area { flex-direction: column; align-items: center; gap: 16px; }
@@ -133,9 +139,10 @@
   
   /* 모바일 환경 입력칸 너비 60% 조정 */
   .input-box {
-    width: 60%;
+    width: 100%;
+    max-width: 60px;
   }
-  
+
   /* 라벨을 100% 너비로 만들어 강제 줄바꿈 발생 */
   .section-label { 
     flex-basis: 100%; 
