@@ -84,7 +84,7 @@
         width: 100%;
     }
 
-    /* [요청 반영] 2번 항목: "새 문제", "정답 확인" 버튼이 가로 전체폭을 채우도록 그리드 컨테이너화 */
+    /* "새 문제", "정답 확인" 버튼이 가로 전체폭을 채우도록 그리드 컨테이너화 */
     .control-grid-layout {
         display: grid;
         grid-template-columns: repeat(2, 1fr); /* 1:1 비율 균등 분할 배치 */
@@ -109,7 +109,7 @@
         border-color: #6c757d !important;
     }
 
-    /* [요청 반영] 3번 항목: "정답 확인" 버튼을 완벽한 전역 테마 파란색으로 빌드 */
+    /* "정답 확인" 버튼을 완벽한 전역 테마 파란색으로 빌드 */
     .btn-confirm-blue {
         background-color: var(--active) !important;
         color: #ffffff !important;
@@ -133,7 +133,7 @@
         cursor: not-allowed;
     }
 
-    /* [요청 반영] 1번 항목: 새 문제 횟수가 최근일 때 초록색이 아닌 파란색 전용 활성화 스타일 선언 */
+    /* 새 문제 횟수가 최근일 때 초록색이 아닌 파란색 전용 활성화 스타일 선언 */
     .skip-active-blue {
         background-color: rgba(0, 123, 255, 0.15) !important;
         color: var(--active) !important;
@@ -190,17 +190,19 @@
             <div id="problem">로딩 중...</div>
             <div class="formula-equal">=</div>
             <div class="input-wrapper-inline">
-                <input type="text" id="inputDisplay" readonly placeholder="예: 2^3*3" onclick="handleInputClick()">
+                <input type="text" id="inputDisplay" readonly placeholder="예: 2^3×5" onclick="handleInputClick()">
             </div>
         </div>
         
-        <div class="full-width-container" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+        <div class="full-width-container" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px;">
             <button class="keypad-btn" onclick="addChar('2')">2</button>
             <button class="keypad-btn" onclick="addChar('3')">3</button>
             <button class="keypad-btn" onclick="addChar('5')">5</button>
             <button class="keypad-btn" onclick="addChar('7')">7</button>
-            <button class="keypad-btn" onclick="addChar('^')">^</button>
-            <button class="keypad-btn" onclick="addChar('*')">×</button>
+            <button class="keypad-btn" onclick="addChar('11')">11</button>
+            <button class="keypad-btn" onclick="addChar('13')">13</button>
+            <button class="keypad-btn" style="grid-column: span 2;" onclick="addChar('^')">^</button>
+            <button class="keypad-btn" style="grid-column: span 2;" onclick="addChar('*')">×</button>
             <button class="keypad-btn" onclick="backspace()">←</button>
             <button class="keypad-btn" onclick="clearInput()">C</button>
         </div>
@@ -245,6 +247,7 @@
         <ul class="rules-list">
             <li>소수는 밑이 작은 순서대로 입력하세요.</li>
             <li>거듭제곱은 '^' 기호를 사용하여 표현하세요.</li>
+            <!-- <li>1단계는 소수 2개, 2단계는 소수 3개, 3단계는 11과 13을 포함한 소수 4개의 곱으로 구성되었습니다.</li> -->
         </ul>
     </div>
 
@@ -264,8 +267,9 @@
 </div>
 
 <script>
-let data = JSON.parse(localStorage.getItem('mathGame')) || { stage: 1, wins: 0, loses: 0, skips: 0, lastResult: null, problems: { 1: 0, 2: 0, 3: 0 }};
-let isWrongState = false; // 현재 오답 피드백 상태인지 기억하는 플래그
+// [수정] 이력 배열(history) 기본값 추가
+let data = JSON.parse(localStorage.getItem('mathGame')) || { stage: 1, wins: 0, loses: 0, skips: 0, lastResult: null, problems: { 1: 0, 2: 0, 3: 0 }, history: []};
+let isWrongState = false;
 
 function save() { localStorage.setItem('mathGame', JSON.stringify(data)); }
 
@@ -287,7 +291,6 @@ function updateUI() {
     const skipCountEl = document.getElementById('skipCount');
 
     if (winCountEl && loseCountEl && skipCountEl) {
-        // [요청 반영] 1번 항목: 새 문제(skip) 액티브 시 'win-active(녹색)' 대신 고유의 'skip-active-blue(파란색)' 주입 
         winCountEl.className = 'count-highlight' + (data.lastResult === 'win' ? ' win-active' : '');
         loseCountEl.className = 'count-highlight' + (data.lastResult === 'lose' ? ' lose-active' : '');
         skipCountEl.className = 'count-highlight' + (data.lastResult === 'skip' ? ' skip-active-blue' : '');
@@ -316,10 +319,27 @@ function generateProblem(isSkipAction = false) {
         data.lastResult = 'skip';
     }
     
+    if (!data.history) data.history = []; // 예전 브라우저 저장 데이터 대응 방어 코드
+    
     let primes = data.stage === 3 ? [2,3,5,7,11,13] : [2,3,5,7];
     let count = data.stage === 1 ? 2 : (data.stage === 2 ? 3 : 4);
     let res = 1;
-    for(let i=0; i<count; i++) res *= primes[Math.floor(Math.random() * primes.length)];
+    let attempts = 0;
+
+    // [수정] 뽑힌 숫자가 최근 5번 이내에 있던 숫자라면 다시 뽑기 (무한루프 방지 50회 제한)
+    do {
+        res = 1;
+        for(let i=0; i<count; i++) {
+            res *= primes[Math.floor(Math.random() * primes.length)];
+        }
+        attempts++;
+    } while (data.history.includes(res) && attempts < 50);
+
+    // 최근 기록 큐(Queue)에 추가 및 최대 5개 유지
+    data.history.push(res);
+    if (data.history.length > 5) {
+        data.history.shift();
+    }
     
     if (!data.problems) data.problems = { 1: 0, 2: 0, 3: 0 };
     data.problems[data.stage] = res;
@@ -334,42 +354,74 @@ function clickNewProblem() {
     generateProblem(true);
 }
 
+function isPrime(num) {
+    if (num <= 1) return false;
+    if (num === 2) return true;
+    if (num % 2 === 0) return false;
+    for (let i = 3; i <= Math.sqrt(num); i += 2) {
+        if (num % i === 0) return false;
+    }
+    return true;
+}
+
 function checkAnswer() {
     let input = document.getElementById('inputDisplay').value;
     let r1 = document.getElementById("result1");
     if (!r1) return;
     
     try {
-        let val = eval(input.replace(/\^/g, '**').replace(/x/g, '*').replace(/X/g, '*'));
+        let val;
+        try {
+            val = eval(input.replace(/\^/g, '**').replace(/×/g, '*'));
+        } catch(err) {
+            throw new Error("수식 형식이 올바르지 않습니다.");
+        }
+
+        if (val === undefined || isNaN(val)) {
+            throw new Error("수식 형식이 올바르지 않습니다.");
+        }
         
-        let parts = input.split('*');
+        let parts = input.split('×');
         let bases = [];
         for (let part of parts) {
             let base = part.split('^')[0];
-            if (isNaN(base) || base === "") throw new Error();
+            if (isNaN(base) || base === "") throw new Error("수식 형식이 올바르지 않습니다.");
             bases.push(parseInt(base));
         }
 
-        let isSorted = true;
-        for (let i = 0; i < bases.length - 1; i++) {
-            if (bases[i] >= bases[i + 1]) { isSorted = false; break; }
+        if (val !== data.problems[data.stage]) {
+            throw new Error(`계산 결과가 틀립니다. (입력한 수식의 결과: ${val})`);
         }
 
-        if(val === data.problems[data.stage] && isSorted) {
-            data.wins++;
-            data.lastResult = 'win';
-            isWrongState = false; // 정답이므로 오답 상태 해제
-            r1.textContent = "🎉 정답입니다!"; 
-            r1.className = "feedback-success";
-            data.problems[data.stage] = 0;
-            save(); updateUI();
-            setTimeout(() => { generateProblem(false); }, 1000);
-        } else throw new Error();
+        for (let base of bases) {
+            if (!isPrime(base)) {
+                throw new Error(`소인수분해가 덜 되었습니다. (${base}은(는) 소수가 아닙니다.)`);
+            }
+        }
+
+        for (let i = 0; i < bases.length - 1; i++) {
+            if (bases[i] > bases[i + 1]) {
+                throw new Error("밑이 작은 소수부터 순서대로 입력해야 합니다.");
+            } else if (bases[i] === bases[i + 1]) {
+                throw new Error("같은 소수의 곱은 거듭제곱('^') 기호를 사용해주세요.");
+            }
+        }
+
+        data.wins++;
+        data.lastResult = 'win';
+        isWrongState = false; 
+        r1.textContent = "🎉 정답입니다!"; 
+        r1.className = "feedback-success";
+        data.problems[data.stage] = 0;
+        save(); updateUI();
+        setTimeout(() => { generateProblem(false); }, 1000);
+
     } catch(e) {
         data.loses++;
         data.lastResult = 'lose';
-        isWrongState = true; // 오답 상태 활성화
-        r1.textContent = "❌ 오답입니다! (입력칸을 누르면 지워집니다)"; 
+        isWrongState = true; 
+        let errorReason = e.message || "잘못된 입력입니다.";
+        r1.textContent = `❌ 오답입니다! - ${errorReason}`; 
         r1.className = "feedback-danger";
         save(); updateUI();
     }
@@ -387,7 +439,7 @@ function resetFeedback() {
         r1.textContent = "수식을 입력한 후 정답 확인을 눌러주세요.";
         r1.className = "msg-default";
     }
-    isWrongState = false; // 상태 초기화
+    isWrongState = false;
 }
 
 function openModal() { 
@@ -401,17 +453,22 @@ function closeModal() {
 }
 
 function confirmReset() {
-    data = { stage: 1, wins: 0, loses: 0, skips: 0, lastResult: null, problems: { 1: 0, 2: 0, 3: 0 }};
+    // [수정] 초기화 시 이력 데이터도 함께 비우도록 수정
+    data = { stage: 1, wins: 0, loses: 0, skips: 0, lastResult: null, problems: { 1: 0, 2: 0, 3: 0 }, history: []};
     save(); updateUI(); switchStage(1);
     closeModal();
 }
 
 function addChar(c) { 
     if (isWrongState) {
-        // 오답인 상태에서 키패드를 새로 누르면 깔끔하게 지우고 새로 입력 시작
         document.getElementById('inputDisplay').value = "";
     }
     resetFeedback();
+
+    if (c === '*') {
+        c = '×';
+    }
+
     document.getElementById('inputDisplay').value += c; 
     updateBtnState(); 
 }
