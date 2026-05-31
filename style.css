@@ -529,7 +529,7 @@ input[type=range] { flex-grow: 1; cursor: pointer; height: 8px; }
 .shortcut-item { display: flex; align-items: center; gap: 10px; line-height: 1.5; }
 kbd {
   background-color: #f8f9fa; border: 1px solid #ced4da; border-bottom: 3px solid #adb5bd; border-radius: 6px;
-  color: #495057; display: inline-block; font-size: 12px; font-weight: 700; padding: 5px 9px; white-space: nowrap;
+  color: #495057; display: inline-block; font-size: 14px; font-weight: 700; padding: 5px 9px; white-space: nowrap;
 }
 
 /* 12. 기록 초기화용 확인 경고 시스템 모달 레이어 */
