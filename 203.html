@@ -17,12 +17,8 @@
 
   <style>
     /* 전체 화면을 채우는 5열 균등 키패드 스타일 */
-    .keypad-container {
-      width: 100% !important;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+    
+.keypad-container { display: flex; flex-direction: column; gap: 8px; width: 100%; }
 
     .keypad-grid {
       display: grid !important;
@@ -31,13 +27,7 @@
       width: 100% !important;
     }
 
-    .keypad-btn {
-      width: 100% !important;
-      height: 58px !important;
-      font-size: 19px !important;
-      margin: 0 !important;
-      font-weight: 700;
-    }
+    
 
     /* 다음 문제 버튼 글자 크기 미세 조정 (버튼 크기에 맞춤) */
     .next-btn-text {
@@ -71,6 +61,7 @@
     .keypad-btn.next-btn.is-active:hover {
       background-color: var(--active-hover) !important;
     }
+
   </style>
 </head>
 <body>

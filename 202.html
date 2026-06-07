@@ -103,6 +103,8 @@
     .keypad-btn.next-btn.is-active:hover {
       background-color: var(--active-hover) !important;
     }
+
+
 </style>
 </head>
 <body>
@@ -154,7 +156,7 @@
           <button class="keypad-btn" onclick="appendNumber('-', event)">-</button>
           <button class="keypad-btn" onclick="appendNumber('/', event)">/</button>
           <button class="keypad-btn" onclick="backspace(event)">←</button>
-          <button class="keypad-btn" onclick="clearInput(event)">C</button>
+          <button class="keypad-btn" onclick="clearInput()">C</button>
           <button class="keypad-btn confirm-btn" onclick="checkAnswer(event)">✓ 확인</button>
         </div>
         <div class="keypad-row" style="margin-top: 4px;">
