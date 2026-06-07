@@ -79,9 +79,9 @@
         <div id="message-box" class="msg-default">모든 약수를 선택한 후 정답 확인을 누르세요.</div>
         
         <div class="control-area">
-            <button class="keypad-btn" onclick="generateNewTarget(true)">새로운 문제</button>
-            <button class="keypad-btn" onclick="clearInput()">초기화</button>
-            <button id="checkBtn" class="keypad-btn confirm-btn" onclick="checkAnswer()" disabled>정답 확인</button>
+            <button class="keypad-btn" onclick="generateNewTarget(true)">✨ 새 문제</button>
+            <button class="keypad-btn" onclick="clearInput()">🔄 처음으로</button>
+            <button id="checkBtn" class="keypad-btn confirm-btn" onclick="checkAnswer()" disabled>✓ 정답 확인</button>
         </div>
     </div>
 
@@ -129,10 +129,10 @@
                 <kbd>1</kbd> ~ <kbd>0</kbd> <span>순서대로 버튼 토글 선택</span>
             </div>
             <div class="shortcut-item">
-                <kbd>R</kbd> <span>새로운 문제 생성</span>
+                <kbd>R</kbd> <span>새 문제 생성</span>
             </div>
             <div class="shortcut-item">
-                <kbd>Esc</kbd> <span>선택 초기화</span>
+                <kbd>Esc</kbd> <span>처음으로</span>
             </div>
             <div class="shortcut-item">
                 <kbd>Enter</kbd> / <kbd>Space</kbd> <span>정답 확인 진행</span>
@@ -341,13 +341,14 @@
                 toggleNumber(n);
             }
             if(e.key === 'r' || e.key === 'R') generateNewTarget(true);
-            if(e.key === 'Escape') resetGame();
+            if(e.key === 'Escape') clearInput();
             
             const checkBtn = document.getElementById('checkBtn');
             if(checkBtn && !checkBtn.disabled && (e.key === 'Enter' || e.key === ' ')) {
                 e.preventDefault();
                 checkAnswer();
             }
+            
         }
     };
 

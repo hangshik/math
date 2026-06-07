@@ -205,11 +205,9 @@
             <button class="keypad-btn" style="grid-column: span 2;" onclick="addChar('*')">×</button>
             <button class="keypad-btn" onclick="backspace()">←</button>
             <button class="keypad-btn" onclick="clearInput()">C</button>
-        </div>
-        
-        <div class="control-grid-layout full-width-container" style="margin-top: 5px;">
-            <button class="btn-new-prob" onclick="clickNewProblem()">새 문제</button>
-            <button class="btn-confirm-blue" id="checkBtn" onclick="checkAnswer()" disabled>정답 확인</button>
+
+            <button class="btn-new-prob" style="grid-column: span 3;"  onclick="clickNewProblem()">✨ 새 문제</button>
+            <button class="btn-confirm-blue" style="grid-column: span 3;" id="checkBtn" onclick="checkAnswer()" disabled>✓ 정답 확인</button>
         </div>
         
         <div id="result1" class="msg-default">수식을 입력한 후 정답 확인을 눌러주세요.</div>
