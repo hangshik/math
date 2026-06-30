@@ -29,24 +29,23 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script" async></script>
 
 <style>
-    /* 마스터 명세와 구조가 겹치지 않는 레이아웃 속성 지정 */
     .problem-card { display: flex; flex-direction: column; align-items: center; gap: 20px; }
 
     #problem { 
-      font-size: 20px; 
+      font-size: 22px; 
       min-height: 110px; 
       display: flex; 
       flex-direction: column;
       align-items: center; 
+      justify-content: center;
       width: 100%; 
       background: transparent; 
       border: none; 
       padding: 10px 15px; 
     }
 
-    /* 💡 주어진 값 영역 스타일 (자동 줄바꿈 및 모바일 대응) */
     .given-values {
-      font-size: 1.3rem;
+      font-size: 1.4rem;
       font-weight: bold;
       margin-bottom: 20px;
       color: var(--primary);
@@ -54,41 +53,35 @@
       line-height: 1.6;
       word-break: keep-all;
     }
-    .mobile-br { display: none; }
 
-    /* 💡 공간 부족 시 자동으로 1줄씩 배치 (스크롤 방지) */
     .questions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 15px;
+      display: flex;
+      justify-content: center;
       width: 100%;
-      max-width: 800px;
+      max-width: 600px;
     }
     
-    /* 💡 유연한 배치(Flex-wrap)로 모바일 찌그러짐 방지 */
     .q-row {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
       background: #f8f9fa;
-      padding: 12px 15px;
+      padding: 15px 20px;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
       box-sizing: border-box;
     }
     
-    .q-label { font-size: 1.1rem; font-weight: bold; color: #495057; flex: 0 0 auto; }
-    .q-math { flex: 1 1 auto; text-align: center; font-size: 1.2rem; min-height: 40px; display: flex; align-items: center; justify-content: center; }
-    .q-equal { font-size: 1.2rem; font-weight: bold; color: #adb5bd; flex: 0 0 auto; }
+    .q-label { font-size: 1.2rem; font-weight: bold; color: #495057; }
+    .q-math { text-align: center; font-size: 1.4rem; min-height: 45px; display: flex; align-items: center; justify-content: center; }
+    .q-equal { font-size: 1.3rem; font-weight: bold; color: #adb5bd; }
     
     .input-box {
-      flex: 0 0 80px;
-      width: 80px;
+      width: 100px;
       text-align: center;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       padding: 8px;
       border: 2px solid #ced4da;
       border-radius: 6px;
@@ -103,42 +96,13 @@
       background: #eef5ff;
     }
 
-    /* 💡 모바일 화면(480px 이하)에서의 최적화 설정 */
     @media (max-width: 480px) {
-      .given-values {
-        font-size: 1.1rem;
-        margin-bottom: 15px;
-      }
-      .mobile-br { display: block; height: 5px; content: ""; } /* 모바일에서만 주어진 값에 줄바꿈 추가 */
-
-      .questions-grid { grid-template-columns: 1fr; }
-      
-      .q-row {
-        padding: 12px 10px;
-        gap: 8px;
-      }
-      /* 번호를 단독 줄로 위로 올리기 */
-      .q-label {
-        width: 100%;
-        text-align: left;
-        margin-bottom: -5px; 
-      }
-      .q-math {
-        font-size: 1.1rem;
-        flex: 1 1 auto;
-      }
-      .q-equal {
-        margin: 0 2px;
-      }
-      .input-box {
-        flex: 0 0 75px; 
-        width: 75px;
-        font-size: 1.1rem;
-        padding: 6px;
-      }
+      .given-values { font-size: 1.2rem; margin-bottom: 15px; }
+      .q-row { padding: 12px; gap: 8px; }
+      .q-math { font-size: 1.2rem; }
+      .input-box { width: 85px; font-size: 1.1rem; padding: 6px; }
     }
 
-    /* 💡 키패드 가로 최대한 사용 */
     .keypad-container { display: flex; flex-direction: column; gap: 8px; width: 100%; }
     .keypad-row { display: flex; gap: 8px; width: 100%; }
     .keypad-btn { flex: 1; }
@@ -162,6 +126,11 @@
     #nextBtn.is-active:hover, .keypad-btn.next-btn.is-active:hover {
       background-color: var(--active-hover) !important;
     }
+
+    .record-table tr.current-stage-row {
+      background-color: #eef5ff;
+      font-weight: bold;
+    }
 </style>
 </head>
 <body>
@@ -169,10 +138,19 @@
   <div class="main-container">
     <h1 class="main-title">문자와 식</h1>
 
+    <div id="stageCard" class="game-card">
+      <div class="stage-grid">
+        <button id="btn1" class="stage-button" onclick="setStage(1, event)">1단계</button>
+        <button id="btn2" class="stage-button" onclick="setStage(2, event)">2단계</button>
+        <button id="btn3" class="stage-button" onclick="setStage(3, event)">3단계</button>
+        <button id="btn4" class="stage-button" onclick="setStage(4, event)">4단계</button>
+      </div>
+    </div>
+
     <div class="game-card problem-card">
       <div id="problem">문제 생성 중...</div>
 
-      <div id="result1" class="msg-default">문제를 보고 각 빈칸에 정답을 입력하세요.</div>
+      <div id="result1" class="msg-default">문제를 보고 빈칸에 정답을 입력하세요.</div>
 
       <div class="keypad-container">
         <div class="keypad-row">
@@ -204,20 +182,37 @@
 
     <div id="recordCard" class="guide-box record">
       <div class="guide-header">
-        <div class="guide-title">📊 누적 기록</div>
+        <div class="guide-title">📊 단계별 누적 기록</div>
         <button class="reset-btn" onclick="openModal(event)">누적기록 초기화</button>
       </div>
       <table class="record-table">
-        <tbody>
+        <thead>
           <tr>
             <th>구분</th>
             <th>정답 횟수</th>
             <th>오답 횟수</th>
           </tr>
-          <tr>
-            <td>횟수</td>
-            <td id="result2" class="count-highlight">0회</td>
-            <td id="result3" class="count-highlight">0회</td>
+        </thead>
+        <tbody>
+          <tr id="rowStage1">
+            <td>1단계</td>
+            <td id="winStage1" class="count-highlight">0회</td>
+            <td id="loseStage1" class="count-highlight">0회</td>
+          </tr>
+          <tr id="rowStage2">
+            <td>2단계</td>
+            <td id="winStage2" class="count-highlight">0회</td>
+            <td id="loseStage2" class="count-highlight">0회</td>
+          </tr>
+          <tr id="rowStage3">
+            <td>3단계</td>
+            <td id="winStage3" class="count-highlight">0회</td>
+            <td id="loseStage3" class="count-highlight">0회</td>
+          </tr>
+          <tr id="rowStage4">
+            <td>4단계</td>
+            <td id="winStage4" class="count-highlight">0회</td>
+            <td id="loseStage4" class="count-highlight">0회</td>
           </tr>
         </tbody>
       </table>
@@ -226,9 +221,9 @@
     <div id="rulesCard" class="guide-box rules">
       <div class="guide-title">◈ 퍼즐 규칙</div>
       <ul class="rules-list">
-        <li>제시된 \(a, b, x, y\)의 값을 4개의 문제 식에 대입하여 식의 값을 구하세요.</li>
-        <li>문제 4의 정답이 분수인 경우, <b>반드시 기약분수 형태</b>로만 입력해야 정답으로 인정됩니다.</li>
-        <li>분수를 답으로 입력 시 분수 기호(/)를 사용하세요.</li>
+        <li>제시된 문자의 값을 식에 대입하여 식의 값을 구하세요.</li>
+        <li>정답이 분수인 경우, <b>반드시 기약분수 형태</b>로만 입력해야 정답으로 인정됩니다.</li>
+        <li>분수를 답으로 입력 시 분수 기호(/)를 사용하세요. (예: 1/2, -3/4)</li>
       </ul>
     </div>
 
@@ -239,21 +234,20 @@
         <div class="shortcut-item"><kbd>-</kbd> <span>음수 기호</span></div>
         <div class="shortcut-item"><kbd>/</kbd> <span>분수 기호</span></div>
         <div class="shortcut-item"><kbd>Backspace</kbd> <span>지우기</span></div>
-        <div class="shortcut-item"><kbd>Tab</kbd> <span>입력창 이동</span></div>
         <div class="shortcut-item"><kbd>Enter</kbd> <span>정답 확인</span></div>
         <div class="shortcut-item"><kbd>Space</kbd> <span>다음 문제</span></div>
-        <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 초기화</span></div>
+        <div class="shortcut-item"><kbd>Esc</kbd> <span>입력 전체 지우기</span></div>
       </div>
     </div>
   </div>
 
   <div id="customModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
     <div class="modal-content">
-      <div class="modal-title">누적 기록 초기화</div>
-      <div class="modal-text">누적 기록을 모두 삭제하시겠습니까?</div>
+      <div class="modal-title">전체 누적 기록 초기화</div>
+      <div class="modal-text">1단계부터 4단계까지의 모든 누적 기록을 삭제하시겠습니까?</div>
       <div class="modal-buttons">
         <button class="modal-btn cancel" onclick="closeModal(event)">취소</button>
-        <button class="modal-btn confirm" onclick="resetScore(event)">초기화</button>
+        <button class="modal-btn confirm" onclick="resetAllScores(event)">초기화</button>
       </div>
     </div>
   </div>
@@ -266,13 +260,14 @@
 
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    let winCount = parseInt(localStorage.getItem('expr_winCount')) || 0;
-    let loseCount = parseInt(localStorage.getItem('expr_loseCount')) || 0;
-    let selectedInput = 1;
+    let currentStage = parseInt(localStorage.getItem('expr_stage')) || 1;
+    let winCounts = JSON.parse(localStorage.getItem('expr_winCounts')) || {1:0, 2:0, 3:0, 4:0};
+    let loseCounts = JSON.parse(localStorage.getItem('expr_loseCounts')) || {1:0, 2:0, 3:0, 4:0};
+    
     let isCurrentAnswerCorrect = false;
-    let lastAnswers = [null, null, null, null];
+    let lastAnswer = null;
+    let currentCorrectAns = "";
 
-    // 기약분수 로직
     function gcd(a, b) {
       while (b) { let t = b; b = a % b; a = t; }
       return Math.abs(a);
@@ -294,36 +289,52 @@
       if (e && e.target && typeof e.target.blur === 'function') e.target.blur();
     }
 
-    function selectInput(target, e) {
+    function setStage(stage, e) {
       if (e) blurTarget(e);
-      selectedInput = target;
+      currentStage = stage;
+      localStorage.setItem('expr_stage', stage);
       
-      for(let i=1; i<=4; i++) {
-        const el = document.getElementById('input' + i);
-        if (el) el.classList.remove('selected');
-      }
+      updateStageUI();
       
-      const res = document.getElementById('result1');
-      if(!isCurrentAnswerCorrect) {
-        res.textContent = "답안을 입력 중입니다...";
-        res.className = "msg-default";
-        res.removeAttribute("style");
+      const savedProblem = localStorage.getItem('expr_currentProblem_stage_' + currentStage);
+      if (savedProblem) {
+        renderProblem(JSON.parse(savedProblem));
+      } else {
+        generateProblem(true);
       }
+    }
 
-      const activeInput = document.getElementById('input' + target);
-      if (activeInput) activeInput.classList.add('selected');
+    function updateStageUI() {
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById("btn" + i).classList.toggle("active", i === currentStage);
+      }
+      
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`winStage${i}`).textContent = `${winCounts[i]}회`;
+        document.getElementById(`loseStage${i}`).textContent = `${loseCounts[i]}회`;
+        
+        const row = document.getElementById(`rowStage${i}`);
+        if (i === currentStage) {
+          row.classList.add("current-stage-row");
+        } else {
+          row.classList.remove("current-stage-row");
+        }
+      }
+      resetTextColors();
     }
 
     function resetTextColors() {
-      document.getElementById('result2').className = 'count-highlight';
-      document.getElementById('result3').className = 'count-highlight';
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`winStage${i}`).className = 'count-highlight';
+        document.getElementById(`loseStage${i}`).className = 'count-highlight';
+      }
     }
 
     function appendNumber(num, e) {
       if (e) blurTarget(e);
       if (isCurrentAnswerCorrect) return;
       resetTextColors(); 
-      const input = document.getElementById('input' + selectedInput);
+      const input = document.getElementById('inputBox');
       if (input) input.value += num;
       resetMsg();
     }
@@ -332,7 +343,7 @@
       if (e) blurTarget(e);
       if (isCurrentAnswerCorrect) return;
       resetTextColors(); 
-      const input = document.getElementById('input' + selectedInput);
+      const input = document.getElementById('inputBox');
       if (input) input.value = input.value.slice(0, -1);
       resetMsg();
     }
@@ -341,7 +352,7 @@
       if (e) blurTarget(e);
       if (isCurrentAnswerCorrect) return;
       resetTextColors(); 
-      const input = document.getElementById('input' + selectedInput);
+      const input = document.getElementById('inputBox');
       if (input) input.value = "";
       resetMsg();
     }
@@ -366,9 +377,9 @@
     window.generateProblem = function(forceGenerate = false, e) {
       if (e) blurTarget(e);
       if (!forceGenerate) {
-        const savedProblem = localStorage.getItem('expr_currentProblem');
+        const savedProblem = localStorage.getItem('expr_currentProblem_stage_' + currentStage);
         if (savedProblem) {
-          loadSavedProblem(JSON.parse(savedProblem));
+          renderProblem(JSON.parse(savedProblem));
           return;
         }
       }
@@ -377,126 +388,110 @@
       document.getElementById('nextBtn').classList.remove('is-active');
       isCurrentAnswerCorrect = false;
 
-      // a,b,x,y (표시됨) & c,d,k,l,m,n (보이지 않지만 연산용으로 생성)
-      let a = getValidRandom(), b = getValidRandom(), x = getValidRandom(), y = getValidRandom();
-      let c = getValidRandom(), d = getValidRandom(), k = getValidRandom();
-      let l = getValidRandom(), m = getValidRandom(), n = getValidRandom();
-
-      // Q1 유형 (cx±k, dy±k)
-      let type1 = Math.floor(Math.random() * 2);
-      let op1 = getOp();
-      let sign1 = op1 === '+' ? 1 : -1;
-      let q1_tex, q1_ans;
-      if (type1 === 0) {
-          q1_tex = `${c}x ${op1} ${Math.abs(k)}`;
-          q1_ans = String(c * x + sign1 * Math.abs(k));
-      } else {
-          q1_tex = `${d}y ${op1} ${Math.abs(k)}`;
-          q1_ans = String(d * y + sign1 * Math.abs(k));
-      }
-
-      // Q2 유형 (dx±cy±l, bx±cy±l, dx±ay±l)
-      let type2 = Math.floor(Math.random() * 3);
-      let op2a = getOp(), op2b = getOp();
-      let sign2a = op2a === '+' ? 1 : -1;
-      let sign2b = op2b === '+' ? 1 : -1;
-      let q2_tex, q2_ans;
-      if (type2 === 0) {
-          q2_tex = `${d}x ${op2a} ${Math.abs(c)}y ${op2b} ${Math.abs(l)}`;
-          q2_ans = String(d * x + sign2a * Math.abs(c) * y + sign2b * Math.abs(l));
-      } else if (type2 === 1) {
-          q2_tex = `${b}x ${op2a} ${Math.abs(c)}y ${op2b} ${Math.abs(l)}`;
-          q2_ans = String(b * x + sign2a * Math.abs(c) * y + sign2b * Math.abs(l));
-      } else {
-          q2_tex = `${d}x ${op2a} ${Math.abs(a)}y ${op2b} ${Math.abs(l)}`;
-          q2_ans = String(d * x + sign2a * Math.abs(a) * y + sign2b * Math.abs(l));
-      }
-
-      // Q3 유형 (ay^2±by, ax^2±bx, ay^2±by±m, ax^2±bx±m)
-      let type3 = Math.floor(Math.random() * 4);
-      let op3a = getOp(), op3b = getOp();
-      let sign3a = op3a === '+' ? 1 : -1;
-      let sign3b = op3b === '+' ? 1 : -1;
-      let q3_tex, q3_ans;
-      if (type3 === 0) {
-          q3_tex = `${a}y^2 ${op3a} ${Math.abs(b)}y`;
-          q3_ans = String(a * y * y + sign3a * Math.abs(b) * y);
-      } else if (type3 === 1) {
-          q3_tex = `${a}x^2 ${op3a} ${Math.abs(b)}x`;
-          q3_ans = String(a * x * x + sign3a * Math.abs(b) * x);
-      } else if (type3 === 2) {
-          q3_tex = `${a}y^2 ${op3a} ${Math.abs(b)}y ${op3b} ${Math.abs(m)}`;
-          q3_ans = String(a * y * y + sign3a * Math.abs(b) * y + sign3b * Math.abs(m));
-      } else {
-          q3_tex = `${a}x^2 ${op3a} ${Math.abs(b)}x ${op3b} ${Math.abs(m)}`;
-          q3_ans = String(a * x * x + sign3a * Math.abs(b) * x + sign3b * Math.abs(m));
-      }
-
-      // Q4 유형 ((ax+by)/n, axy±y/n)
-      let type4 = Math.floor(Math.random() * 2);
-      let q4_tex, q4_ans;
-      if (type4 === 0) {
+      let texStr = "", ansStr = "", givenStr = "";
+      
+      if (currentStage === 1) {
+        let c = getValidRandom(), x = getValidRandom(), y = getValidRandom(), k = getValidRandom();
+        let op = getOp();
+        let sign = op === '+' ? 1 : -1;
+        let type = Math.floor(Math.random() * 2);
+        
+        if (type === 0) {
+          givenStr = `x = ${x}`;
+          texStr = `${c}x ${op} ${Math.abs(k)}`;
+          ansStr = String(c * x + sign * Math.abs(k));
+        } else {
+          givenStr = `y = ${y}`;
+          texStr = `${c}y ${op} ${Math.abs(k)}`;
+          ansStr = String(c * y + sign * Math.abs(k));
+        }
+      } 
+      else if (currentStage === 2) {
+        let a = getValidRandom(), c = getValidRandom(), d = getValidRandom(), x = getValidRandom(), y = getValidRandom(), k = getValidRandom();
+        let op1 = getOp(), op2 = getOp();
+        let sign1 = op1 === '+' ? 1 : -1;
+        let sign2 = op2 === '+' ? 1 : -1;
+        let type = Math.floor(Math.random() * 3);
+        
+        if (type === 0) {
+          givenStr = `x = ${x},\\; y = ${y}`;
+          texStr = `${c}x ${op1} ${Math.abs(d)}y ${op2} ${Math.abs(k)}`;
+          ansStr = String(c * x + sign1 * Math.abs(d) * y + sign2 * Math.abs(k));
+        } else if (type === 1) {
+          givenStr = `x = ${x},\\; y = ${y}`;
+          texStr = `${a}x ${op1} ${Math.abs(c)}y ${op2} ${Math.abs(k)}`;
+          ansStr = String(a * x + sign1 * Math.abs(c) * y + sign2 * Math.abs(k));
+        } else {
+          givenStr = `x = ${x},\\; y = ${y}`;
+          texStr = `${c}x ${op1} ${Math.abs(a)}y ${op2} ${Math.abs(k)}`;
+          ansStr = String(c * x + sign1 * Math.abs(a) * y + sign2 * Math.abs(k));
+        }
+      } 
+      else if (currentStage === 3) {
+        let a = getValidRandom(), b = getValidRandom(), c = getValidRandom(), x = getValidRandom(), y = getValidRandom();
+        let op1 = getOp(), op2 = getOp();
+        let sign1 = op1 === '+' ? 1 : -1;
+        let sign2 = op2 === '+' ? 1 : -1;
+        let type = Math.floor(Math.random() * 4);
+        
+        if (type === 0) {
+          givenStr = `y = ${y}`;
+          texStr = `${a}y^2 ${op1} ${Math.abs(b)}y`;
+          ansStr = String(a * y * y + sign1 * Math.abs(b) * y);
+        } else if (type === 1) {
+          givenStr = `x = ${x}`;
+          texStr = `${a}x^2 ${op1} ${Math.abs(b)}x`;
+          ansStr = String(a * x * x + sign1 * Math.abs(b) * x);
+        } else if (type === 2) {
+          givenStr = `y = ${y}`;
+          texStr = `${a}y^2 ${op1} ${Math.abs(b)}y ${op2} ${Math.abs(c)}`;
+          ansStr = String(a * y * y + sign1 * Math.abs(b) * y + sign2 * Math.abs(c));
+        } else {
+          givenStr = `x = ${x}`;
+          texStr = `${a}x^2 ${op1} ${Math.abs(b)}x ${op2} ${Math.abs(c)}`;
+          ansStr = String(a * x * x + sign1 * Math.abs(b) * x + sign2 * Math.abs(c));
+        }
+      } 
+      else if (currentStage === 4) {
+        let a = getValidRandom(), b = getValidRandom(), c = getValidRandom(), x = getValidRandom(), y = getValidRandom();
+        if(c === 0) c = 2; 
+        let type = Math.floor(Math.random() * 2);
+        
+        if (type === 0) {
+          givenStr = `x = ${x},\\; y = ${y}`;
           let signB = b > 0 ? '+' : '-';
-          q4_tex = `\\frac{${a}x ${signB} ${Math.abs(b)}y}{${n}}`;
-          let frac = simplify(a * x + b * y, n);
-          q4_ans = fractionToString(frac);
-      } else {
-          let op4 = getOp();
-          let sign4 = op4 === '+' ? 1 : -1;
+          texStr = `\\frac{${a}x ${signB} ${Math.abs(b)}y}{${c}}`;
+          let frac = simplify(a * x + b * y, c);
+          ansStr = fractionToString(frac);
+        } else {
+          givenStr = `x = ${x},\\; y = ${y}`;
+          let op = getOp();
+          let sign = op === '+' ? 1 : -1;
+          let c_abs = Math.abs(c);
           
-          let n_abs = Math.abs(n);
-          let n_sign = n > 0 ? 1 : -1;
-          let effective_op_sign = sign4 * n_sign;
-          let op_display = effective_op_sign > 0 ? '+' : '-';
-          
-          q4_tex = `${a}xy ${op_display} \\frac{y}{${n_abs}}`;
-          let calc_num = a * x * y * n_abs + effective_op_sign * y;
-          let frac = simplify(calc_num, n_abs);
-          q4_ans = fractionToString(frac);
+          texStr = `${a}xy ${op} \\frac{y}{${c_abs}}`;
+          let calc_num = a * x * y * c_abs + sign * y;
+          let frac = simplify(calc_num, c_abs);
+          ansStr = fractionToString(frac);
+        }
       }
 
-      let currentProblemData = {
-          a, b, x, y,
-          q1_tex, q1_ans, q2_tex, q2_ans, q3_tex, q3_ans, q4_tex, q4_ans
-      };
-
-      localStorage.setItem('expr_currentProblem', JSON.stringify(currentProblemData));
-      renderProblem(currentProblemData);
-      resetProblemInputs();
+      let problemData = { givenStr, texStr, ansStr };
+      localStorage.setItem('expr_currentProblem_stage_' + currentStage, JSON.stringify(problemData));
+      renderProblem(problemData);
     }
 
     function renderProblem(data) {
       const pEl = document.getElementById("problem");
-      // 💡 a, b, x, y 수식을 각각의 블록으로 분리하여 모바일 등 좁은 화면에서 유연하게 줄바꿈 되도록 설정
       pEl.innerHTML = `
         <div class="given-values">
-          <div class="mobile-br"></div>
-          \\( a = ${data.a} \\), \\( b = ${data.b} \\), \\( x = ${data.x} \\), \\( y = ${data.y} \\)
+          \\( ${data.givenStr} \\) 일 때,
         </div>
         <div class="questions-grid">
           <div class="q-row">
-             <span class="q-label">1.</span>
-             <span class="q-math">\\( \\displaystyle ${data.q1_tex} \\)</span>
+             <span class="q-math">\\( \\displaystyle ${data.texStr} \\)</span>
              <span class="q-equal">=</span>
-             <input type="text" id="input1" class="input-box selected" readonly onclick="selectInput(1, event)">
-          </div>
-          <div class="q-row">
-             <span class="q-label">2.</span>
-             <span class="q-math">\\( \\displaystyle ${data.q2_tex} \\)</span>
-             <span class="q-equal">=</span>
-             <input type="text" id="input2" class="input-box" readonly onclick="selectInput(2, event)">
-          </div>
-          <div class="q-row">
-             <span class="q-label">3.</span>
-             <span class="q-math">\\( \\displaystyle ${data.q3_tex} \\)</span>
-             <span class="q-equal">=</span>
-             <input type="text" id="input3" class="input-box" readonly onclick="selectInput(3, event)">
-          </div>
-          <div class="q-row">
-             <span class="q-label">4.</span>
-             <span class="q-math">\\( \\displaystyle ${data.q4_tex} \\)</span>
-             <span class="q-equal">=</span>
-             <input type="text" id="input4" class="input-box" readonly onclick="selectInput(4, event)">
+             <input type="text" id="inputBox" class="input-box selected" readonly>
           </div>
         </div>
       `;
@@ -507,27 +502,8 @@
         });
       }
 
-      window.q1_ans = data.q1_ans;
-      window.q2_ans = data.q2_ans;
-      window.q3_ans = data.q3_ans;
-      window.q4_ans = data.q4_ans;
-    }
-
-    function loadSavedProblem(data) {
-      isCurrentAnswerCorrect = false;
-      document.getElementById('nextBtn').disabled = true;
-      document.getElementById('nextBtn').classList.remove('is-active');
-      renderProblem(data);
-      resetProblemInputs();
-    }
-
-    function resetProblemInputs() {
-      for(let i=1; i<=4; i++) {
-         const el = document.getElementById('input' + i);
-         if(el) el.value = "";
-      }
-      lastAnswers = [null, null, null, null];
-      selectInput(1);
+      currentCorrectAns = data.ansStr;
+      lastAnswer = null;
       resetMsg();
     }
 
@@ -535,64 +511,45 @@
       if (e) blurTarget(e);
       if (isCurrentAnswerCorrect) return;
 
-      const i1 = document.getElementById('input1').value.replace(/\s+/g, '');
-      const i2 = document.getElementById('input2').value.replace(/\s+/g, '');
-      const i3 = document.getElementById('input3').value.replace(/\s+/g, '');
-      const i4 = document.getElementById('input4').value.replace(/\s+/g, '');
-
+      const inputVal = document.getElementById('inputBox').value.replace(/\s+/g, '');
       const resEl = document.getElementById('result1');
-      const winEl = document.getElementById('result2');
-      const loseEl = document.getElementById('result3');
 
-      if (!i1 || !i2 || !i3 || !i4) {
-        resEl.textContent = "모든 문제의 빈칸에 답을 입력해 주세요.";
+      if (!inputVal) {
+        resEl.textContent = "빈칸에 답을 입력해 주세요.";
         resEl.className = "msg-default";
         resEl.style.border = "2px solid var(--danger)";
         resEl.style.color = "var(--danger)";
         return;
       }
 
-      if (i1 === lastAnswers[0] && i2 === lastAnswers[1] && i3 === lastAnswers[2] && i4 === lastAnswers[3]) return;
-
+      if (inputVal === lastAnswer) return;
       resEl.style.border = "none"; 
 
-      let wrong = [];
-      if (i1 !== window.q1_ans) wrong.push(1);
-      if (i2 !== window.q2_ans) wrong.push(2);
-      if (i3 !== window.q3_ans) wrong.push(3);
-      if (i4 !== window.q4_ans) wrong.push(4);
-
-      if (wrong.length === 0) {
-        resEl.textContent = `🎉 모두 정답입니다! 다음 문제를 진행할 수 있습니다.`;
+      if (inputVal === currentCorrectAns) {
+        resEl.textContent = `🎉 정답입니다! 다음 문제를 진행할 수 있습니다.`;
         resEl.className = "feedback-success"; 
         
-        winCount++;
-        localStorage.setItem('expr_winCount', winCount);
-        winEl.textContent = `${winCount}회`;
+        winCounts[currentStage]++;
+        localStorage.setItem('expr_winCounts', JSON.stringify(winCounts));
+        document.getElementById(`winStage${currentStage}`).textContent = `${winCounts[currentStage]}회`;
         
-        winEl.classList.add('win-active'); 
-        loseEl.classList.remove('lose-active');
-
         isCurrentAnswerCorrect = true;
         
         const nextBtn = document.getElementById('nextBtn');
         nextBtn.disabled = false;
         nextBtn.classList.add('is-active');
         
-        localStorage.removeItem('expr_currentProblem');
+        localStorage.removeItem('expr_currentProblem_stage_' + currentStage);
       } else {
-        resEl.textContent = `❌ 문제 ${wrong.join(', ')}번이 틀렸습니다!`;
+        resEl.textContent = `❌ 틀렸습니다! 다시 계산해보세요.`;
         resEl.className = "feedback-danger"; 
         
-        loseCount++;
-        localStorage.setItem('expr_loseCount', loseCount);
-        loseEl.textContent = `${loseCount}회`;
-        
-        loseEl.classList.add('lose-active');
-        winEl.classList.remove('win-active');
+        loseCounts[currentStage]++;
+        localStorage.setItem('expr_loseCounts', JSON.stringify(loseCounts));
+        document.getElementById(`loseStage${currentStage}`).textContent = `${loseCounts[currentStage]}회`;
       }
 
-      lastAnswers = [i1, i2, i3, i4];
+      lastAnswer = inputVal;
     }
 
     function openModal(e) {
@@ -609,17 +566,21 @@
       if(e.target.id === 'customModal') closeModal();
     }
 
-    function resetScore(e) {
+    // 모든 단계의 기록을 완전히 초기화하는 함수로 전면 수정
+    function resetAllScores(e) {
       if (e) blurTarget(e);
-      winCount = 0;
-      loseCount = 0;
-      localStorage.setItem('expr_winCount', 0);
-      localStorage.setItem('expr_loseCount', 0);
-      localStorage.removeItem('expr_currentProblem');
       
-      document.getElementById('result2').textContent = "0회";
-      document.getElementById('result3').textContent = "0회";
-      resetTextColors();
+      // 1단계부터 4단계까지 일괄 초기화
+      for (let i = 1; i <= 4; i++) {
+        winCounts[i] = 0;
+        loseCounts[i] = 0;
+        localStorage.removeItem('expr_currentProblem_stage_' + i);
+      }
+      
+      localStorage.setItem('expr_winCounts', JSON.stringify(winCounts));
+      localStorage.setItem('expr_loseCounts', JSON.stringify(loseCounts));
+      
+      updateStageUI();
       closeModal();
       generateProblem(true);
     }
@@ -635,17 +596,10 @@
         e.preventDefault();
         if (!document.getElementById('nextBtn').disabled) generateProblem(true);
       }
-      else if (e.key === 'Tab') {
-        e.preventDefault();
-        let next = selectedInput + 1;
-        if (next > 4) next = 1;
-        selectInput(next);
-      }
     });
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('result2').textContent = `${winCount}회`;
-      document.getElementById('result3').textContent = `${loseCount}회`;
+      updateStageUI();
     });
   </script>
 </body>
