@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>함수 그래프 계수 부호 맞추기 퍼즐</title>
+      <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHD0QPH39L"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-VHD0QPH39L');
+  </script>
+  
+  <!-- Pretendard 폰트 CDN -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <!-- 외부 디자인 시스템 연동 -->
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ==========================================================================
+       style.css와 중복되지 않는 본 퍼즐 전용 독자 스타일
+       ========================================================================== */
+    
+    /* 단계 선택 2열 균등 배치 (style.css에는 3/4열만 정의됨) */
+    .stage-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* 퍼즐 문제 타이틀 */
+    .equation-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    /* 캔버스 상위 컨테이너 */
+    .canvas-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    /* 계수 부호 선택 전용 패널 */
+    .coef-selection-panel {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f8f9fa;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .coef-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .coef-label {
+      font-size: 22px;
+      font-weight: 800;
+      width: 50px;
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    .coef-options {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .coef-btn {
+      flex: 1;
+      height: 50px;
+      font-size: 20px;
+      font-weight: 800;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--border-color);
+      background-color: #ffffff;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .coef-btn:hover {
+      background-color: #f0f4f8;
+      border-color: #cbd0d6;
+    }
+
+    .coef-btn.selected {
+      background-color: var(--active) !important;
+      color: #ffffff !important;
+      border-color: var(--active) !important;
+      box-shadow: 0 4px 8px rgba(0, 123, 255, 0.25);
+    }
+
+    /* 하단 버튼 제어부 (50% : 50%) */
+    .action-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .action-controls button {
+      height: 54px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .clear-btn-style {
+      border: 2px solid var(--danger);
+      color: var(--danger);
+      background-color: #ffffff;
+    }
+
+    .clear-btn-style:hover {
+      background-color: #fff5f5;
+    }
+
+    .confirm-btn-style {
+      border: none;
+      background-color: var(--active);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+    }
+
+    .confirm-btn-style:hover {
+      background-color: var(--active-hover);
+    }
+
+    @media (max-width: 576px) {
+      .equation-title { font-size: 22px; }
+      .coef-label { font-size: 18px; width: 40px; }
+      .coef-btn { height: 44px; font-size: 17px; }
+      .action-controls button { height: 48px; font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-wrapper">
+    <!-- [영역 1-A: 퍼즐 제목 영역] -->
+    <h1 class="main-title">함수 그래프 계수 부호 맞추기</h1>
+
+    <!-- [영역 1-B: 단계 선택 영역] -->
+    <div class="container-fixed">
+      <div class="stage-grid-2">
+        <button id="btnLinear" class="stage-btn active" onclick="switchStage('linear')">일차함수</button>
+        <button id="btnQuadratic" class="stage-btn" onclick="switchStage('quadratic')">이차함수</button>
+      </div>
+    </div>
+
+    <!-- [영역 2: 퍼즐 문제 영역] -->
+    <div class="container-fixed">
+      <div id="equationTitle" class="equation-title">y = ax + b</div>
+      
+      <!-- 좌표평면 캔버스 -->
+      <div class="canvas-container">
+        <canvas id="graphCanvas" width="360" height="360"></canvas>
+      </div>
+
+      <!-- 계수 부호 선택 패널 -->
+      <div id="coefPanel" class="coef-selection-panel"></div>
+    </div>
+
+    <!-- [영역 3: 조작 버튼] -->
+    <div class="action-controls">
+      <button class="clear-btn-style" onclick="clearSelection()">초기화 (C)</button>
+      <button id="confirmBtn" class="confirm-btn-style" onclick="checkAnswer()">정답 확인 (Enter)</button>
+    </div>
+
+    <!-- [영역 3: 인라인 알림 메시지] -->
+    <div id="result-message" class="msg-default">
+      그래프를 보고 각 계수의 부호를 선택한 후 [정답 확인]을 누르세요.
+    </div>
+
+    <!-- [영역 4: 누적 기록] -->
+    <div class="guide-box record">
+      <div class="guide-header">
+        <div class="guide-title">📊 누적 기록</div>
+        <button class="reset-btn" onclick="openResetModal()">누적기록 초기화</button>
+      </div>
+      <table class="record-table">
+        <thead>
+          <tr>
+            <th>단계</th>
+            <th>정답 횟수</th>
+            <th>실패 횟수</th>
+          </tr>
+        </thead>
+        <tbody id="recordTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- [영역 5: 퍼즐 규칙] -->
+    <div class="guide-box rules">
+      <div class="guide-title">◈ 퍼즐 규칙</div>
+      <ul class="rules-list">
+        <li>주어진 함수 그래프를 보고 각 계수(a, b, c)의 부호(+, -, 0)를 맞추는 퍼즐입니다.</li>
+        <li>그래프의 모양과 절편, 꼭짓점의 위치를 보고 각 계수(a, b, c)의 부호(+, 0, -)를 선택하세요.</li>
+        <li>모든 계수의 부호를 정확히 맞추어야 정답 처리 됩니다.</li>
+      </ul>
+    </div>
+
+    <!-- [영역 6: 키보드 단축키] -->
+    <!-- <div class="guide-box shortcuts">
+      <div class="guide-title">⌨ 키보드 단축키</div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item"><kbd>1</kbd> / <kbd>2</kbd> : 단계 선택 (일차 / 이차)</div>
+        <div class="shortcut-item"><kbd>Enter</kbd> / <kbd>Space</kbd> : 정답 확인</div>
+        <div class="shortcut-item"><kbd>C</kbd> / <kbd>R</kbd> : 계수 선택 초기화</div>
+      </div>
+    </div>
+  </div> -->
+
+  <!-- 결과 알림 팝업창 (모달 시스템) -->
+  <div id="resultModal" class="modal-overlay">
+    <div id="modalContentCard" class="modal-content">
+      <div id="modalTitle" class="modal-title">🎉 성공!</div>
+      <div id="modalText" class="modal-text">축하합니다! 그래프의 계수 부호를 정확히 맞추셨습니다.</div>
+      <div class="modal-buttons">
+        <button id="modalActionBtn" class="modal-btn" onclick="closeModalAndNext()">확인 (Enter)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기록 초기화 모달 -->
+  <div id="resetModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-title" style="color: var(--danger);">⚠️ 기록 초기화</div>
+      <div class="modal-text">모든 누적 학습 기록과 시도 횟수를 삭제하시겠습니까? 이 작업은 복구할 수 없습니다.</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeResetModal()">취소</button>
+        <button class="modal-btn confirm" onclick="confirmResetRecords()">초기화 실행</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       자바스크립트 데이터 관리 및 이중 출제 방지 로직
+       ========================================================================== */
+    const STORAGE_KEY = 'graph_coef_puzzle_data_v3';
+
+    const STAGE_CONFIG = {
+      linear: { name: '일차함수', keys: ['a', 'b'], eqText: 'y = ax + b' },
+      quadratic: { name: '이차함수', keys: ['a', 'b', 'c'], eqText: 'y = ax² + bx + c' }
+    };
+
+    let currentStage = 'linear';
+    let nextProblemTimer = null; // 중복 문제 생성 방지 타이머 핸들
+
+    let stageHistory = {
+      linear: { prob: null, userSel: { a: null, b: null }, solved: false },
+      quadratic: { prob: null, userSel: { a: null, b: null, c: null }, solved: false }
+    };
+
+    let records = {
+      linear: { wins: 0, losses: 0 },
+      quadratic: { wins: 0, losses: 0 }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStorage();
+      initPreventEvents();
+      initKeyboardListeners();
+
+      if (!stageHistory[currentStage].prob) {
+        generateNewProblem(currentStage);
+      }
+      renderUI();
+    });
+
+    function initPreventEvents() {
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('touchstart', e => {
+        if (e.touches.length > 1) e.preventDefault();
+      }, { passive: false });
+    }
+
+    function loadStorage() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.currentStage) currentStage = parsed.currentStage;
+          if (parsed.stageHistory) stageHistory = parsed.stageHistory;
+          if (parsed.records) {
+            ['linear', 'quadratic'].forEach(s => {
+              if (parsed.records[s]) {
+                const wins = parsed.records[s].wins || 0;
+                const attempts = parsed.records[s].attempts || 0;
+                const losses = parsed.records[s].losses !== undefined ? parsed.records[s].losses : Math.max(0, attempts - wins);
+                records[s] = { wins, losses };
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.error('스토리지 로드 오류:', e);
+      }
+    }
+
+    function saveStorage() {
+      try {
+        const data = { currentStage, stageHistory, records };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (e) {
+        console.error('스토리지 저장 오류:', e);
+      }
+    }
+
+    function getRandomA() {
+      const candidates = [-3, -2, -1, 1, 2, 3];
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    function getRandomBC() {
+      if (Math.random() < 0.3) return 0;
+      const candidates = [-5, -4, -3, -2, -1, 1, 2, 3, 4, 5];
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    function generateNewProblem(stage) {
+      const a = getRandomA();
+      const b = getRandomBC();
+      let c = 0;
+      if (stage === 'quadratic') {
+        c = getRandomBC();
+      }
+
+      stageHistory[stage] = {
+        prob: { a, b, c },
+        userSel: stage === 'linear' ? { a: null, b: null } : { a: null, b: null, c: null },
+        solved: false
+      };
+      saveStorage();
+    }
+
+    function getSignStr(val) {
+      if (val > 0) return '+';
+      if (val < 0) return '-';
+      return '0';
+    }
+
+    function renderUI() {
+      document.getElementById('btnLinear').classList.toggle('active', currentStage === 'linear');
+      document.getElementById('btnQuadratic').classList.toggle('active', currentStage === 'quadratic');
+      document.getElementById('equationTitle').textContent = STAGE_CONFIG[currentStage].eqText;
+
+      const currentData = stageHistory[currentStage];
+      drawGraph(currentData.prob, currentStage);
+      renderCoefPanel(currentData);
+      renderRecords();
+    }
+
+    function renderCoefPanel(currentData) {
+      const panel = document.getElementById('coefPanel');
+      panel.innerHTML = '';
+      const keys = STAGE_CONFIG[currentStage].keys;
+      const options = ['+', '-', '0'];
+
+      keys.forEach(key => {
+        const row = document.createElement('div');
+        row.className = 'coef-row';
+
+        const label = document.createElement('div');
+        label.className = 'coef-label';
+        label.textContent = `${key} :`;
+        row.appendChild(label);
+
+        const optsDiv = document.createElement('div');
+        optsDiv.className = 'coef-options';
+
+        options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'coef-btn';
+          if (currentData.userSel[key] === opt) {
+            btn.classList.add('selected');
+          }
+          btn.textContent = opt;
+          btn.onclick = () => selectCoefSign(key, opt);
+          optsDiv.appendChild(btn);
+        });
+
+        row.appendChild(optsDiv);
+        panel.appendChild(row);
+      });
+    }
+
+    function selectCoefSign(key, val) {
+      const currentData = stageHistory[currentStage];
+      currentData.userSel[key] = val;
+      saveStorage();
+      renderUI();
+    }
+
+    function drawGraph(prob, stage) {
+      const canvas = document.getElementById('graphCanvas');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      const cx = w / 2, cy = h / 2;
+      const scale = 20;
+
+      ctx.clearRect(0, 0, w, h);
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#f0f2f5';
+      ctx.lineWidth = 1;
+      for (let x = cx % scale; x <= w; x += scale) {
+        ctx.moveTo(x, 0); ctx.lineTo(x, h);
+      }
+      for (let y = cy % scale; y <= h; y += scale) {
+        ctx.moveTo(0, y); ctx.lineTo(w, y);
+      }
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#333333';
+      ctx.lineWidth = 2;
+      ctx.moveTo(15, cy); ctx.lineTo(w - 15, cy);
+      ctx.moveTo(cx, h - 15); ctx.lineTo(cx, 15);
+      ctx.stroke();
+
+      ctx.fillStyle = '#333333';
+      ctx.beginPath(); ctx.moveTo(w - 15, cy - 6); ctx.lineTo(w - 3, cy); ctx.lineTo(w - 15, cy + 6); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(cx - 6, 15); ctx.lineTo(cx, 3); ctx.lineTo(cx + 6, 15); ctx.fill();
+
+      ctx.font = 'bold 15px Pretendard, sans-serif';
+      ctx.fillStyle = '#222222';
+      ctx.fillText('x', w - 18, cy + 22);
+      ctx.fillText('y', cx - 22, 18);
+      ctx.fillText('0', cx - 16, cy + 18);
+
+      if (!prob) return;
+
+      ctx.beginPath();
+      ctx.strokeStyle = '#007bff';
+      ctx.lineWidth = 3.5;
+
+      if (stage === 'linear') {
+        const xMin = -10, xMax = 10;
+        const yMin = prob.a * xMin + prob.b;
+        const yMax = prob.a * xMax + prob.b;
+        ctx.moveTo(cx + xMin * scale, cy - yMin * scale);
+        ctx.lineTo(cx + xMax * scale, cy - yMax * scale);
+      } else {
+        let isFirst = true;
+        for (let x = -10; x <= 10; x += 0.05) {
+          const y = prob.a * x * x + prob.b * x + prob.c;
+          const px = cx + x * scale;
+          const py = cy - y * scale;
+          if (isFirst) { ctx.moveTo(px, py); isFirst = false; }
+          else { ctx.lineTo(px, py); }
+        }
+      }
+      ctx.stroke();
+    }
+
+    function switchStage(stage) {
+      if (currentStage === stage) return;
+      if (nextProblemTimer) {
+        clearTimeout(nextProblemTimer);
+        nextProblemTimer = null;
+      }
+      currentStage = stage;
+      if (!stageHistory[currentStage].prob) {
+        generateNewProblem(currentStage);
+      }
+      saveStorage();
+      renderUI();
+
+      const msgBox = document.getElementById('result-message');
+      msgBox.className = 'msg-default';
+      msgBox.textContent = '그래프를 보고 각 계수의 부호를 선택한 후 [정답 확인]을 누르세요.';
+    }
+
+    function clearSelection() {
+      const currentData = stageHistory[currentStage];
+      const keys = STAGE_CONFIG[currentStage].keys;
+      keys.forEach(k => currentData.userSel[k] = null);
+      saveStorage();
+      renderUI();
+
+      const msgBox = document.getElementById('result-message');
+      msgBox.className = 'msg-default';
+      msgBox.textContent = '선택이 초기화되었습니다. 계수의 부호를 다시 선택하세요.';
+    }
+
+    function checkAnswer() {
+      const currentData = stageHistory[currentStage];
+      const keys = STAGE_CONFIG[currentStage].keys;
+      const msgBox = document.getElementById('result-message');
+
+      const unselected = keys.some(k => !currentData.userSel[k]);
+      if (unselected) {
+        msgBox.className = 'feedback-danger';
+        msgBox.textContent = '⚠️ 모든 계수(a, b...)의 부호를 선택해주세요!';
+        return;
+      }
+
+      let isCorrect = true;
+      keys.forEach(k => {
+        if (currentData.userSel[k] !== getSignStr(currentData.prob[k])) {
+          isCorrect = false;
+        }
+      });
+
+      if (isCorrect) {
+        records[currentStage].wins++;
+        currentData.solved = true;
+
+        msgBox.className = 'feedback-success';
+        msgBox.textContent = '🎉 정답입니다! 잠시 후 새 문제가 자동으로 출제됩니다.';
+
+        saveStorage();
+        renderUI();
+        showResultModal(true);
+
+        if (nextProblemTimer) clearTimeout(nextProblemTimer);
+        nextProblemTimer = setTimeout(() => {
+          closeModalAndNext();
+        }, 1500);
+      } else {
+        records[currentStage].losses++;
+
+        msgBox.className = 'feedback-danger';
+        msgBox.textContent = '❌ 오답입니다. 그래프의 특징(기울기, y절편 등)을 다시 확인해보세요!';
+
+        saveStorage();
+        renderUI();
+        showResultModal(false);
+      }
+    }
+
+    function showResultModal(isSuccess) {
+      const modal = document.getElementById('resultModal');
+      const card = document.getElementById('modalContentCard');
+      const title = document.getElementById('modalTitle');
+      const text = document.getElementById('modalText');
+      const btn = document.getElementById('modalActionBtn');
+
+      if (isSuccess) {
+        card.style.borderTop = '6px solid var(--success)';
+        title.style.color = 'var(--success)';
+        title.textContent = '🎉 정답!';
+        text.textContent = '그래프의 계수 부호를 완벽하게 맞추셨습니다.';
+        btn.textContent = '확인 (Enter)';
+        btn.style.backgroundColor = 'var(--success)';
+        btn.style.color = '#ffffff';
+        btn.onclick = () => closeModalAndNext();
+      } else {
+        card.style.borderTop = '6px solid var(--danger)';
+        title.style.color = 'var(--danger)';
+        title.textContent = '❌ 틀렸습니다!';
+        text.textContent = '선택한 부호가 그래프와 다릅니다. 다시 시도해보세요!';
+        btn.textContent = '다시 시도';
+        btn.style.backgroundColor = 'var(--danger)';
+        btn.style.color = '#ffffff';
+        btn.onclick = () => closeModal();
+      }
+
+      modal.classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('resultModal').classList.remove('show');
+    }
+
+    function closeModalAndNext() {
+      if (nextProblemTimer) {
+        clearTimeout(nextProblemTimer);
+        nextProblemTimer = null;
+      }
+      closeModal();
+      generateNewProblem(currentStage);
+      renderUI();
+
+      const msgBox = document.getElementById('result-message');
+      msgBox.className = 'msg-default';
+      msgBox.textContent = '그래프를 보고 각 계수의 부호를 선택한 후 [정답 확인]을 누르세요.';
+    }
+
+    function openResetModal() {
+      document.getElementById('resetModal').classList.add('show');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.remove('show');
+    }
+
+    function confirmResetRecords() {
+      records = {
+        linear: { wins: 0, losses: 0 },
+        quadratic: { wins: 0, losses: 0 }
+      };
+      saveStorage();
+      renderUI();
+      closeResetModal();
+
+      const msgBox = document.getElementById('result-message');
+      msgBox.className = 'msg-default';
+      msgBox.textContent = '누적 기록이 초기화되었습니다.';
+    }
+
+    function renderRecords() {
+      const tbody = document.getElementById('recordTableBody');
+      tbody.innerHTML = '';
+
+      ['linear', 'quadratic'].forEach(stage => {
+        const rec = records[stage];
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${STAGE_CONFIG[stage].name}</strong></td>
+          <td class="count-highlight win-active">${rec.wins}회</td>
+          <td class="count-highlight lose-active">${rec.losses}회</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function initKeyboardListeners() {
+      window.addEventListener('keydown', e => {
+        const resModal = document.getElementById('resultModal');
+        const rstModal = document.getElementById('resetModal');
+
+        if (resModal.classList.contains('show')) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            document.getElementById('modalActionBtn').click();
+          }
+          return;
+        }
+
+        if (rstModal.classList.contains('show')) {
+          if (e.key === 'Escape') closeResetModal();
+          return;
+        }
+
+        if (e.key === '1') switchStage('linear');
+        else if (e.key === '2') switchStage('quadratic');
+        else if (e.key === 'c' || e.key === 'C' || e.key === 'r' || e.key === 'R') clearSelection();
+        else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          checkAnswer();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
