@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>분수의 덧셈과 뺄셈</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHD0QPH39L"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-VHD0QPH39L');
+  </script>
+<script>
+    window.MathJax = { 
+        tex: { 
+            inlineMath: [['$', '$'], ['\\(', '\\)']] 
+        },
+        chtml: {
+            displayAlign: 'center'
+        }
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+<link rel="stylesheet" href="style.css">
+<style>
+    /* 단계 선택 버튼 전용 그리드 */
+    .stage-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        width: 100%;
+    }
+
+    .formula-row-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    #problem { 
+        font-size: 32px; 
+        font-weight: 800;
+        text-align: center;
+        margin: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 0;
+        word-break: break-all;
+        min-height: 80px;
+    }
+    
+    /* MathJax 여백 및 수직 중앙 정렬 보정 */
+    #problem .mjx-chtml, 
+    #problem mjx-container {
+        margin: 0 !important;
+        padding: 0 !important;
+        vertical-align: middle !important;
+        outline: none !important;
+    }
+
+    mjx-frac {
+        padding: 0 2px !important;
+    }
+
+    .formula-equal {
+        font-size: 44px;
+        font-weight: 800;
+        color: var(--text-main);
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 64px;
+        line-height: 1;
+        padding-bottom: 4px;
+    }
+
+    .input-wrapper-inline {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #txt { 
+        width: 100%;
+        max-width: 220px;
+        height: 64px;
+        font-size: 36px; 
+        font-weight: 700; 
+        text-align: center; 
+        border: 2px solid var(--active); 
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); 
+        border-radius: 12px; 
+        background-color: #ffffff;
+        outline: none;
+        cursor: pointer;
+    }
+    
+    .full-width-container {
+        width: 100%;
+    }
+
+    /* '-' 버튼 제거 후 4열 기반 그리드로 깔끔하게 정리 */
+    .key-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+        width: 100%;
+    }
+
+    .confirm-btn-style {
+        grid-column: span 2;
+        background-color: var(--active) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        height: 52px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 3px 6px rgba(0, 123, 255, 0.2) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .confirm-btn-style:hover {
+        filter: brightness(0.9);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3) !important;
+    }
+
+    .confirm-btn-style:active {
+        transform: scale(0.98);
+    }
+
+    .msg-default {
+        background-color: #f1f3f5 !important;
+        color: var(--text-sub) !important;
+        padding: 12px 20px !important;
+        border-radius: 10px !important;
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+        font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+        #problem {
+            font-size: 24px;
+            min-height: 60px;
+        }
+        .formula-equal {
+            font-size: 28px;
+            height: 54px;
+            padding-bottom: 2px;
+        }
+        #txt {
+            height: 54px;
+            font-size: 26px;
+        }
+        .key-grid {
+            gap: 8px;
+        }
+        .button {
+            height: 50px;
+            font-size: 16px;
+        }
+        .confirm-btn-style {
+            height: 50px !important;
+            font-size: 16px !important;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div id="overlay" class="modal-overlay">
+    <div class="modal-box" style="border-top: 6px solid var(--danger);">
+        <h2 class="modal-title">누적 기록 초기화</h2>
+        <p class="modal-text">누적 기록을 모두 삭제하시겠습니까?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeResetModal()">취소</button>
+            <button class="modal-btn confirm" onclick="confirmReset()">초기화</button>
+        </div>
+    </div>
+</div>
+
+<div class="wrapper">
+    <h1 class="main-title">분수의 덧셈과 뺄셈</h1>
+    
+    <!-- 단계 선택 버튼 영역 -->
+    <div class="container-fixed" style="gap: 12px; padding: 16px 20px;">
+        <div class="stage-grid-2">
+            <button class="stage-btn active" id="stageBtn-1" onclick="selectStage(1)">1단계 (덧셈)</button>
+            <button class="stage-btn" id="stageBtn-2" onclick="selectStage(2)">2단계 (뺄셈)</button>
+        </div>
+    </div>
+
+    <div class="container-fixed" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        
+        <div class="formula-row-container">
+            <div id="problem">로딩 중...</div>
+            <div class="formula-equal">=</div>
+            <div class="input-wrapper-inline">
+                <input type="text" id="txt" readonly placeholder="?" onclick="handleInputClick()">
+            </div>
+        </div>
+        
+        <!-- 마이너스(-) 제거된 4열 가상 키패드 -->
+        <div class="key-grid full-width-container">
+            <button class="button" onclick="appendNumber(1)">1</button>
+            <button class="button" onclick="appendNumber(2)">2</button>
+            <button class="button" onclick="appendNumber(3)">3</button>
+            <button class="button" onclick="appendNumber(4)">4</button>
+            
+            <button class="button" onclick="appendNumber(5)">5</button>
+            <button class="button" onclick="appendNumber(6)">6</button>
+            <button class="button" onclick="appendNumber(7)">7</button>
+            <button class="button" onclick="appendNumber(8)">8</button>
+            
+            <button class="button" onclick="appendNumber(9)">9</button>
+            <button class="button" onclick="appendNumber(0)">0</button>
+            <button class="button" style="font-weight: 800;" onclick="appendNumber('/')">/</button>
+            <button class="button" onclick="backspace()">←</button>
+            
+            <button class="button" style="grid-column: span 1;" onclick="clearInput()">C</button>
+            <button class="confirm-btn-style" onclick="main()">✓ 정답 확인</button>
+        </div>
+        
+        <div id="result1" class="msg-default">수식을 계산한 후 확인을 눌러주세요.</div>
+    </div>
+
+    <div class="guide-box record">
+        <div class="guide-header">
+            <h2 class="guide-title">📊 누적 기록</h2>
+            <button class="reset-btn" onclick="openResetModal()">누적기록 초기화</button>
+        </div>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>단계</th>
+                    <th>성공 횟수</th>
+                    <th>실패 횟수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1단계 (덧셈)</td>
+                    <td id="winCount-1" class="count-highlight win-active">0</td>
+                    <td id="loseCount-1" class="count-highlight lose-active">0</td>
+                </tr>
+                <tr>
+                    <td>2단계 (뺄셈)</td>
+                    <td id="winCount-2" class="count-highlight win-active">0</td>
+                    <td id="loseCount-2" class="count-highlight lose-active">0</td>
+                </tr>
+                <tr class="total-row">
+                    <td>합계</td>
+                    <td id="totalWinCount" class="count-highlight win-active">0</td>
+                    <td id="totalLoseCount" class="count-highlight lose-active">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="guide-box rules">
+        <div class="guide-header">
+            <h2 class="guide-title">⚠️ 주의사항</h2>
+        </div>
+        <ul class="rules-list" style="list-style: none; padding-left: 5px; margin: 0;">
+            <li style="margin-bottom: 6px; font-size: 15px;">• <b>반드시 기약분수 형태로 정리하여 입력하세요.</b></li>
+            <li style="color: var(--text-sub); font-size: 14px; padding-left: 10px;"> 예시: <span style="color:var(--danger); font-weight:700;">2/4</span>로 입력 시 오답 처리되며, 약분한 <span style="color:var(--success); font-weight:700;">1/2</span>만 정답으로 인정됩니다.</li>
+        </ul>
+    </div>
+
+    <div class="guide-box shortcuts">
+        <div class="guide-header">
+            <h2 class="guide-title">⌨ 키보드 단축키</h2>
+        </div>
+        <div class="shortcut-grid">
+            <div class="shortcut-item"><kbd>0</kbd> ~ <kbd>9</kbd> <span>숫자 입력</span></div>
+            <div class="shortcut-item"><kbd>/</kbd> <span>분수선 입력</span></div>
+            <div class="shortcut-item"><kbd>Backspace</kbd> <span>한 글자 지우기</span></div>
+            <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 삭제 / 모달 취소</span></div>
+            <div class="shortcut-item"><kbd>Enter</kbd> / <kbd>Space</kbd> <span>정답 확인 / 모달 확인</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let gameState = {
+        currentStage: 1,
+        stageHistory: {
+            1: { currentProblemLatex: "", ansNum: 0, ansDen: 1, inputVal: "", win: 0, lose: 0 },
+            2: { currentProblemLatex: "", ansNum: 0, ansDen: 1, inputVal: "", win: 0, lose: 0 }
+        }
+    };
+
+    let isWrongState = false; 
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+    // 양수 기약분수 생성 함수
+    function generatePositiveFraction() {
+        while(true) {
+            let den = Math.floor(Math.random() * 8) + 2; // 2 ~ 9
+            let num = Math.floor(Math.random() * 8) + 1; // 1 ~ 8
+            let common = gcd(num, den);
+            num /= common; den /= common;
+            if (den === 1) continue; // 분모가 1인 경우 제외
+            return { n: num, d: den };
+        }
+    }
+
+    function loadState() {
+        const saved = localStorage.getItem('fracPositiveMathGame_v2');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                gameState = { ...gameState, ...parsed };
+            } catch(e) {
+                console.error("데이터 로드 실패", e);
+            }
+        }
+    }
+
+    function saveState() {
+        localStorage.setItem('fracPositiveMathGame_v2', JSON.stringify(gameState));
+    }
+
+    function initGame() {
+        loadState();
+        updateRecordUI();
+        updateStageUI();
+        
+        const curStage = gameState.currentStage;
+        if (gameState.stageHistory[curStage]?.currentProblemLatex) {
+            renderCurrentProblem();
+        } else {
+            startNewProblemForStage(curStage);
+        }
+    }
+
+    function selectStage(stageNum) {
+        if (gameState.currentStage === stageNum) return;
+
+        const input = document.getElementById("txt");
+        if (gameState.stageHistory[gameState.currentStage]) {
+            gameState.stageHistory[gameState.currentStage].inputVal = input.value;
+        }
+
+        gameState.currentStage = stageNum;
+        saveState();
+
+        updateStageUI();
+        resetFeedback();
+
+        if (!gameState.stageHistory[stageNum]?.currentProblemLatex) {
+            startNewProblemForStage(stageNum);
+        } else {
+            renderCurrentProblem();
+        }
+    }
+
+    function startNewProblemForStage(stageNum) {
+        let f1, f2, resNum, resDen;
+
+        if (stageNum === 1) { 
+            // 1단계: 덧셈
+            f1 = generatePositiveFraction();
+            f2 = generatePositiveFraction();
+            resNum = f1.n * f2.d + f2.n * f1.d;
+            resDen = f1.d * f2.d;
+        } else { 
+            // 2단계: 뺄셈 (결과가 항상 양수가 되도록 f1 > f2 보장)
+            while (true) {
+                f1 = generatePositiveFraction();
+                f2 = generatePositiveFraction();
+                let val1 = f1.n / f1.d;
+                let val2 = f2.n / f2.d;
+                if (val1 > val2) break;
+            }
+            resNum = f1.n * f2.d - f2.n * f1.d;
+            resDen = f1.d * f2.d;
+        }
+
+        let common = gcd(resNum, resDen);
+        let finalAnsNum = resNum / common;
+        let finalAnsDen = resDen / common;
+
+        let t1 = `\\dfrac{${f1.n}}{${f1.d}}`;
+        let t2 = `\\dfrac{${f2.n}}{${f2.d}}`;
+        let opSymbol = (stageNum === 1) ? "+" : "-";
+
+        const currentData = gameState.stageHistory[stageNum] || {};
+        gameState.stageHistory[stageNum] = {
+            currentProblemLatex: `$ ${t1} ${opSymbol} ${t2} $`,
+            ansNum: finalAnsNum,
+            ansDen: finalAnsDen,
+            inputVal: "",
+            win: currentData.win || 0,
+            lose: currentData.lose || 0
+        };
+
+        saveState();
+        renderCurrentProblem();
+    }
+
+    function renderCurrentProblem() {
+        const curStage = gameState.currentStage;
+        const history = gameState.stageHistory[curStage];
+
+        const pDiv = document.getElementById("problem");
+        pDiv.innerHTML = history.currentProblemLatex;
+        document.getElementById("txt").value = history.inputVal || "";
+
+        MathJax.typesetPromise([pDiv]).catch(err => console.log(err));
+    }
+
+    function updateStageUI() {
+        for (let i = 1; i <= 2; i++) {
+            const btn = document.getElementById(`stageBtn-${i}`);
+            if (btn) {
+                if (i === gameState.currentStage) btn.classList.add('active');
+                else btn.classList.remove('active');
+            }
+        }
+    }
+
+    function updateRecordUI() {
+        let totalWin = 0, totalLose = 0;
+
+        for (let i = 1; i <= 2; i++) {
+            const stageData = gameState.stageHistory[i] || { win: 0, lose: 0 };
+            const win = stageData.win || 0;
+            const lose = stageData.lose || 0;
+            totalWin += win;
+            totalLose += lose;
+
+            document.getElementById(`winCount-${i}`).textContent = win;
+            document.getElementById(`loseCount-${i}`).textContent = lose;
+        }
+
+        document.getElementById("totalWinCount").textContent = totalWin;
+        document.getElementById("totalLoseCount").textContent = totalLose;
+    }
+
+    function appendNumber(num) { 
+        const input = document.getElementById("txt");
+        if (isWrongState) {
+            input.value = "";
+        }
+        resetFeedback();
+
+        // 슬래시 중복 입력 방지
+        if (num === '/' && input.value.includes('/')) return;
+
+        input.value += num; 
+        gameState.stageHistory[gameState.currentStage].inputVal = input.value;
+        saveState();
+    }
+    
+    function resetFeedback() { 
+        let res = document.getElementById("result1");
+        if (res) {
+            res.textContent = "수식을 계산한 후 확인을 눌러주세요.";
+            res.className = "msg-default";
+        }
+        isWrongState = false;
+    }
+    
+    function backspace() { 
+        const input = document.getElementById("txt");
+        if (isWrongState) {
+            clearInput();
+            return;
+        }
+        input.value = input.value.slice(0, -1); 
+        gameState.stageHistory[gameState.currentStage].inputVal = input.value;
+        saveState();
+    }
+    
+    function clearInput() { 
+        resetFeedback();
+        const input = document.getElementById("txt");
+        input.value = ""; 
+        gameState.stageHistory[gameState.currentStage].inputVal = "";
+        saveState();
+    }
+
+    function handleInputClick() {
+        if (isWrongState) {
+            clearInput();
+        }
+    }
+
+    function main() {
+        const input = document.getElementById("txt"), res = document.getElementById("result1");
+        if(input.value === "") return;
+        
+        let parts = input.value.split("/");
+        let userNum = parseInt(parts[0]), userDen = parseInt(parts[1] || 1);
+
+        const curStage = gameState.currentStage;
+        const targetData = gameState.stageHistory[curStage];
+
+        if(userNum === targetData.ansNum && userDen === targetData.ansDen) {
+            targetData.win++;
+            updateRecordUI();
+            
+            res.textContent = "🎉 정답입니다! 다음 문제로 넘어갑니다."; 
+            res.className = "feedback-success"; 
+            isWrongState = false;
+            
+            saveState();
+            setTimeout(() => { 
+                resetFeedback(); 
+                startNewProblemForStage(curStage); 
+            }, 1200);
+        } else {
+            targetData.lose++;
+            updateRecordUI();
+            
+            res.textContent = "❌ 틀렸습니다! (입력칸을 누르면 지워집니다)"; 
+            res.className = "feedback-danger"; 
+            isWrongState = true;
+            saveState();
+        }
+    }
+
+    function openResetModal() {
+        document.getElementById('overlay').classList.add('overlay-visible');
+    }
+
+    function closeResetModal() {
+        document.getElementById('overlay').classList.remove('overlay-visible');
+    }
+
+    function confirmReset() {
+        gameState = {
+            currentStage: 1,
+            stageHistory: {
+                1: { currentProblemLatex: "", ansNum: 0, ansDen: 1, inputVal: "", win: 0, lose: 0 },
+                2: { currentProblemLatex: "", ansNum: 0, ansDen: 1, inputVal: "", win: 0, lose: 0 }
+            }
+        };
+        saveState();
+        updateRecordUI();
+        updateStageUI();
+        closeResetModal();
+        clearInput();
+        startNewProblemForStage(1);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('overlay');
+        if(modal && modal.classList.contains('overlay-visible')) {
+            if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); confirmReset(); }
+            if(e.key === 'Escape') { e.preventDefault(); closeResetModal(); }
+        } else {
+            if(e.key >= '0' && e.key <= '9') appendNumber(e.key);
+            else if(e.key === '/') appendNumber('/');
+            else if(e.key === 'Backspace') backspace();
+            else if(e.key === 'Escape') clearInput();
+            else if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); main(); }
+        }
+    });
+
+    window.onload = initGame;
+</script>
+</body>
+</html>

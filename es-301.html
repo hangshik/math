@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>자연수의 곱셈</title>
+
+    <!-- Pretendard 폰트 로드 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VHD0QPH39L"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-VHD0QPH39L');
+    </script>
+
+    <!-- 외부 스타일시트 연결 -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+    /* 정답 확인 버튼 스타일 */
+    .confirm-btn-style {
+        grid-column: span 3;
+        background-color: var(--active) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 3px 6px rgba(0, 123, 255, 0.2) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 2단계 구조를 위한 무대 선택 그리드 */
+    .stage-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        width: 100%;
+    }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <!-- 메인 대제목 -->
+    <h1 class="main-title">자연수의 곱셈</h1>
+
+    <!-- 단계 선택 카드리스트 -->
+    <div class="container-fixed" style="gap: 12px; padding: 16px 20px;">
+        <div class="stage-grid-2">
+            <button class="stage-btn active" id="stageBtn-1" onclick="selectStage(1)">1단계</button>
+            <button class="stage-btn" id="stageBtn-2" onclick="selectStage(2)">2단계</button>
+        </div>
+    </div>
+
+    <!-- 문제 수식 및 입력 영역 -->
+    <main class="container-fixed">
+        <div class="formula-row-container">
+            <div id="problem">로딩 중...</div>
+            <div class="formula-equal">=</div>
+            <div class="input-wrapper-inline">
+                <input type="text" id="txt" readonly placeholder="?" onclick="handleInputClick()">
+            </div>
+        </div>
+
+        <!-- 가상 키패드 -->
+        <div class="key-grid full-width-container">
+            <button class="button" onclick="appendNumber(1)">1</button>
+            <button class="button" onclick="appendNumber(2)">2</button>
+            <button class="button" onclick="appendNumber(3)">3</button>
+            <button class="button" onclick="appendNumber(4)">4</button>
+            <button class="button" onclick="appendNumber(5)">5</button>
+            <button class="button" onclick="appendNumber(6)">6</button>
+            <button class="button" onclick="appendNumber(7)">7</button>
+            <button class="button" onclick="appendNumber(8)">8</button>
+            <button class="button" onclick="appendNumber(9)">9</button>
+            <button class="button" onclick="appendNumber(0)">0</button>
+
+            <button class="button" onclick="backspace()">←</button>
+            <button class="button" onclick="clearInput()">C</button>
+            <button class="confirm-btn-style" onclick="main()">✓ 정답 확인</button>
+        </div>
+
+        <!-- 피드백 메시지 박스 -->
+        <div id="result1" class="msg-default">수식을 계산한 후 정답 확인을 눌러주세요.</div>
+    </main>
+
+    <!-- 누적 기록 패널 -->
+    <section class="guide-box record">
+        <div class="guide-header">
+            <h2 class="guide-title">📊 누적 기록</h2>
+            <button class="reset-btn" onclick="openResetModal()">누적기록 초기화</button>
+        </div>
+        <table class="record-table">
+            <thead>
+                <tr>
+                    <th>단계</th>
+                    <th>성공 횟수</th>
+                    <th>실패 횟수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1단계</td>
+                    <td id="winCount-1" class="count-highlight win-active">0</td>
+                    <td id="loseCount-1" class="count-highlight lose-active">0</td>
+                </tr>
+                <tr>
+                    <td>2단계</td>
+                    <td id="winCount-2" class="count-highlight win-active">0</td>
+                    <td id="loseCount-2" class="count-highlight lose-active">0</td>
+                </tr>
+                <tr class="total-row">
+                    <td>합계</td>
+                    <td id="totalWinCount" class="count-highlight win-active">0</td>
+                    <td id="totalLoseCount" class="count-highlight lose-active">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 퍼즐 규칙 패널 -->
+    <section class="guide-box rules">
+        <div class="guide-header">
+            <h2 class="guide-title">◈ 퍼즐 규칙</h2>
+        </div>
+        <ul class="rules-list">
+            <li>1단계: 몇십 몇 × 몇 (예: 24 × 5)</li>
+            <li>2단계: 몇십 몇 × 몇십 몇 (예: 32 × 45)</li>
+            <li>각 단계별 풀던 문제와 입력 상태는 단계를 이동해도 자동으로 유지됩니다.</li>
+        </ul>
+    </section>
+
+    <!-- 키보드 단축키 패널 -->
+    <section class="guide-box shortcuts">
+        <div class="guide-header">
+            <h2 class="guide-title">⌨ 키보드 단축키</h2>
+        </div>
+        <div class="shortcut-grid">
+            <div class="shortcut-item"><kbd>0</kbd> ~ <kbd>9</kbd> <span>숫자 입력</span></div>
+            <div class="shortcut-item"><kbd>Backspace</kbd> <span>한 글자 지우기</span></div>
+            <div class="shortcut-item"><kbd>Esc</kbd> <span>전체 삭제 / 모달 닫기</span></div>
+            <div class="shortcut-item"><kbd>Enter</kbd> / <kbd>Space</kbd> <span>정답 확인 / 모달 확인</span></div>
+        </div>
+    </section>
+</div>
+
+<!-- 누적기록 초기화 모달 -->
+<div id="overlay" class="modal-overlay">
+    <div class="modal-box">
+        <h2 class="modal-title">누적 기록 초기화</h2>
+        <p class="modal-text">저장된 모든 누적 기록 및 진행 상태를 삭제하시겠습니까?</p>
+        <div class="modal-buttons">
+            <button class="modal-btn cancel" onclick="closeResetModal()">취소</button>
+            <button class="modal-btn confirm" onclick="confirmReset()">초기화</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 우클릭 방지
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// 전역 게임 상태 정의 (2단계 구조로 수정)
+let gameState = {
+    currentStage: 1,
+    stageHistory: {
+        1: { problemText: "", answer: null, inputVal: "", win: 0, lose: 0 },
+        2: { problemText: "", answer: null, inputVal: "", win: 0, lose: 0 }
+    }
+};
+
+let isWrongState = false;
+
+// 로컬 스토리지 불러오기
+function loadState() {
+    const saved = localStorage.getItem('natMulGame_v1');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            gameState = { ...gameState, ...parsed };
+            for (let i = 1; i <= 2; i++) {
+                if (!gameState.stageHistory[i]) {
+                    gameState.stageHistory[i] = { problemText: "", answer: null, inputVal: "", win: 0, lose: 0 };
+                } else {
+                    if (typeof gameState.stageHistory[i].win !== 'number') gameState.stageHistory[i].win = 0;
+                    if (typeof gameState.stageHistory[i].lose !== 'number') gameState.stageHistory[i].lose = 0;
+                }
+            }
+        } catch(e) {
+            console.error("저장 데이터 로드 실패", e);
+        }
+    }
+}
+
+// 로컬 스토리지 저장
+function saveState() {
+    localStorage.setItem('natMulGame_v1', JSON.stringify(gameState));
+}
+
+// 문제 생성 (곱셈 알고리즘)
+function generateProblemForStage(stage) {
+    let a, b, answer, problemText;
+
+    if (stage === 1) { // 1단계: 몇십 몇 × 몇 (11~99 × 2~9)
+        a = Math.floor(Math.random() * 89) + 11;
+        b = Math.floor(Math.random() * 8) + 2;
+        answer = a * b;
+        problemText = `${a} × ${b}`;
+    } else { // 2단계: 몇십 몇 × 몇십 몇 (11~99 × 11~99)
+        a = Math.floor(Math.random() * 89) + 11;
+        b = Math.floor(Math.random() * 89) + 11;
+        answer = a * b;
+        problemText = `${a} × ${b}`;
+    }
+
+    return { problemText, answer };
+}
+
+// 게임 초기화
+function initGame() {
+    loadState();
+    updateRecordUI();
+    updateStageUI();
+    
+    const curStage = gameState.currentStage;
+    if (!gameState.stageHistory[curStage]?.problemText) {
+        startNewProblemForStage(curStage);
+    } else {
+        renderCurrentProblem();
+    }
+}
+
+// 단계 변경
+function selectStage(stageNum) {
+    if (gameState.currentStage === stageNum) return;
+
+    const input = document.getElementById("txt");
+    if (gameState.stageHistory[gameState.currentStage]) {
+        gameState.stageHistory[gameState.currentStage].inputVal = input.value;
+    }
+
+    gameState.currentStage = stageNum;
+    saveState();
+    
+    updateStageUI();
+    resetFeedback();
+
+    if (!gameState.stageHistory[stageNum]?.problemText) {
+        startNewProblemForStage(stageNum);
+    } else {
+        renderCurrentProblem();
+    }
+}
+
+function startNewProblemForStage(stageNum) {
+    const p = generateProblemForStage(stageNum);
+    const currentData = gameState.stageHistory[stageNum] || {};
+    
+    const currentWin = typeof currentData.win === 'number' ? currentData.win : 0;
+    const currentLose = typeof currentData.lose === 'number' ? currentData.lose : 0;
+
+    gameState.stageHistory[stageNum] = {
+        problemText: p.problemText,
+        answer: p.answer,
+        inputVal: "",
+        win: currentWin,
+        lose: currentLose
+    };
+    saveState();
+    renderCurrentProblem();
+}
+
+function renderCurrentProblem() {
+    const curStage = gameState.currentStage;
+    const history = gameState.stageHistory[curStage];
+    
+    document.getElementById("problem").textContent = history.problemText;
+    document.getElementById("txt").value = history.inputVal || "";
+}
+
+function updateStageUI() {
+    for (let i = 1; i <= 2; i++) {
+        const btn = document.getElementById(`stageBtn-${i}`);
+        if (btn) {
+            if (i === gameState.currentStage) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+    }
+}
+
+function updateRecordUI() {
+    let totalWin = 0;
+    let totalLose = 0;
+
+    for (let i = 1; i <= 2; i++) {
+        const stageData = gameState.stageHistory[i] || { win: 0, lose: 0 };
+        const win = stageData.win || 0;
+        const lose = stageData.lose || 0;
+        totalWin += win;
+        totalLose += lose;
+
+        const winEl = document.getElementById(`winCount-${i}`);
+        const loseEl = document.getElementById(`loseCount-${i}`);
+
+        if (winEl) winEl.textContent = win;
+        if (loseEl) loseEl.textContent = lose;
+    }
+
+    const totalWinEl = document.getElementById("totalWinCount");
+    const totalLoseEl = document.getElementById("totalLoseCount");
+
+    if (totalWinEl) totalWinEl.textContent = totalWin;
+    if (totalLoseEl) totalLoseEl.textContent = totalLose;
+}
+
+function appendNumber(num) {
+    const input = document.getElementById("txt");
+    if (isWrongState) {
+        input.value = "";
+        resetFeedback();
+    }
+    input.value += num;
+    gameState.stageHistory[gameState.currentStage].inputVal = input.value;
+    saveState();
+}
+
+function backspace() {
+    const input = document.getElementById("txt");
+    if (isWrongState) {
+        clearInput();
+        return;
+    }
+    input.value = input.value.slice(0, -1);
+    gameState.stageHistory[gameState.currentStage].inputVal = input.value;
+    saveState();
+}
+
+function clearInput() {
+    const input = document.getElementById("txt");
+    input.value = "";
+    gameState.stageHistory[gameState.currentStage].inputVal = "";
+    saveState();
+    resetFeedback();
+}
+
+function handleInputClick() {
+    if (isWrongState) {
+        clearInput();
+    }
+}
+
+function resetFeedback() {
+    const res = document.getElementById("result1");
+    if (res) {
+        res.textContent = "수식을 계산한 후 정답 확인을 눌러주세요.";
+        res.className = "msg-default";
+    }
+    isWrongState = false;
+}
+
+// 정답 확인
+function main() {
+    const input = document.getElementById("txt");
+    const res = document.getElementById("result1");
+    if (!input.value.trim()) return;
+
+    const curStage = gameState.currentStage;
+    const currentAnswer = gameState.stageHistory[curStage]?.answer;
+
+    if (parseInt(input.value, 10) === currentAnswer) {
+        if (!gameState.stageHistory[curStage].win) gameState.stageHistory[curStage].win = 0;
+        gameState.stageHistory[curStage].win++;
+        updateRecordUI();
+
+        res.textContent = "🎉 정답입니다! 다음 문제로 넘어갑니다.";
+        res.className = "feedback-success";
+        isWrongState = false;
+
+        saveState();
+        setTimeout(() => {
+            resetFeedback();
+            startNewProblemForStage(curStage);
+        }, 1000);
+    } else {
+        if (!gameState.stageHistory[curStage].lose) gameState.stageHistory[curStage].lose = 0;
+        gameState.stageHistory[curStage].lose++;
+        updateRecordUI();
+
+        res.textContent = "❌ 틀렸습니다! (입력칸을 누르면 지워집니다)";
+        res.className = "feedback-danger";
+        isWrongState = true;
+
+        saveState();
+    }
+}
+
+function openResetModal() {
+    document.getElementById('overlay').classList.add('overlay-visible');
+}
+
+function closeResetModal() {
+    document.getElementById('overlay').classList.remove('overlay-visible');
+}
+
+function confirmReset() {
+    gameState = {
+        currentStage: 1,
+        stageHistory: {
+            1: { problemText: "", answer: null, inputVal: "", win: 0, lose: 0 },
+            2: { problemText: "", answer: null, inputVal: "", win: 0, lose: 0 }
+        }
+    };
+    saveState();
+    updateRecordUI();
+    updateStageUI();
+    closeResetModal();
+    resetFeedback();
+    startNewProblemForStage(1);
+}
+
+// 키보드 이벤트
+document.addEventListener('keydown', (e) => {
+    const overlay = document.getElementById('overlay');
+    if (overlay && overlay.classList.contains('overlay-visible')) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            confirmReset();
+            return;
+        }
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeResetModal();
+            return;
+        }
+        return;
+    }
+
+    if (e.key >= '0' && e.key <= '9') {
+        appendNumber(e.key);
+    } else if (e.key === 'Backspace') {
+        backspace();
+    } else if (e.key === 'Escape') {
+        clearInput();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        main();
+    }
+});
+
+// 초기 실행
+window.addEventListener('DOMContentLoaded', initGame);
+</script>
+</body>
+</html>
