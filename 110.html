@@ -513,16 +513,15 @@
         gameState.problemHistory[selectedProblem] = (gameState.problemHistory[selectedProblem] || 0) + 1;
         saveState();
 
-const typeNum = parseInt(selectedCategory);
-const problemTypeStr = (typeNum % 2 !== 0) 
-    ? `<span class="text-highlight-red">겉넓이</span>를` 
-    : `<span class="text-highlight-red">부피</span>를`;
+        const typeNum = parseInt(selectedCategory);
+        const problemTypeStr = (typeNum % 2 !== 0) 
+            ? `<span class="text-highlight-red">겉넓이</span>를` 
+            : `<span class="text-highlight-red">부피</span>를`;
 
-// 문제 번호를 괄호와 함께 추가 (필요에 따라 스타일 지정 가능)
-document.getElementById("problem-text").innerHTML = `다음 입체도형의 ${problemTypeStr} 구하시오. <span style="font-size: 16px; color: #888; font-weight: normal;">(${selectedProblem})</span>`;
+        document.getElementById("problem-text").innerHTML = `다음 입체도형의 ${problemTypeStr} 구하시오.`;
         
         const imgEl = document.getElementById("problem-img");
-        imgEl.src = `img110/${selectedProblem}.png`;
+        imgEl.src = `img110/${selectedProblem}.jpg`;
         imgEl.style.display = 'block';
 
         clearInput();
