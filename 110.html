@@ -123,7 +123,7 @@
         height: 78vh;
         max-width: 90vw;
         max-height: 78vh;
-        object-fit: contain; /* 원본 비율을 유지하면서 지정된 동일한 박스 크기에 꽉 차게 정렬 */
+        object-fit: contain;
         border-radius: var(--radius-sm);
         cursor: pointer;
         background-color: #fafafa;
@@ -134,6 +134,133 @@
         color: #555;
         font-weight: 700;
         flex-shrink: 0;
+    }
+
+    /* 🔑 비밀 관리자 모달 스타일 */
+    .admin-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+        padding: 15px;
+        box-sizing: border-box;
+    }
+    .admin-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    .admin-modal-box {
+        width: 100%;
+        max-width: 650px;
+        background: #fff;
+        border-radius: var(--radius-md);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        max-height: 85vh;
+    }
+    .admin-modal-header {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .admin-modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--text-main);
+    }
+    .admin-close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #6c757d;
+    }
+    .admin-modal-body {
+        padding: 20px;
+        overflow-y: auto;
+        flex-grow: 1;
+    }
+    .admin-input-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .admin-input-group input {
+        flex-grow: 1;
+        padding: 10px 12px;
+        font-size: 16px;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        box-sizing: border-box;
+    }
+    .admin-input-group button {
+        padding: 10px 20px;
+        background-color: var(--active);
+        color: white;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        cursor: pointer;
+    }
+    .admin-input-group button:hover {
+        background-color: var(--active-hover);
+    }
+    .admin-result-area {
+        font-size: 15px;
+        color: var(--text-main);
+    }
+    .admin-category-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 15px;
+    }
+    .admin-tab-btn {
+        padding: 6px 10px;
+        background-color: #e9ecef;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 13px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #495057;
+    }
+    .admin-tab-btn.active {
+        background-color: var(--active);
+        color: white;
+        border-color: var(--active);
+    }
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+    .admin-table th, .admin-table td {
+        border: 1px solid #dee2e6;
+        padding: 8px 12px;
+        text-align: center;
+        font-size: 14px;
+    }
+    .admin-table th {
+        background-color: #f1f3f5;
+    }
+    .admin-table tr:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
     }
 
     /* 문제 텍스트 내 강조 키워드 색상 지정 */
@@ -191,8 +318,27 @@
     </div>
 </div>
 
+<!-- 🔑 비밀 관리자 모달 영역 -->
+<div id="admin-modal" class="admin-modal-overlay" onclick="closeAdminModal()">
+    <div class="admin-modal-box" onclick="event.stopPropagation()">
+        <div class="admin-modal-header">
+            <h3>문제 관리자 조회</h3>
+            <button class="admin-close-btn" onclick="closeAdminModal()">&times;</button>
+        </div>
+        <div class="admin-modal-body">
+            <div class="admin-input-group">
+                <input type="text" id="admin-input" placeholder="문제 번호" onkeydown="if(event.key==='Enter') executeAdminSearch()">
+                <button onclick="executeAdminSearch()">조회</button>
+            </div>
+            <div id="admin-result-area" class="admin-result-area">
+                <p style="color: #6c757d; text-align: center; margin: 20px 0;">문제 번호를 검색하세요.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="wrapper">
-    <h1 class="main-title">입체도형의 겉넓이와 부피</h1>
+    <h1 class="main-title">입체도형의 겉넓이와 <span style="cursor: pointer; text-decoration: none;" onclick="openAdminModal()">부피</span></h1>
 
     <!-- 카테고리 선택 버튼 영역 (1줄에 5개씩) -->
     <div class="category-grid-5">
@@ -353,25 +499,25 @@
 
 <script>    
     const PROBLEM_ANSWERS = {
-"1001": "164", "1002": "28pi", "1003": "168", "1004": "184", "1005": "80pi", "1006": "60pi", "1007": "152", "1008": "288", "1009": "90pi", "1010": "124", "1011": "96pi", "1012": "216", "1013": "330", "1014": "52", "1015": "126", "1016": "54pi", "1017": "24pi", "1018": "204", "1019": "352", "1020": "228pi", "1021": "120pi",
-"2001": "84", "2002": "125pi", "2003": "96pi", "2004": "135", "2005": "75", "2006": "80pi", "2007": "360", "2008": "100pi", "2009": "96", "2010": "63pi", "2011": "240", "2012": "84", "2013": "128pi", "2014": "150", "2015": "18", "2016": "175/2", "2017": "240", "2018": "60", "2019": "54pi", "2020": "16pi", "2021": "300", "2022": "108", "2023": "36pi", "2024": "60pi", "2025": "440pi", "2026": "30pi",
-"3001": "320", "3002": "90pi", "3003": "132", "3004": "48pi", "3005": "156", "3006": "33pi", "3007": "33", "3008": "14pi", "3009": "33", "3010": "245", "3011": "24pi", "3012": "48pi", "3013": "64", "3014": "108pi",
-"4001": "112", "4002": "75pi", "4003": "21pi", "4004": "75", "4005": "4", "4006": "378", "4007": "144pi", "4008": "12", "4009": "18pi", "4010": "256", "4011": "70", "4012": "18pi", "4013": "100pi", "4014": "50", "4015": "96pi",
-"5001": "98", "5002": "297", "5003": "140pi", "5004": "192pi", "5005": "117", "5006": "66pi", "5007": "113", "5008": "17pi",
-"6001": "93", "6002": "285pi", "6003": "228pi", "6004": "105", "6005": "104", "6006": "84pi", "6007": "392", "6008": "224pi", "6009": "42", "6010": "140pi/3",
-"7001": "36pi", "7002": "147pi", "7003": "26pi", "7004": "16pi", "7005": "48pi", "7006": "75pi", "7007": "225pi", "7008": "100pi", "7009": "64pi", "7010": "27pi", "7011": "108pi",
-"8001": "32pi/3", "8002": "240pi", "8003": "288pi", "8004": "486pi", "8005": "972pi", "8006": "64pi/3", "8007": "250pi/3", "8008": "1375pi/3", "8009": "36pi", "8010": "500pi/3", "8011": "256pi/3", "8012": "16pi/3", "8013": "18pi"
+"1001": "164", "1002": "28pi", "1003": "168", "1004": "184", "1005": "80pi", "1006": "60pi", "1007": "152", "1008": "288", "1009": "90pi", "1010": "124", "1011": "96pi", "1012": "216", "1013": "330", "1014": "52", "1015": "126", "1016": "54pi", "1017": "24pi", "1018": "204", "1019": "352", "1020": "228pi", "1021": "120pi", "1022": "224", "1023": "192pi",
+"2001": "84", "2002": "125pi", "2003": "96pi", "2004": "135", "2005": "75", "2006": "80pi", "2007": "360", "2008": "100pi", "2009": "96", "2010": "63pi", "2011": "240", "2012": "84", "2013": "128pi", "2014": "150", "2015": "18", "2016": "175/2", "2017": "240", "2018": "60", "2019": "54pi", "2020": "16pi", "2021": "300", "2022": "108", "2023": "36pi", "2024": "60pi", "2025": "440pi", "2026": "30pi", "2027": "196", "2028": "360pi", "2029": "10pi", "2030": "128pi",
+"3001": "320", "3002": "90pi", "3003": "132", "3004": "48pi", "3005": "156", "3006": "33pi", "3007": "33", "3008": "14pi", "3009": "33", "3010": "245", "3011": "24pi", "3012": "48pi", "3013": "64", "3014": "108pi", "3015": "360", "3016": "216pi",
+"4001": "112", "4002": "75pi", "4003": "21pi", "4004": "75", "4005": "4", "4006": "378", "4007": "144pi", "4008": "12", "4009": "18pi", "4010": "256", "4011": "70", "4012": "18pi", "4013": "100pi", "4014": "50", "4015": "96pi", "4016": "400", "4017": "324pi",
+"5001": "98", "5002": "297", "5003": "140pi", "5004": "192pi", "5005": "117", "5006": "66pi", "5007": "113", "5008": "17pi", "5009": "360", "5010": "90pi",
+"6001": "93", "6002": "285pi", "6003": "228pi", "6004": "105", "6005": "104", "6006": "84pi", "6007": "392", "6008": "224pi", "6009": "42", "6010": "140pi/3", "6011": "336",
+"7001": "36pi", "7002": "147pi", "7003": "26pi", "7004": "16pi", "7005": "48pi", "7006": "75pi", "7007": "225pi", "7008": "100pi", "7009": "64pi", "7010": "27pi", "7011": "108pi", "7012": "324pi",
+"8001": "32pi/3", "8002": "240pi", "8003": "288pi", "8004": "486pi", "8005": "972pi", "8006": "64pi/3", "8007": "250pi/3", "8008": "1375pi/3", "8009": "36pi", "8010": "500pi/3", "8011": "256pi/3", "8012": "16pi/3", "8013": "18pi", "8014": "972pi", "8015": "128pi/3", "8016": "63pi", "8017": "80pi"
+    };
 
-
-
-        // "1001": "164", "1002": "28pi", "1003": "168", "1004": "184", "1005": "80pi", "1006": "60pi","1007": "152","1008": "288","1009": "90pi","1010": "124","1011": "96pi",
-        // "2001": "84", "2002": "125pi","2003": "96pi","2004": "135","2005": "75","2006": "80pi","2007": "360","2008": "100pi","2009": "96","2010": "63pi","2011": "240","2012": "84","2013": "128pi","2014": "150","2015": "18","2016": "175/2",
-        // "3001": "320", "3002": "90pi", "3003": "132", "3004": "48pi", "3005": "156","3006": "33pi","3007": "33","3008": "14pi",
-        // "4001": "112", "4002": "75pi","4003": "21pi","4004": "75","4005": "4","4006": "378","4007": "144pi","4008": "12","4009": "18pi",
-        // "5001": "98","5002": "297","5003": "140pi","5004": "192pi",
-        // "6001": "93","6002": "285pi","6003": "228pi","6004": "105","6005": "104","6006": "84pi",
-        // "7001": "36pi", "7002": "147pi", "7003": "26pi", "7004": "16pi", "7005": "48pi", "7006": "75pi","7007": "225pi",
-        // "8001": "32pi/3", "8002": "240pi", "8003": "288pi", "8004": "486pi","8005": "972pi","8006": "64pi/3","8007": "250pi/3","8008": "1375pi/3"
+    const CATEGORY_NAMES = {
+        "1": "기둥 겉넓이",
+        "2": "기둥 부피",
+        "3": "뿔 겉넓이",
+        "4": "뿔 부피",
+        "5": "뿔대 겉넓이",
+        "6": "뿔대 부피",
+        "7": "구 겉넓이",
+        "8": "구 부피"
     };
 
 
@@ -400,7 +546,8 @@
         if (gameState.records[c].skip === undefined) gameState.records[c].skip = 0;
     });
 
-    let selectedTypes = []; 
+    // 1. 처음 진입 시 모든 카테고리가 선택된 상태로 설정
+    let selectedTypes = ['1', '2', '3', '4', '5', '6', '7', '8']; 
     let isWrongState = false; 
 
     function saveState() {
@@ -530,11 +677,36 @@
             ? `<span class="text-highlight-red">겉넓이</span>를` 
             : `<span class="text-highlight-red">부피</span>를`;
 
-        // 문제 번호를 괄호와 함께 추가 (필요에 따라 스타일 지정 가능)
         document.getElementById("problem-text").innerHTML = `다음 입체도형의 ${problemTypeStr} 구하시오. <span style="font-size: 16px; color: #888; font-weight: normal;">(${selectedProblem})</span>`;
         
         const imgEl = document.getElementById("problem-img");
         imgEl.src = `img110/${selectedProblem}.jpg`;
+        imgEl.style.display = 'block';
+
+        clearInput();
+    }
+
+    // 특정 문제 번호로 메인 화면 설정 및 출제
+    function loadSpecificProblem(probNum) {
+        if (!PROBLEM_ANSWERS[probNum]) return;
+        const selectedCategory = probNum.substring(0, 1);
+        const ans = PROBLEM_ANSWERS[probNum] || "0";
+
+        gameState.currentProblemNum = probNum;
+        gameState.currentAnswer = ans;
+        gameState.currentCategory = selectedCategory;
+        gameState.lastProblemNum = probNum;
+        saveState();
+
+        const typeNum = parseInt(selectedCategory);
+        const problemTypeStr = (typeNum % 2 !== 0) 
+            ? `<span class="text-highlight-red">겉넓이</span>를` 
+            : `<span class="text-highlight-red">부피</span>를`;
+
+        document.getElementById("problem-text").innerHTML = `다음 입체도형의 ${problemTypeStr} 구하시오. <span style="font-size: 16px; color: #888; font-weight: normal;">(${probNum})</span>`;
+        
+        const imgEl = document.getElementById("problem-img");
+        imgEl.src = `img110/${probNum}.jpg`;
         imgEl.style.display = 'block';
 
         clearInput();
@@ -554,6 +726,80 @@
     function closeImageModal() {
         const modal = document.getElementById("img-modal");
         modal.classList.remove("active");
+    }
+
+    // 🔑 비밀 관리자 모달 제어 함수
+    function openAdminModal() {
+        const modal = document.getElementById("admin-modal");
+        const input = document.getElementById("admin-input");
+        input.value = "";
+        document.getElementById("admin-result-area").innerHTML = '<p style="color: #6c757d; text-align: center; margin: 20px 0;">코드를 입력하거나 문제 번호를 검색하세요.</p>';
+        modal.classList.add("active");
+        setTimeout(() => input.focus(), 50); // 입력창 자동 활성화
+    }
+
+    function closeAdminModal() {
+        const modal = document.getElementById("admin-modal");
+        modal.classList.remove("active");
+    }
+
+    function executeAdminSearch() {
+        const val = document.getElementById("admin-input").value.trim();
+        const area = document.getElementById("admin-result-area");
+
+        if (val === "9859") {
+            // 카테고리별 버튼 탭 생성
+            let html = '<div class="admin-category-tabs">';
+            CATEGORIES.forEach((catKey, idx) => {
+                const activeClass = idx === 0 ? 'active' : '';
+                html += `<button class="admin-tab-btn ${activeClass}" onclick="switchAdminTab('${catKey}')">${CATEGORY_NAMES[catKey]}</button>`;
+            });
+            html += '</div>';
+            html += '<div id="admin-tab-content"></div>';
+            area.innerHTML = html;
+            switchAdminTab('1'); // 첫 번째 카테고리 기본 표시
+        } else if (PROBLEM_ANSWERS[val]) {
+            // 특정 문제 번호 검색 시 모달을 닫고 새 문제처럼 메인 화면에 출력
+            closeAdminModal();
+            loadSpecificProblem(val);
+        } else {
+            area.innerHTML = '<p style="color: var(--danger); text-align: center; margin: 20px 0;">존재하지 않는 문제 번호이거나 올바르지 않은 코드입니다.</p>';
+        }
+    }
+
+    function switchAdminTab(catKey) {
+        // 탭 활성화 상태 변경
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent === CATEGORY_NAMES[catKey]) {
+                btn.classList.add('active');
+            }
+        });
+
+        // 해당 카테고리 문제 목록 필터링
+        const problems = Object.keys(PROBLEM_ANSWERS).filter(p => p.startsWith(catKey));
+        let html = `<table class="admin-table">
+            <thead>
+                <tr>
+                    <th style="width: 40%;">문제 번호</th>
+                    <th>정답</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        
+        if (problems.length === 0) {
+            html += `<tr><td colspan="2" style="text-align: center; color: #6c757d;">등록된 문제가 없습니다.</td></tr>`;
+        } else {
+            problems.forEach(p => {
+                let formattedAns = PROBLEM_ANSWERS[p].replace(/pi/g, 'π');
+                html += `<tr onclick="closeAdminModal(); loadSpecificProblem('${p}');">
+                    <td><b>${p}</b></td>
+                    <td>${formattedAns}</td>
+                </tr>`;
+            });
+        }
+        html += `</tbody></table>`;
+        document.getElementById("admin-tab-content").innerHTML = html;
     }
 
     function appendNumber(char) { 
@@ -673,7 +919,16 @@
     document.addEventListener('keydown', (e) => {
         const modal = document.getElementById('overlay');
         const imgModal = document.getElementById('img-modal');
+        const adminModal = document.getElementById('admin-modal');
         
+        if (adminModal && adminModal.classList.contains('active')) {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                closeAdminModal();
+            }
+            return;
+        }
+
         if (imgModal && imgModal.classList.contains('active')) {
             if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
