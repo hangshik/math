@@ -223,21 +223,37 @@
         font-size: 15px;
         color: var(--text-main);
     }
-    .admin-category-tabs {
-        display: flex;
-        flex-wrap: wrap;
+    
+    /* 기존 화면의 카테고리 위치 레이아웃 유지 (5열 그리드) */
+    .admin-category-tabs-initial {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
         gap: 6px;
         margin-bottom: 15px;
     }
+    
+    .admin-summary-info {
+        background-color: #e7f5ff;
+        border: 1px solid #a5d8ff;
+        border-radius: var(--radius-sm);
+        padding: 10px 15px;
+        margin-bottom: 15px;
+        font-weight: bold;
+        color: #1971c2;
+        text-align: center;
+    }
+
     .admin-tab-btn {
-        padding: 6px 10px;
+        padding: 8px 4px;
         background-color: #e9ecef;
         border: 1px solid #ced4da;
         border-radius: 4px;
-        font-size: 13px;
+        font-size: 12px;
         cursor: pointer;
         font-weight: 600;
         color: #495057;
+        text-align: center;
+        white-space: nowrap;
     }
     .admin-tab-btn.active {
         background-color: var(--active);
@@ -278,8 +294,8 @@
 
     /* 모바일 반응형 처리 */
     @media (max-width: 600px) {
-        .category-grid-5 { grid-template-columns: repeat(5, 1fr); gap: 4px; }
-        .stage-btn { font-size: 11px; padding: 8px 2px; }
+        .category-grid-5, .admin-category-tabs-initial { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+        .stage-btn, .admin-tab-btn { font-size: 10px; padding: 6px 1px; }
         #problem-text { font-size: 18px; }
         .record-table th, .record-table td { font-size: 11px; padding: 4px 1px; }
         
@@ -327,7 +343,18 @@
         </div>
         <div class="admin-modal-body">
             <div class="admin-input-group">
-                <input type="text" id="admin-input" placeholder="문제 번호" onkeydown="if(event.key==='Enter') executeAdminSearch()">
+                <input type="text" id="admin-input" placeholder="문제 번호" inputmode="numeric" onkeydown="if(event.key==='Enter') executeAdminSearch()">
+                      <!-- <input
+        id="pw"
+        type="password"
+        placeholder="비밀번호 입력"
+        required
+        aria-label="비밀번호"
+        autofocus
+        inputmode="numeric"
+        pattern="[0-9]*"
+      /> -->
+                
                 <button onclick="executeAdminSearch()">조회</button>
             </div>
             <div id="admin-result-area" class="admin-result-area">
@@ -733,7 +760,7 @@
         const modal = document.getElementById("admin-modal");
         const input = document.getElementById("admin-input");
         input.value = "";
-        document.getElementById("admin-result-area").innerHTML = '<p style="color: #6c757d; text-align: center; margin: 20px 0;">코드를 입력하거나 문제 번호를 검색하세요.</p>';
+        document.getElementById("admin-result-area").innerHTML = '<p style="color: #6c757d; text-align: center; margin: 20px 0;">문제 번호를 입력하세요.</p>';
         modal.classList.add("active");
         setTimeout(() => input.focus(), 50); // 입력창 자동 활성화
     }
@@ -744,20 +771,41 @@
     }
 
     function executeAdminSearch() {
-        const val = document.getElementById("admin-input").value.trim();
+        const inputEl = document.getElementById("admin-input");
+        const val = inputEl.value.trim();
         const area = document.getElementById("admin-result-area");
 
         if (val === "9859") {
-            // 카테고리별 버튼 탭 생성
-            let html = '<div class="admin-category-tabs">';
-            CATEGORIES.forEach((catKey, idx) => {
-                const activeClass = idx === 0 ? 'active' : '';
-                html += `<button class="admin-tab-btn ${activeClass}" onclick="switchAdminTab('${catKey}')">${CATEGORY_NAMES[catKey]}</button>`;
-            });
+            // 입력된 9859 숫자를 안 보이게 입력창 비우기
+            inputEl.value = "";
+
+            const totalProblems = Object.keys(PROBLEM_ANSWERS).length;
+
+            // 요약 정보 표시 영역
+            let html = `<div id="admin-summary-info" class="admin-summary-info">전체 문제 수: ${totalProblems}개</div>`;
+
+            // 메인 화면과 동일한 배치(1줄 5개 그리드)로 카테고리 버튼 구성
+            html += '<div class="admin-category-tabs-initial">';
+            
+            // 1행: 겉넓이 4개
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('1')">${CATEGORY_NAMES['1']}</button>`;
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('3')">${CATEGORY_NAMES['3']}</button>`;
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('5')">${CATEGORY_NAMES['5']}</button>`;
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('7')">${CATEGORY_NAMES['7']}</button>`;
+            html += `<div></div>`; // 5번째 위치 맞춤용 빈 박스
+
+            // 2행: 부피 4개
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('2')">${CATEGORY_NAMES['2']}</button>`;
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('4')">${CATEGORY_NAMES['4']}</button>`;
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('6')">${CATEGORY_NAMES['6']}</button>`;
+            html += `<button class="admin-tab-btn" onclick="switchAdminTab('8')">${CATEGORY_NAMES['8']}</button>`;
+            html += `<div></div>`; // 5번째 위치 맞춤용 빈 박스
+
             html += '</div>';
             html += '<div id="admin-tab-content"></div>';
+            
             area.innerHTML = html;
-            switchAdminTab('1'); // 첫 번째 카테고리 기본 표시
+            switchAdminTab('1'); // 첫 번째 카테고리 기본 선택
         } else if (PROBLEM_ANSWERS[val]) {
             // 특정 문제 번호 검색 시 모달을 닫고 새 문제처럼 메인 화면에 출력
             closeAdminModal();
@@ -771,13 +819,21 @@
         // 탭 활성화 상태 변경
         document.querySelectorAll('.admin-tab-btn').forEach(btn => {
             btn.classList.remove('active');
-            if (btn.textContent === CATEGORY_NAMES[catKey]) {
+            if (btn.textContent.includes(CATEGORY_NAMES[catKey])) {
                 btn.classList.add('active');
             }
         });
 
-        // 해당 카테고리 문제 목록 필터링
+        // 해당 카테고리 문제 목록 필터링 및 문제 수 계산
         const problems = Object.keys(PROBLEM_ANSWERS).filter(p => p.startsWith(catKey));
+        const totalProblems = Object.keys(PROBLEM_ANSWERS).length;
+
+        // 상단 요약 정보 업데이트
+        const summaryEl = document.getElementById("admin-summary-info");
+        if (summaryEl) {
+            summaryEl.innerHTML = `전체 문제 수: <b>${totalProblems}</b>개 | [${CATEGORY_NAMES[catKey]}] 문제 수: <b>${problems.length}</b>개`;
+        }
+
         let html = `<table class="admin-table">
             <thead>
                 <tr>
